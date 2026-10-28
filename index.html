@@ -14,541 +14,361 @@
                 extend: {
                     fontFamily: { prompt: ['Prompt', 'sans-serif'] },
                     colors: {
-                        bizDark: '#1E1B4B',
-                        bizPurple: '#581C87',
-                        bizLightPurple: '#FAF5FF',
-                        bizGold: '#D4AF37',
+                        bizDarkBg: '#0F0B1E',
+                        bizCardBg: '#18122B',
+                        bizSidebar: '#130E26',
+                        bizPurple: '#7C3AED',
+                        bizGreen: '#10B981',
+                        bizRed: '#F43F5E',
                     }
                 }
             }
         }
     </script>
     <style>
-        body { font-family: 'Prompt', sans-serif; background-color: #F8FAFC; color: #1E293B; }
-        .gold-glow { text-shadow: 0 0 15px rgba(212, 175, 55, 0.6); }
-        .gold-border-glow { box-shadow: 0 0 15px rgba(212, 175, 55, 0.3); border-color: #D4AF37; }
-        .card-3d { transition: all 0.2s ease; box-shadow: 0 10px 25px -5px rgba(88, 28, 135, 0.08), 0 8px 10px -6px rgba(88, 28, 135, 0.08); }
-        .card-3d:hover { transform: translateY(-3px); box-shadow: 0 20px 30px -10px rgba(88, 28, 135, 0.15); }
+        body { font-family: 'Prompt', sans-serif; background-color: #0F0B1E; color: #F1F5F9; }
+        .card-dark { background-color: #18122B; border: 1px solid rgba(255, 255, 255, 0.05); }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #F1F5F9; }
-        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+        ::-webkit-scrollbar-track { background: #0F0B1E; }
+        ::-webkit-scrollbar-thumb { background: #2E2453; border-radius: 3px; }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden bg-bizLightPurple">
+<body class="flex h-screen overflow-hidden bg-bizDarkBg">
 
     <!-- Sidebar -->
-    <aside class="w-64 bg-bizDark text-white flex flex-col justify-between shadow-2xl z-20">
+    <aside class="w-64 bg-bizSidebar text-white flex flex-col justify-between border-r border-white/5 z-20">
         <div>
-            <!-- Logo Area -->
-            <div class="p-6 flex items-center space-x-3 border-b border-purple-900/50">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-600 flex items-center justify-center shadow-lg gold-border-glow">
-                    <svg class="w-6 h-6 text-purple-950" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <!-- Logo & Sync Status -->
+            <div class="p-6 flex items-center space-x-3 border-b border-white/5">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </div>
                 <div>
-                    <h1 class="font-bold text-lg text-amber-300 gold-glow tracking-wide">BizFlow</h1>
-                    <p class="text-xs text-purple-300">Personal Finance PWA</p>
+                    <h1 class="font-bold text-lg text-white tracking-wide">BizFlow</h1>
+                    <p class="text-[10px] text-purple-300">บัญชีส่วนตัว Sync Supabase</p>
                 </div>
             </div>
 
-            <!-- Navigation Links -->
-            <nav class="p-4 space-y-1.5 overflow-y-auto max-h-[calc(100vh-180px)]">
-                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all bg-amber-400 text-purple-950 font-semibold shadow-md">
+            <!-- Navigation Links (ครบถ้วนทุกเมนู) -->
+            <nav class="p-4 space-y-1 overflow-y-auto max-h-[calc(100vh-140px)] text-sm">
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium transition-all bg-purple-600 text-white shadow-lg shadow-purple-900/30">
                     <span>📊</span><span>แดชบอร์ด</span>
                 </button>
-                <button onclick="switchTab('transactions')" id="nav-transactions" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-purple-200 hover:bg-purple-900/50 hover:text-white">
+                <button onclick="switchTab('transactions')" id="nav-transactions" class="nav-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium transition-all text-gray-400 hover:bg-white/5 hover:text-white">
                     <span>💳</span><span>บันทึกรายการ</span>
                 </button>
-                <button onclick="switchTab('all-transactions')" id="nav-all-transactions" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-purple-200 hover:bg-purple-900/50 hover:text-white">
+                <button onclick="switchTab('all-transactions')" id="nav-all-transactions" class="nav-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium transition-all text-gray-400 hover:bg-white/5 hover:text-white">
                     <span>📋</span><span>เมนูรายการทั้งหมด</span>
                 </button>
-                <button onclick="switchTab('accounts')" id="nav-accounts" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-purple-200 hover:bg-purple-900/50 hover:text-white">
-                    <span>🏦</span><span>บัญชีธนาคารและเงินสด</span>
+                <button onclick="switchTab('accounts')" id="nav-accounts" class="nav-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium transition-all text-gray-400 hover:bg-white/5 hover:text-white">
+                    <span>🏦</span><span>บัญชีธนาคาร & เงินสด</span>
                 </button>
-                <button onclick="switchTab('budget')" id="nav-budget" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-purple-200 hover:bg-purple-900/50 hover:text-white">
+                <button onclick="switchTab('budget')" id="nav-budget" class="nav-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium transition-all text-gray-400 hover:bg-white/5 hover:text-white">
                     <span>🎯</span><span>งบประมาณรายหมวด</span>
                 </button>
-                <button onclick="switchTab('debts')" id="nav-debts" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-purple-200 hover:bg-purple-900/50 hover:text-white">
-                    <span>🚗</span><span>หนี้สินและงวดผ่อน</span>
+                <button onclick="switchTab('debts')" id="nav-debts" class="nav-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium transition-all text-gray-400 hover:bg-white/5 hover:text-white">
+                    <span>🚗</span><span>หนี้สิน & งวดผ่อน</span>
                 </button>
-                <button onclick="switchTab('receivables')" id="nav-receivables" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-purple-200 hover:bg-purple-900/50 hover:text-white">
+                <button onclick="switchTab('receivables')" id="nav-receivables" class="nav-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium transition-all text-gray-400 hover:bg-white/5 hover:text-white">
                     <span>🤝</span><span>ลูกหนี้ (คนที่ยืมเงิน)</span>
                 </button>
-                <button onclick="switchTab('savings')" id="nav-savings" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-purple-200 hover:bg-purple-900/50 hover:text-white">
+                <button onclick="switchTab('savings')" id="nav-savings" class="nav-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium transition-all text-gray-400 hover:bg-white/5 hover:text-white">
                     <span>🏆</span><span>เป้าหมายการออม</span>
                 </button>
-                <button onclick="switchTab('recurring')" id="nav-recurring" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-purple-200 hover:bg-purple-900/50 hover:text-white">
+                <button onclick="switchTab('recurring')" id="nav-recurring" class="nav-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium transition-all text-gray-400 hover:bg-white/5 hover:text-white">
                     <span>🔄</span><span>รายการประจำ</span>
                 </button>
-                <button onclick="switchTab('reports')" id="nav-reports" class="nav-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-purple-200 hover:bg-purple-900/50 hover:text-white">
-                    <span>📈</span><span>รายงาน & Google Sheet</span>
+                <button onclick="switchTab('reports')" id="nav-reports" class="nav-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium transition-all text-gray-400 hover:bg-white/5 hover:text-white">
+                    <span>📈</span><span>รายงาน & ตั้งค่า (Supabase)</span>
                 </button>
             </nav>
         </div>
-
-        <!-- User Profile Footer -->
-        <div class="p-4 border-t border-purple-900/50 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="w-9 h-9 rounded-full bg-amber-400 text-purple-950 font-bold flex items-center justify-center">ก</div>
-                <div>
-                    <p class="text-sm font-semibold text-white">บัญชีของฉัน</p>
-                    <p class="text-xs text-amber-400">เชื่อมต่อ Google Sheets</p>
-                </div>
-            </div>
-        </div>
+        <div class="p-4 border-t border-white/5 text-xs text-gray-500 text-center">BizFlow PWA v1.0</div>
     </aside>
 
     <!-- Main Content Wrapper -->
     <main class="flex-1 flex flex-col h-screen overflow-hidden">
         
         <!-- Top Header Bar -->
-        <header class="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-8 shadow-sm z-10">
-            <div class="flex items-center space-x-4">
-                <h2 id="current-title" class="text-xl font-bold text-bizDark">แดชบอร์ดภาพรวมเดือนนี้</h2>
+        <header class="bg-bizSidebar border-b border-white/5 h-16 flex items-center justify-between px-8 z-10">
+            <div>
+                <h2 id="current-title" class="text-lg font-bold text-white">แดชบอร์ดการเงิน</h2>
+                <p class="text-xs text-gray-400">ภาพรวมสถานะการเงินและพฤติกรรมการใช้จ่ายเรียลไทม์ผ่าน Supabase</p>
             </div>
-            <div class="flex items-center space-x-4">
-                <button onclick="switchTab('transactions')" class="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-purple-950 font-bold px-4 py-2 rounded-xl shadow-md transition-all flex items-center space-x-2 text-sm">
-                    <span>+ เพิ่มรายการ</span>
+            <div class="flex items-center space-x-3">
+                <button onclick="switchTab('transactions')" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2 rounded-xl shadow-md transition-all text-xs flex items-center space-x-1">
+                    <span>+ + เพิ่มรายการ</span>
                 </button>
-                <span class="text-xs bg-purple-50 text-purple-700 px-3 py-1.5 rounded-lg font-medium border border-purple-100">สิงหาคม 2569</span>
+                <span class="text-xs bg-white/5 text-gray-300 px-3 py-1.5 rounded-lg border border-white/5 font-medium">TH</span>
             </div>
         </header>
 
         <!-- Dynamic Content Body -->
-        <main class="flex-1 overflow-y-auto p-8 bg-slate-50" id="main-content-area">
+        <div class="flex-1 overflow-y-auto p-8 space-y-6" id="main-content-area">
             
             <!-- 1. DASHBOARD TAB -->
             <div id="tab-dashboard" class="tab-content space-y-6">
-                <!-- Header Banner Intro -->
-                <div class="text-center py-2 space-y-1">
-                    <h2 class="text-3xl font-extrabold text-bizDark tracking-tight">บัญชีส่วนตัว <span class="text-bizPurple">ไม่ได้มีไว้แค่จดเงินเข้า-ออก</span></h2>
-                    <p class="text-sm text-gray-500 font-medium">4 ตัวเลขที่ควรเช็กทุกเดือน เพื่อสุขภาพการเงินที่แข็งแรง</p>
-                </div>
-
-                <!-- 4 3D-Style Dashboard Cards -->
+                <!-- 4 Top Summary Cards -->
                 <div class="grid grid-cols-4 gap-6">
-                    <!-- Card 1: รายรับ -->
-                    <div class="bg-white p-6 rounded-3xl card-3d border border-purple-50 flex flex-col justify-between space-y-4">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-14 h-14 bg-gradient-to-tr from-purple-600 to-indigo-500 rounded-2xl flex items-center justify-center shadow-lg text-2xl text-white">💰</div>
-                            <div>
-                                <h3 class="font-bold text-gray-800 text-lg">รายรับ</h3>
-                                <p class="text-xs text-gray-400">เดือนนี้ได้เงินจากไหนบ้าง?</p>
-                            </div>
+                    <div class="card-dark p-6 rounded-2xl flex flex-col justify-between space-y-4">
+                        <div class="flex justify-between items-start">
+                            <div><p class="text-xs text-gray-400 font-medium">ยอดเงินคงเหลือรวม</p><h3 class="text-2xl font-black text-white mt-1">฿477,600</h3></div>
+                            <div class="w-10 h-10 bg-purple-600/20 text-purple-400 rounded-xl flex items-center justify-center">💳</div>
                         </div>
-                        <div>
-                            <p class="text-2xl font-black text-emerald-600">฿76,400</p>
-                        </div>
-                        <button onclick="switchTab('reports')" class="w-full bg-purple-50 hover:bg-purple-100 text-bizPurple font-semibold py-2 rounded-xl text-xs transition-all flex items-center justify-center space-x-1">
-                            <span>ดูรายละเอียด</span><span>➔</span>
-                        </button>
+                        <p class="text-[11px] text-emerald-400 flex items-center space-x-1"><span class="w-2 h-2 bg-emerald-400 rounded-full inline-block"></span><span>เชื่อมต่อ Supabase แล้ว</span></p>
                     </div>
-
-                    <!-- Card 2: รายจ่าย -->
-                    <div class="bg-white p-6 rounded-3xl card-3d border border-purple-50 flex flex-col justify-between space-y-4">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-14 h-14 bg-gradient-to-tr from-purple-400 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg text-2xl text-white">📊</div>
-                            <div>
-                                <h3 class="font-bold text-gray-800 text-lg">รายจ่าย</h3>
-                                <p class="text-xs text-gray-400">หมวดไหนใช้เงินมากที่สุด?</p>
-                            </div>
+                    <div class="card-dark p-6 rounded-2xl flex flex-col justify-between space-y-4">
+                        <div class="flex justify-between items-start">
+                            <div><p class="text-xs text-gray-400 font-medium">รายรับเดือนนี้</p><h3 class="text-2xl font-black text-emerald-400 mt-1">฿65,000</h3></div>
+                            <div class="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center">📈</div>
                         </div>
-                        <div>
-                            <p class="text-2xl font-black text-rose-600">฿31,300</p>
-                        </div>
-                        <button onclick="switchTab('budget')" class="w-full bg-purple-50 hover:bg-purple-100 text-bizPurple font-semibold py-2 rounded-xl text-xs transition-all flex items-center justify-center space-x-1">
-                            <span>ดูรายละเอียด</span><span>➔</span>
-                        </button>
+                        <p class="text-[11px] text-gray-400">รวมรายรับในระบบ</p>
                     </div>
-
-                    <!-- Card 3: ภาระที่กำลังจะถึง -->
-                    <div class="bg-white p-6 rounded-3xl card-3d border border-purple-50 flex flex-col justify-between space-y-4">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-14 h-14 bg-gradient-to-tr from-indigo-600 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg text-2xl text-white">📅</div>
-                            <div>
-                                <h3 class="font-bold text-gray-800 text-lg">ภาระที่กำลังจะถึง</h3>
-                                <p class="text-xs text-gray-400">มีบิลหรือค่างวดอะไรต้องจ่าย?</p>
-                            </div>
+                    <div class="card-dark p-6 rounded-2xl flex flex-col justify-between space-y-4">
+                        <div class="flex justify-between items-start">
+                            <div><p class="text-xs text-gray-400 font-medium">รายจ่ายเดือนนี้</p><h3 class="text-2xl font-black text-rose-500 mt-1">฿2,750</h3></div>
+                            <div class="w-10 h-10 bg-rose-500/20 text-rose-500 rounded-xl flex items-center justify-center">📉</div>
                         </div>
-                        <div>
-                            <p class="text-xl font-black text-amber-600">2 รายการ <span class="text-xs font-normal text-gray-500">(฿9,700)</span></p>
-                        </div>
-                        <button onclick="switchTab('debts')" class="w-full bg-purple-50 hover:bg-purple-100 text-bizPurple font-semibold py-2 rounded-xl text-xs transition-all flex items-center justify-center space-x-1">
-                            <span>ดูรายละเอียด</span><span>➔</span>
-                        </button>
+                        <p class="text-[11px] text-gray-400">รวมรายจ่ายในระบบ</p>
                     </div>
-
-                    <!-- Card 4: เงินที่เหลือจริง -->
-                    <div class="bg-white p-6 rounded-3xl card-3d border border-purple-50 flex flex-col justify-between space-y-4">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-14 h-14 bg-gradient-to-tr from-pink-400 to-rose-400 rounded-2xl flex items-center justify-center shadow-lg text-2xl text-white">🐷</div>
-                            <div>
-                                <h3 class="font-bold text-gray-800 text-lg">เงินที่เหลือจริง</h3>
-                                <p class="text-xs text-gray-400">หลังหักภาระ เหลือใช้และออมเท่าไหร่?</p>
-                            </div>
+                    <div class="card-dark p-6 rounded-2xl flex flex-col justify-between space-y-4">
+                        <div class="flex justify-between items-start">
+                            <div><p class="text-xs text-gray-400 font-medium">เงินออมสะสม</p><h3 class="text-2xl font-black text-amber-400 mt-1">฿65,000</h3></div>
+                            <div class="w-10 h-10 bg-amber-500/20 text-amber-400 rounded-xl flex items-center justify-center">🏆</div>
                         </div>
-                        <div>
-                            <p class="text-2xl font-black text-bizPurple">฿45,100</p>
-                        </div>
-                        <button onclick="switchTab('savings')" class="w-full bg-purple-50 hover:bg-purple-100 text-bizPurple font-semibold py-2 rounded-xl text-xs transition-all flex items-center justify-center space-x-1">
-                            <span>ดูรายละเอียด</span><span>➔</span>
-                        </button>
+                        <p class="text-[11px] text-gray-400">เป้าหมายเงินออม</p>
                     </div>
                 </div>
 
-                <!-- Middle Section: Alerts & Quick Action -->
+                <!-- Middle Charts -->
                 <div class="grid grid-cols-3 gap-6">
-                    <!-- Alerts & Pending Items -->
-                    <div class="col-span-2 bg-white p-6 rounded-3xl card-3d border border-purple-50 space-y-4">
-                        <div class="flex justify-between items-center">
-                            <h4 class="font-bold text-gray-800 text-base">🔔 รายการที่กำลังจะถึง & รายการประจำรออนุมัติ</h4>
-                            <span class="text-xs bg-amber-100 text-amber-800 px-3 py-1 rounded-full font-semibold">รอดำเนินการ 1 รายการ</span>
-                        </div>
-                        <div class="border border-amber-200 bg-amber-50/50 p-4 rounded-2xl flex items-center justify-between">
-                            <div>
-                                <p class="font-semibold text-gray-800 text-sm">⚡ ค่าไฟฟ้า <span class="text-xs font-normal text-gray-500">(ครบกำหนด 15 ส.ค.)</span></p>
-                                <p class="text-xs text-gray-600 mt-0.5">ประมาณ ฿1,200 (ยังไม่ตัดยอดอัตโนมัติ)</p>
-                            </div>
-                            <button onclick="openConfirmModal('ค่าไฟฟ้า', 1200)" class="bg-bizPurple hover:bg-bizDark text-white text-xs font-semibold px-4 py-2 rounded-xl shadow transition-all">
-                                ยืนยันยอด / แก้ไข
-                            </button>
-                        </div>
-                        <div class="border border-purple-50 p-4 rounded-2xl flex items-center justify-between bg-purple-50/30">
-                            <div>
-                                <p class="font-semibold text-gray-800 text-sm">🚗 ค่างวดรถ Honda City <span class="text-xs font-normal text-gray-500">(งวด 2/60)</span></p>
-                                <p class="text-xs text-rose-600 font-medium mt-0.5">฿8,500 - ครบกำหนด 5 ก.ย.</p>
-                            </div>
-                            <span class="text-xs bg-emerald-100 text-emerald-800 px-3 py-1 rounded-xl font-medium">รอชำระ</span>
-                        </div>
+                    <div class="col-span-2 card-dark p-6 rounded-2xl space-y-4">
+                        <div><h4 class="font-bold text-white text-base">เปรียบเทียบ รายรับ - รายจ่าย</h4><p class="text-xs text-gray-400">ข้อมูลจากฐานข้อมูลจริง</p></div>
+                        <div class="h-64 flex items-center justify-center"><canvas id="trendChart"></canvas></div>
                     </div>
-
-                    <!-- Comparison Box -->
-                    <div class="bg-white p-6 rounded-3xl card-3d border border-purple-50 flex flex-col justify-between">
-                        <div>
-                            <h4 class="font-bold text-gray-800 text-base mb-1">เปรียบเทียบเดือนก่อน</h4>
-                            <p class="text-xs text-gray-400 mb-4">สิงหาคม 2569 เทียบกับ กรกฎาคม 2569</p>
-                            <div class="space-y-3 text-sm">
-                                <div class="flex justify-between"><span class="text-gray-600 text-xs">รายรับ</span><span class="font-semibold text-rose-600 text-xs">฿76,400 (-17.4%)</span></div>
-                                <div class="flex justify-between"><span class="text-gray-600 text-xs">รายจ่าย</span><span class="font-semibold text-emerald-600 text-xs">฿31,300 (-31.2%)</span></div>
-                                <div class="flex justify-between"><span class="text-gray-600 text-xs">ผลต่างสุทธิ</span><span class="font-semibold text-rose-600 text-xs">฿45,100 (-4.0%)</span></div>
-                                <div class="flex justify-between border-t pt-2"><span class="text-gray-800 font-medium text-xs">Savings Rate</span><span class="font-bold text-bizPurple text-xs">59.0%</span></div>
-                            </div>
+                    <div class="card-dark p-6 rounded-2xl space-y-4 flex flex-col justify-between">
+                        <div><h4 class="font-bold text-white text-base">สัดส่วนรายจ่ายตามหมวดหมู่</h4><p class="text-xs text-gray-400">ภาพรวมปัจจุบัน</p></div>
+                        <div class="h-48 flex items-center justify-center"><canvas id="categoryChart"></canvas></div>
+                        <div class="flex justify-center space-x-4 text-[10px] text-gray-300">
+                            <span class="flex items-center space-x-1"><span class="w-2 h-2 bg-purple-500 rounded-full"></span><span>อาหาร</span></span>
+                            <span class="flex items-center space-x-1"><span class="w-2 h-2 bg-rose-500 rounded-full"></span><span>ช้อปปิ้ง</span></span>
+                            <span class="flex items-center space-x-1"><span class="w-2 h-2 bg-amber-400 rounded-full"></span><span>เดินทาง</span></span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Bottom Section: Charts & Categories -->
-                <div class="grid grid-cols-2 gap-6">
-                    <div class="bg-white p-6 rounded-3xl card-3d border border-purple-50">
-                        <h4 class="font-bold text-gray-800 text-base mb-4">📈 แนวโน้มรายรับ-รายจ่าย 6 เดือนล่าสุด</h4>
-                        <div class="h-64 flex items-center justify-center bg-slate-50 rounded-2xl border border-dashed border-gray-200">
-                            <canvas id="trendChart" class="w-full h-full"></canvas>
-                        </div>
+                <!-- Bottom Table: รายการบันทึกล่าสุด -->
+                <div class="card-dark p-6 rounded-2xl space-y-4">
+                    <div class="flex justify-between items-center">
+                        <div><h4 class="font-bold text-white text-base">รายการบันทึกล่าสุด</h4><p class="text-xs text-gray-400">ซิงค์เรียลไทม์จากตาราง transactions บน Supabase</p></div>
+                        <input type="text" placeholder="ค้นหารายการ..." class="bg-white/5 border border-white/10 rounded-xl px-4 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-purple-600">
                     </div>
-                    <div class="bg-white p-6 rounded-3xl card-3d border border-purple-50">
-                        <h4 class="font-bold text-gray-800 text-base mb-4">🥧 สัดส่วนรายจ่ายตามหมวดหมู่</h4>
-                        <div class="space-y-3.5">
-                            <div>
-                                <div class="flex justify-between text-sm mb-1"><span class="font-medium text-gray-700 text-xs">ค่าผ่อนชำระ</span><span class="text-gray-600 font-semibold text-xs">฿15,000 (48%)</span></div>
-                                <div class="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden"><div class="bg-purple-600 h-2.5 rounded-full" style="width: 48%"></div></div>
-                            </div>
-                            <div>
-                                <div class="flex justify-between text-sm mb-1"><span class="font-medium text-gray-700 text-xs">ค่าอาหาร</span><span class="text-gray-600 font-semibold text-xs">฿9,900 (32%)</span></div>
-                                <div class="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden"><div class="bg-amber-500 h-2.5 rounded-full" style="width: 32%"></div></div>
-                            </div>
-                            <div>
-                                <div class="flex justify-between text-sm mb-1"><span class="font-medium text-gray-700 text-xs">ช้อปปิ้ง / ความบันเทิง</span><span class="text-gray-600 font-semibold text-xs">฿3,400 (11%)</span></div>
-                                <div class="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden"><div class="bg-pink-500 h-2.5 rounded-full" style="width: 11%"></div></div>
-                            </div>
-                            <div>
-                                <div class="flex justify-between text-sm mb-1"><span class="font-medium text-gray-700 text-xs">ค่าเดินทาง</span><span class="text-gray-600 font-semibold text-xs">฿3,000 (10%)</span></div>
-                                <div class="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden"><div class="bg-blue-500 h-2.5 rounded-full" style="width: 10%"></div></div>
-                            </div>
-                        </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-gray-300">
+                            <thead class="text-gray-500 uppercase border-b border-white/5">
+                                <tr>
+                                    <th class="px-4 py-3">วันที่</th>
+                                    <th class="px-4 py-3">หมวดหมู่</th>
+                                    <th class="px-4 py-3">โน้ต / รายละเอียด</th>
+                                    <th class="px-4 py-3">บัญชี</th>
+                                    <th class="px-4 py-3 text-right">จำนวนเงิน</th>
+                                    <th class="px-4 py-3 text-center">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-white/5">
+                                <tr>
+                                    <td class="px-4 py-3">2026-10-28</td>
+                                    <td class="px-4 py-3"><span class="bg-purple-500/20 text-purple-300 px-2.5 py-1 rounded-lg">อาหาร & เครื่องดื่ม</span></td>
+                                    <td class="px-4 py-3 font-semibold text-white">มื้อเย็น ชาบูซึ</td>
+                                    <td class="px-4 py-3">กสิกรไทย (K-Bank)</td>
+                                    <td class="px-4 py-3 text-right font-bold text-rose-500">-฿1,250</td>
+                                    <td class="px-4 py-3 text-center"><button class="text-gray-500 hover:text-rose-400">🗑️</button></td>
+                                </tr>
+                                <tr>
+                                    <td class="px-4 py-3">2026-10-27</td>
+                                    <td class="px-4 py-3"><span class="bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-lg">เงินเดือน / รายได้</span></td>
+                                    <td class="px-4 py-3 font-semibold text-white">เงินเดือนรอบตุลาคม</td>
+                                    <td class="px-4 py-3">ไทยพาณิชย์ (SCB)</td>
+                                    <td class="px-4 py-3 text-right font-bold text-emerald-400">+฿65,000</td>
+                                    <td class="px-4 py-3 text-center"><button class="text-gray-500 hover:text-rose-400">🗑️</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
 
             <!-- 2. TRANSACTIONS TAB -->
-            <div id="tab-transactions" class="tab-content hidden space-y-6">
-                <div class="bg-white p-8 rounded-3xl card-3d border border-purple-50 max-w-3xl mx-auto">
-                    <h3 class="text-xl font-bold text-bizDark mb-6">บันทึกรายรับ-รายจ่าย</h3>
-                    <form class="space-y-4" onsubmit="event.preventDefault(); alert('บันทึกข้อมูลสำเร็จ!');">
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">ประเภท</label>
-                                <select class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-bizPurple focus:outline-none">
-                                    <option>รายจ่าย</option>
-                                    <option>รายรับ</option>
-                                    <option>โอนเงิน</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">จำนวนเงิน (บาท)</label>
-                                <input type="number" placeholder="0.00" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-bizPurple focus:outline-none">
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">บัญชีต้นทาง / บัญชีรับ</label>
-                                <select class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-bizPurple focus:outline-none">
-                                    <option>บัญชีออมทรัพย์หลัก (KBANK)</option>
-                                    <option>เงินสด</option>
-                                    <option>บัญชีเงินเก็บ</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">หมวดหมู่</label>
-                                <select class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-bizPurple focus:outline-none">
-                                    <option>ค่าอาหาร</option>
-                                    <option>ค่าเดินทาง</option>
-                                    <option>ช้อปปิ้ง</option>
-                                    <option>ค่าผ่อนชำระ</option>
-                                </select>
-                            </div>
+            <div id="tab-transactions" class="tab-content hidden card-dark p-8 rounded-2xl space-y-6 max-w-2xl mx-auto">
+                <h3 class="text-xl font-bold text-white">บันทึกรายรับ-รายจ่าย</h3>
+                <form class="space-y-4 text-sm" onsubmit="event.preventDefault(); alert('บันทึกข้อมูลลง Supabase สำเร็จ!');">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-400 mb-1">ประเภท</label>
+                            <select class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-purple-600">
+                                <option class="bg-bizDarkBg">รายจ่าย</option>
+                                <option class="bg-bizDarkBg">รายรับ</option>
+                                <option class="bg-bizDarkBg">โอนเงิน</option>
+                            </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">วันที่</label>
-                            <input type="date" value="2026-10-28" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-bizPurple focus:outline-none">
+                            <label class="block text-xs font-medium text-gray-400 mb-1">จำนวนเงิน (บาท)</label>
+                            <input type="number" placeholder="0.00" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-purple-600">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-400 mb-1">บัญชีต้นทาง / บัญชีรับ</label>
+                            <select class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-purple-600">
+                                <option class="bg-bizDarkBg">กสิกรไทย (K-Bank)</option>
+                                <option class="bg-bizDarkBg">ไทยพาณิชย์ (SCB)</option>
+                                <option class="bg-bizDarkBg">เงินสด</option>
+                            </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">รายละเอียด</label>
-                            <input type="text" placeholder="เช่น ข้าวกลางวัน, กาแฟ" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-bizPurple focus:outline-none">
-                        </div>
-                        <div class="flex justify-end space-x-3 pt-4">
-                            <button type="button" onclick="switchTab('dashboard')" class="px-6 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50">ยกเลิก</button>
-                            <button type="submit" class="px-6 py-2.5 rounded-xl bg-bizPurple text-white font-semibold hover:bg-bizDark shadow-md">บันทึกรายการ</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- 3. ALL TRANSACTIONS TAB -->
-            <div id="tab-all-transactions" class="tab-content hidden space-y-6">
-                <div class="bg-white p-6 rounded-3xl card-3d border border-purple-50 space-y-4">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-xl font-bold text-bizDark">เมนูรายการทั้งหมด</h3>
-                        <div class="flex space-x-3">
-                            <input type="text" placeholder="ค้นหาจากรายละเอียด..." class="border border-gray-300 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-bizPurple">
-                            <select class="border border-gray-300 rounded-xl px-4 py-2 text-sm focus:outline-none">
-                                <option>ทุกบัญชี</option>
-                                <option>บัญชีออมทรัพย์หลัก</option>
-                                <option>เงินสด</option>
+                            <label class="block text-xs font-medium text-gray-400 mb-1">หมวดหมู่</label>
+                            <select class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-purple-600">
+                                <option class="bg-bizDarkBg">อาหาร & เครื่องดื่ม</option>
+                                <option class="bg-bizDarkBg">ช้อปปิ้ง</option>
+                                <option class="bg-bizDarkBg">เดินทาง</option>
+                                <option class="bg-bizDarkBg">เงินเดือน / รายได้</option>
                             </select>
                         </div>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm text-gray-600">
-                            <thead class="bg-purple-50/50 text-purple-900 uppercase text-xs">
-                                <tr>
-                                    <th class="px-4 py-3">วันที่</th>
-                                    <th class="px-4 py-3">ประเภท</th>
-                                    <th class="px-4 py-3">บัญชี</th>
-                                    <th class="px-4 py-3">หมวดหมู่</th>
-                                    <th class="px-4 py-3">รายละเอียด</th>
-                                    <th class="px-4 py-3 text-right">จำนวนเงิน</th>
-                                    <th class="px-4 py-3 text-center">จัดการ</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-100">
-                                <tr>
-                                    <td class="px-4 py-3">28/10/2026</td>
-                                    <td class="px-4 py-3"><span class="text-rose-600 font-medium">รายจ่าย</span></td>
-                                    <td class="px-4 py-3">บัญชีออมทรัพย์หลัก</td>
-                                    <td class="px-4 py-3">ค่าอาหาร</td>
-                                    <td class="px-4 py-3">ข้าวมันไก่</td>
-                                    <td class="px-4 py-3 text-right font-semibold text-rose-600">-฿60</td>
-                                    <td class="px-4 py-3 text-center">
-                                        <button class="text-purple-600 hover:text-purple-900 mx-1">✏️</button>
-                                        <button class="text-rose-600 hover:text-rose-900 mx-1">🗑️</button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">วันที่</label>
+                        <input type="date" value="2026-10-28" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-purple-600">
                     </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-400 mb-1">รายละเอียด / โน้ต</label>
+                        <input type="text" placeholder="เช่น มื้อเย็น ชาบูซึ" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-purple-600">
+                    </div>
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" onclick="switchTab('dashboard')" class="px-6 py-2.5 rounded-xl border border-white/10 text-gray-300 text-xs font-medium hover:bg-white/5">ยกเลิก</button>
+                        <button type="submit" class="px-6 py-2.5 rounded-xl bg-purple-600 text-white text-xs font-semibold hover:bg-purple-700 shadow-md">บันทึกรายการ</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 3. ALL TRANSACTIONS TAB -->
+            <div id="tab-all-transactions" class="tab-content hidden card-dark p-6 rounded-2xl space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-white">เมนูรายการทั้งหมด</h3>
+                    <div class="flex space-x-3">
+                        <input type="text" placeholder="ค้นหาจากรายละเอียด..." class="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none">
+                        <select class="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none"><option class="bg-bizDarkBg">ทุกบัญชี</option></select>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-gray-300">
+                        <thead class="text-gray-500 uppercase border-b border-white/5">
+                            <tr><th class="px-4 py-3">วันที่</th><th class="px-4 py-3">ประเภท</th><th class="px-4 py-3">บัญชี</th><th class="px-4 py-3">หมวดหมู่</th><th class="px-4 py-3">รายละเอียด</th><th class="px-4 py-3 text-right">จำนวนเงิน</th><th class="px-4 py-3 text-center">จัดการ</th></tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/5">
+                            <tr>
+                                <td class="px-4 py-3">28/10/2026</td><td class="px-4 py-3"><span class="text-rose-500">รายจ่าย</span></td><td class="px-4 py-3">กสิกรไทย (K-Bank)</td><td class="px-4 py-3">อาหาร & เครื่องดื่ม</td><td class="px-4 py-3">มื้อเย็น ชาบูซึ</td><td class="px-4 py-3 text-right font-semibold text-rose-500">-฿1,250</td>
+                                <td class="px-4 py-3 text-center"><button class="text-purple-400 hover:text-white mx-1">✏️</button><button class="text-rose-500 hover:text-rose-400 mx-1">🗑️</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
             <!-- 4. ACCOUNTS TAB -->
-            <div id="tab-accounts" class="tab-content hidden space-y-6">
-                <div class="bg-white p-6 rounded-3xl card-3d border border-purple-50 space-y-6">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-xl font-bold text-bizDark">บัญชีธนาคารและเงินสด</h3>
-                        <button class="bg-bizPurple text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-bizDark">+ เพิ่มบัญชี</button>
-                    </div>
-                    <div class="grid grid-cols-3 gap-6">
-                        <div class="border border-purple-100 p-5 rounded-2xl flex flex-col justify-between bg-gradient-to-br from-white to-purple-50/30">
-                            <div>
-                                <span class="text-xs bg-purple-100 text-purple-800 px-2.5 py-1 rounded-full font-medium">ธนาคารกสิกรไทย</span>
-                                <h4 class="font-bold text-lg text-bizDark mt-3">บัญชีออมทรัพย์หลัก</h4>
-                            </div>
-                            <div class="mt-6 flex justify-between items-end">
-                                <div><p class="text-xs text-gray-500">ยอดคงเหลือ</p><p class="text-xl font-bold text-bizPurple">฿253,150</p></div>
-                                <span class="text-xs text-emerald-600 font-semibold bg-emerald-50 px-2 py-1 rounded">ใช้งาน</span>
-                            </div>
-                        </div>
+            <div id="tab-accounts" class="tab-content hidden card-dark p-6 rounded-2xl space-y-6">
+                <div class="flex justify-between items-center"><h3 class="text-xl font-bold text-white">บัญชีธนาคารและเงินสด</h3><button class="bg-purple-600 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-purple-700">+ เพิ่มบัญชี</button></div>
+                <div class="grid grid-cols-3 gap-6">
+                    <div class="bg-white/5 border border-white/10 p-5 rounded-2xl flex flex-col justify-between">
+                        <div><span class="text-[10px] bg-purple-500/20 text-purple-300 px-2.5 py-1 rounded-full font-medium">กสิกรไทย</span><h4 class="font-bold text-lg text-white mt-3">กสิกรไทย (K-Bank)</h4></div>
+                        <div class="mt-6 flex justify-between items-end"><div><p class="text-xs text-gray-400">ยอดคงเหลือ</p><p class="text-xl font-bold text-purple-400">฿352,150</p></div><span class="text-xs text-emerald-400 bg-emerald-500/20 px-2 py-1 rounded">ใช้งาน</span></div>
                     </div>
                 </div>
             </div>
 
             <!-- 5. BUDGET TAB -->
-            <div id="tab-budget" class="tab-content hidden space-y-6">
-                <div class="bg-white p-6 rounded-3xl card-3d border border-purple-50 space-y-6">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-xl font-bold text-bizDark">งบประมาณรายหมวด (ประจำเดือน)</h3>
-                        <div class="space-x-2">
-                            <button class="border border-bizPurple text-bizPurple px-4 py-2 rounded-xl text-sm font-semibold hover:bg-purple-50">ใช้งบเดือนก่อน</button>
-                            <button class="bg-bizPurple text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-bizDark">+ เพิ่มงบประมาณ</button>
-                        </div>
-                    </div>
-                    <div class="space-y-4 max-w-2xl">
-                        <div>
-                            <div class="flex justify-between text-sm mb-1"><span class="font-semibold text-gray-800">ค่าอาหาร</span><span class="text-gray-600 font-bold">฿9,900 / ฿12,000</span></div>
-                            <div class="w-full bg-gray-100 h-3 rounded-full overflow-hidden"><div class="bg-purple-600 h-3 rounded-full" style="width: 82.5%"></div></div>
-                        </div>
+            <div id="tab-budget" class="tab-content hidden card-dark p-6 rounded-2xl space-y-6">
+                <div class="flex justify-between items-center"><h3 class="text-xl font-bold text-white">งบประมาณรายหมวด (ประจำเดือน)</h3><button class="bg-purple-600 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-purple-700">+ เพิ่มงบประมาณ</button></div>
+                <div class="space-y-4 max-w-2xl text-sm">
+                    <div>
+                        <div class="flex justify-between text-xs mb-1"><span class="font-semibold text-gray-300">อาหาร & เครื่องดื่ม</span><span class="text-gray-400 font-bold">฿1,250 / ฿6,000</span></div>
+                        <div class="w-full bg-white/5 h-2.5 rounded-full overflow-hidden"><div class="bg-purple-500 h-2.5 rounded-full" style="width: 21%"></div></div>
                     </div>
                 </div>
             </div>
 
             <!-- 6. DEBTS TAB -->
-            <div id="tab-debts" class="tab-content hidden space-y-6">
-                <div class="bg-white p-6 rounded-3xl card-3d border border-purple-50 space-y-6">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-xl font-bold text-bizDark">หนี้สินและงวดผ่อน</h3>
-                        <button class="bg-bizPurple text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-bizDark">+ เพิ่มหนี้สิน</button>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm text-gray-600">
-                            <thead class="bg-purple-50/50 text-purple-900 uppercase text-xs">
-                                <tr>
-                                    <th class="px-4 py-3">ชื่อหนี้</th>
-                                    <th class="px-4 py-3">ประเภท</th>
-                                    <th class="px-4 py-3">ยอดคงเหลือ</th>
-                                    <th class="px-4 py-3">ดอกเบี้ย/ปี</th>
-                                    <th class="px-4 py-3">ครบกำหนด</th>
-                                    <th class="px-4 py-3 text-center">จัดการ</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-100">
-                                <tr>
-                                    <td class="px-4 py-3 font-semibold text-gray-800">รถยนต์ Honda City <br><span class="text-xs text-rose-600 font-normal">งวด 2/60 · ค้าง 5 งวด (฿40,000)</span></td>
-                                    <td class="px-4 py-3">สินเชื่อรถยนต์</td>
-                                    <td class="px-4 py-3 font-semibold">464,000 บาท</td>
-                                    <td class="px-4 py-3">0%</td>
-                                    <td class="px-4 py-3">1 เม.ย.</td>
-                                    <td class="px-4 py-3 text-center space-x-2">
-                                        <button class="text-bizPurple font-semibold hover:underline">ชำระ</button>
-                                        <button class="text-gray-500 hover:underline">ประวัติ</button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+            <div id="tab-debts" class="tab-content hidden card-dark p-6 rounded-2xl space-y-6">
+                <div class="flex justify-between items-center"><h3 class="text-xl font-bold text-white">หนี้สินและงวดผ่อน</h3><button class="bg-purple-600 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-purple-700">+ เพิ่มหนี้สิน</button></div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-gray-300">
+                        <thead class="text-gray-500 uppercase border-b border-white/5"><tr><th class="px-4 py-3">ชื่อหนี้</th><th class="px-4 py-3">ประเภท</th><th class="px-4 py-3">ยอดคงเหลือ</th><th class="px-4 py-3">ค่างวด/เดือน</th><th class="px-4 py-3 text-center">จัดการ</th></tr></thead>
+                        <tbody class="divide-y divide-white/5">
+                            <tr><td class="px-4 py-3 font-semibold text-white">รถยนต์ Honda City</td><td class="px-4 py-3">สินเชื่อรถยนต์</td><td class="px-4 py-3">464,000 บาท</td><td class="px-4 py-3 font-semibold text-rose-500">฿8,500</td><td class="px-4 py-3 text-center"><button class="text-purple-400 hover:underline">ชำระ</button></td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
             <!-- 7. RECEIVABLES TAB -->
-            <div id="tab-receivables" class="tab-content hidden space-y-6">
-                <div class="bg-white p-6 rounded-3xl card-3d border border-purple-50 space-y-6">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-xl font-bold text-bizDark">ลูกหนี้ (คนที่ยืมเงินเรา)</h3>
-                        <button class="bg-bizPurple text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-bizDark">+ เพิ่มลูกหนี้</button>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="border border-purple-100 p-5 rounded-2xl flex justify-between items-center bg-purple-50/20">
-                            <div>
-                                <h4 class="font-bold text-gray-800">คุณเอ</h4>
-                                <p class="text-xs text-gray-500 mt-1">ครบกำหนดคืน: 05/11/2026</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-xs text-gray-500">ยอดค้างรับ</p>
-                                <p class="text-lg font-bold text-emerald-600">฿1,500</p>
-                            </div>
-                        </div>
+            <div id="tab-receivables" class="tab-content hidden card-dark p-6 rounded-2xl space-y-6">
+                <div class="flex justify-between items-center"><h3 class="text-xl font-bold text-white">ลูกหนี้ (คนที่ยืมเงินเรา)</h3><button class="bg-purple-600 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-purple-700">+ เพิ่มลูกหนี้</button></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-white/5 border border-white/10 p-5 rounded-2xl flex justify-between items-center">
+                        <div><h4 class="font-bold text-white">คุณเอ</h4><p class="text-xs text-gray-400 mt-1">กำหนดคืน: 05/11/2026</p></div>
+                        <div class="text-right"><p class="text-xs text-gray-400">ยอดค้างรับ</p><p class="text-lg font-bold text-emerald-400">฿1,500</p></div>
                     </div>
                 </div>
             </div>
 
             <!-- 8. SAVINGS GOALS TAB -->
-            <div id="tab-savings" class="tab-content hidden space-y-6">
-                <div class="bg-white p-6 rounded-3xl card-3d border border-purple-50 space-y-6">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-xl font-bold text-bizDark">เป้าหมายการออมเงิน</h3>
-                        <button class="bg-bizPurple text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-bizDark">+ เพิ่มเป้าหมาย</button>
-                    </div>
-                    <div class="grid grid-cols-2 gap-6">
-                        <div class="border border-purple-100 p-5 rounded-2xl space-y-3 bg-gradient-to-r from-white to-purple-50/20">
-                            <div class="flex justify-between items-center">
-                                <h4 class="font-bold text-gray-800">กองทุนฉุกเฉิน</h4>
-                                <span class="text-xs font-semibold text-bizPurple bg-purple-50 px-2.5 py-1 rounded-full">25%</span>
-                            </div>
-                            <div class="w-full bg-gray-100 h-3 rounded-full overflow-hidden"><div class="bg-bizPurple h-3 rounded-full" style="width: 25%"></div></div>
-                            <div class="flex justify-between text-xs text-gray-500"><span>฿25,000 สะสม</span><span>เป้าหมาย ฿100,000</span></div>
-                            <button class="w-full mt-2 bg-purple-50 hover:bg-purple-100 text-bizPurple py-2 rounded-xl text-xs font-semibold transition-all">+ เติมเงิน</button>
-                        </div>
+            <div id="tab-savings" class="tab-content hidden card-dark p-6 rounded-2xl space-y-6">
+                <div class="flex justify-between items-center"><h3 class="text-xl font-bold text-white">เป้าหมายการออมเงิน</h3><button class="bg-purple-600 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-purple-700">+ เพิ่มเป้าหมาย</button></div>
+                <div class="grid grid-cols-2 gap-6 text-sm">
+                    <div class="bg-white/5 border border-white/10 p-5 rounded-2xl space-y-3">
+                        <div class="flex justify-between items-center"><h4 class="font-bold text-white">กองทุนฉุกเฉิน</h4><span class="text-xs font-semibold text-purple-400 bg-purple-500/20 px-2.5 py-1 rounded-full">65%</span></div>
+                        <div class="w-full bg-white/5 h-2.5 rounded-full overflow-hidden"><div class="bg-purple-500 h-2.5 rounded-full" style="width: 65%"></div></div>
+                        <div class="flex justify-between text-xs text-gray-400"><span>฿65,000 สะสม</span><span>เป้าหมาย ฿100,000</span></div>
                     </div>
                 </div>
             </div>
 
             <!-- 9. RECURRING TAB -->
-            <div id="tab-recurring" class="tab-content hidden space-y-6">
-                <div class="bg-white p-6 rounded-3xl card-3d border border-purple-50 space-y-6">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-xl font-bold text-bizDark">รายการประจำ (Recurring Transactions)</h3>
-                        <button class="bg-bizPurple text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-bizDark">+ เพิ่มรายการประจำ</button>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm text-gray-600">
-                            <thead class="bg-purple-50/50 text-purple-900 uppercase text-xs">
-                                <tr>
-                                    <th class="px-4 py-3">ชื่อรายการ</th>
-                                    <th class="px-4 py-3">หมวดหมู่</th>
-                                    <th class="px-4 py-3">จำนวนเงิน</th>
-                                    <th class="px-4 py-3">รอบ</th>
-                                    <th class="px-4 py-3">บัญชี</th>
-                                    <th class="px-4 py-3 text-center">จัดการ</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-100">
-                                <tr>
-                                    <td class="px-4 py-3 font-semibold text-gray-800">เงินเดือน</td>
-                                    <td class="px-4 py-3">เงินเดือน</td>
-                                    <td class="px-4 py-3 font-semibold text-emerald-600">+35,000 บาท</td>
-                                    <td class="px-4 py-3">ทุกวันที่ 1 ของทุกเดือน</td>
-                                    <td class="px-4 py-3">บัญชีออมทรัพย์หลัก</td>
-                                    <td class="px-4 py-3 text-center"><button class="bg-amber-500 text-white text-xs px-3 py-1 rounded-lg">ตัดตอนนี้</button></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+            <div id="tab-recurring" class="tab-content hidden card-dark p-6 rounded-2xl space-y-6">
+                <div class="flex justify-between items-center"><h3 class="text-xl font-bold text-white">รายการประจำ (Recurring Transactions)</h3><button class="bg-purple-600 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-purple-700">+ เพิ่มรายการประจำ</button></div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-gray-300">
+                        <thead class="text-gray-500 uppercase border-b border-white/5"><tr><th class="px-4 py-3">ชื่อรายการ</th><th class="px-4 py-3">หมวดหมู่</th><th class="px-4 py-3">จำนวนเงิน</th><th class="px-4 py-3">รอบ</th><th class="px-4 py-3 text-center">จัดการ</th></tr></thead>
+                        <tbody class="divide-y divide-white/5">
+                            <tr>
+                                <td class="px-4 py-3 font-semibold text-white">ค่าไฟฟ้า</td><td class="px-4 py-3">ค่าใช้จ่ายทั่วไป</td><td class="px-4 py-3 font-semibold text-rose-500">฿1,200 (ประมาณ)</td><td class="px-4 py-3">ทุกวันที่ 15</td>
+                                <td class="px-4 py-3 text-center"><button onclick="openConfirmModal('ค่าไฟฟ้า', 1200)" class="bg-amber-500 hover:bg-amber-600 text-purple-950 font-bold text-xs px-3 py-1 rounded-lg">ยืนยันยอด / แก้ไข</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
             <!-- 10. REPORTS & SETTINGS TAB -->
-            <div id="tab-reports" class="tab-content hidden space-y-6">
-                <div class="bg-white p-6 rounded-3xl card-3d border border-purple-50 space-y-6">
-                    <h3 class="text-xl font-bold text-bizDark">รายงานสรุป & Google Sheet Backend</h3>
-                    <div class="grid grid-cols-3 gap-6">
-                        <div class="bg-purple-900 text-white p-6 rounded-2xl flex flex-col justify-between">
-                            <div>
-                                <p class="text-xs text-purple-300">Google Sheet เชื่อมต่อสำเร็จ</p>
-                                <h4 class="font-bold text-lg mt-1 text-amber-300">BizFlow_Database.xlsx</h4>
-                            </div>
-                            <div class="mt-4">
-                                <span class="text-xs bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full border border-emerald-500/30">สถานะ: ซิงค์อัตโนมัติ</span>
-                            </div>
+            <div id="tab-reports" class="tab-content hidden card-dark p-8 rounded-2xl space-y-8 max-w-4xl mx-auto text-sm">
+                <div class="flex justify-between items-center border-b border-white/5 pb-4">
+                    <div><h3 class="text-2xl font-bold text-white">รายงานสรุป & การตั้งค่า Supabase</h3><p class="text-xs text-gray-400 mt-0.5">จัดการฐานข้อมูลและปรับแต่งระบบ BizFlow PWA</p></div>
+                    <span class="text-xs bg-purple-500/20 text-purple-300 px-3 py-1.5 rounded-xl font-semibold border border-purple-500/30">Supabase Connected</span>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-purple-950/50 border border-purple-500/30 p-5 rounded-2xl space-y-3">
+                        <label class="block text-xs font-semibold text-gray-300">Supabase URL</label>
+                        <input type="text" placeholder="https://xyz.supabase.co" class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                        <label class="block text-xs font-semibold text-gray-300">Supabase Anon Key</label>
+                        <input type="password" placeholder="eyJhbGciOi..." class="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                        <button onclick="alert('เชื่อมต่อ Supabase สำเร็จ!')" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 rounded-xl text-xs transition-all">Test & Save Connection</button>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between bg-white/5 border border-white/10 px-4 py-3 rounded-xl">
+                            <span class="text-xs text-gray-300">โหมดความเป็นส่วนตัว (ซ่อนยอดเงิน)</span>
+                            <input type="checkbox" onchange="alert(this.checked ? 'ซ่อนยอดเงินแล้ว' : 'แสดงยอดเงินปกติ')" class="w-4 h-4 accent-purple-600 cursor-pointer">
                         </div>
-                        <div class="col-span-2 border border-purple-100 p-6 rounded-2xl space-y-3">
-                            <h4 class="font-bold text-gray-800">โครงสร้างชีตภาษาไทยในไฟล์ของคุณเอง</h4>
-                            <div class="flex flex-wrap gap-2 text-xs">
-                                <span class="bg-purple-50 px-3 py-1.5 rounded-lg font-medium text-purple-800">รายการ</span>
-                                <span class="bg-purple-50 px-3 py-1.5 rounded-lg font-medium text-purple-800">บัญชี</span>
-                                <span class="bg-purple-50 px-3 py-1.5 rounded-lg font-medium text-purple-800">งบประมาณ</span>
-                                <span class="bg-purple-50 px-3 py-1.5 rounded-lg font-medium text-purple-800">หนี้สิน</span>
-                                <span class="bg-purple-50 px-3 py-1.5 rounded-lg font-medium text-purple-800">เป้าหมายออม</span>
-                                <span class="bg-purple-50 px-3 py-1.5 rounded-lg font-medium text-purple-800">รายการประจำ</span>
-                                <span class="bg-amber-100 px-3 py-1.5 rounded-lg font-medium text-amber-800">📘 คู่มือการใช้งาน</span>
-                            </div>
-                        </div>
+                        <button onclick="alert('ดาวน์โหลดไฟล์ Backup สำเร็จ!')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl text-xs transition-all">📥 ดาวน์โหลดข้อมูลสำรอง (Backup)</button>
+                        <button onclick="if(confirm('รีเซ็ตข้อมูลทั้งหมด?')) alert('รีเซ็ตสำเร็จ');" class="w-full bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 font-semibold py-2.5 rounded-xl text-xs transition-all border border-rose-500/30">⚠️ รีเซ็ตข้อมูลทั้งหมด (Factory Reset)</button>
                     </div>
                 </div>
             </div>
@@ -557,17 +377,17 @@
     </main>
 
     <!-- Modal: Confirm / Edit Recurring Amount -->
-    <div id="confirmModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50">
-        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
-            <h3 class="text-lg font-bold text-bizDark" id="modalTitle">ยืนยันยอด: ค่าไฟฟ้า</h3>
-            <p class="text-xs text-gray-500">รายการที่ถึงกำหนดแต่ยังไม่ตัดอัตโนมัติ กรุณาตรวจสอบหรือแก้ไขยอดเงินจริงก่อนบันทึก</p>
+    <div id="confirmModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50">
+        <div class="card-dark rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 border border-white/10">
+            <h3 class="text-lg font-bold text-white" id="modalTitle">ยืนยันยอด: ค่าไฟฟ้า</h3>
+            <p class="text-xs text-gray-400">ตรวจสอบหรือแก้ไขจำนวนเงินจริงตามบิลก่อนบันทึกลง Supabase</p>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">จำนวนเงินจริง (บาท)</label>
-                <input type="number" id="modalAmountInput" class="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-bizPurple focus:outline-none font-semibold text-lg">
+                <label class="block text-xs font-medium text-gray-400 mb-1">จำนวนเงินจริง (บาท)</label>
+                <input type="number" id="modalAmountInput" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-purple-600 font-semibold text-lg">
             </div>
             <div class="flex justify-end space-x-3 pt-2">
-                <button onclick="closeConfirmModal()" class="px-4 py-2 rounded-xl border border-gray-300 text-gray-700 text-sm font-medium hover:bg-gray-50">ยกเลิก</button>
-                <button onclick="submitConfirmModal()" class="px-4 py-2 rounded-xl bg-bizPurple text-white text-sm font-semibold hover:bg-bizDark">ยืนยัน</button>
+                <button onclick="closeConfirmModal()" class="px-4 py-2 rounded-xl border border-white/10 text-gray-300 text-xs font-medium hover:bg-white/5">ยกเลิก</button>
+                <button onclick="submitConfirmModal()" class="px-4 py-2 rounded-xl bg-purple-600 text-white text-xs font-semibold hover:bg-purple-700">ยืนยันและบันทึก</button>
             </div>
         </div>
     </div>
@@ -577,26 +397,26 @@
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.nav-btn').forEach(el => {
-                el.classList.remove('bg-amber-400', 'text-purple-950', 'font-semibold', 'shadow-md');
-                el.classList.add('text-purple-200', 'hover:bg-purple-900/50', 'hover:text-white');
+                el.classList.remove('bg-purple-600', 'text-white', 'shadow-lg', 'shadow-purple-900/30');
+                el.classList.add('text-gray-400', 'hover:bg-white/5', 'hover:text-white');
             });
             
             document.getElementById('tab-' + tabId).classList.remove('hidden');
             const activeBtn = document.getElementById('nav-' + tabId);
-            activeBtn.classList.add('bg-amber-400', 'text-purple-950', 'font-semibold', 'shadow-md');
-            activeBtn.classList.remove('text-purple-200', 'hover:bg-purple-900/50', 'hover:text-white');
+            activeBtn.classList.add('bg-purple-600', 'text-white', 'shadow-lg', 'shadow-purple-900/30');
+            activeBtn.classList.remove('text-gray-400', 'hover:bg-white/5', 'hover:text-white');
 
             const titles = {
-                'dashboard': 'แดชบอร์ดภาพรวมเดือนนี้',
-                'transactions': 'บันทึกรายรับ-รายจ่าย',
+                'dashboard': 'แดชบอร์ดการเงิน',
+                'transactions': 'บันทึกรายการ',
                 'all-transactions': 'เมนูรายการทั้งหมด',
-                'accounts': 'บัญชีธนาคารและเงินสด',
+                'accounts': 'บัญชีธนาคาร & เงินสด',
                 'budget': 'งบประมาณรายหมวด',
-                'debts': 'หนี้สินและงวดผ่อน',
-                'receivables': 'ลูกหนี้ (คนที่ยืมเงินเรา)',
-                'savings': 'เป้าหมายการออมเงิน',
-                'recurring': 'รายการประจำ (Recurring Transactions)',
-                'reports': 'รายงานสรุป & Google Sheet'
+                'debts': 'หนี้สิน & งวดผ่อน',
+                'receivables': 'ลูกหนี้ (คนที่ยืมเงิน)',
+                'savings': 'เป้าหมายการออม',
+                'recurring': 'รายการประจำ',
+                'reports': 'รายงาน & ตั้งค่า (Supabase)'
             };
             document.getElementById('current-title').innerText = titles[tabId];
         }
@@ -615,23 +435,33 @@
 
         function submitConfirmModal() {
             const amt = document.getElementById('modalAmountInput').value;
-            alert('บันทึกยอดเงินจริงจำนวน ฿' + amt + ' ลงบัญชีและ Google Sheets เรียบร้อยแล้ว!');
+            alert('บันทึกยอดเงินจริง ฿' + amt + ' ลง Supabase สำเร็จเรียบร้อย!');
             closeConfirmModal();
         }
 
-        // Render Trend Chart
+        // Render Charts
         window.addEventListener('DOMContentLoaded', () => {
-            const ctx = document.getElementById('trendChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
+            const ctxTrend = document.getElementById('trendChart').getContext('2d');
+            new Chart(ctxTrend, {
+                type: 'bar',
                 data: {
                     labels: ['พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.'],
                     datasets: [
-                        { label: 'รายรับ', data: [70000, 85000, 92500, 76400, 80000, 82000], borderColor: '#10B981', backgroundColor: '#10B981', tension: 0.3 },
-                        { label: 'รายจ่าย', data: [40000, 42000, 45500, 31300, 35000, 32000], borderColor: '#F43F5E', backgroundColor: '#F43F5E', tension: 0.3 }
+                        { label: 'รายรับ', data: [65000, 70000, 68000, 85000, 72000, 98000], backgroundColor: '#10B981', borderRadius: 6 },
+                        { label: 'รายจ่าย', data: [32000, 45000, 39000, 41000, 38000, 12000], backgroundColor: '#F43F5E', borderRadius: 6 }
                     ]
                 },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#9CA3AF', font: { family: 'Prompt' } } } }, scales: { x: { ticks: { color: '#9CA3AF' } }, y: { ticks: { color: '#9CA3AF' } } } }
+            });
+
+            const ctxCat = document.getElementById('categoryChart').getContext('2d');
+            new Chart(ctxCat, {
+                type: 'doughnut',
+                data: {
+                    labels: ['อาหาร', 'ช้อปปิ้ง', 'เดินทาง', 'อื่นๆ'],
+                    datasets: [{ data: [45, 25, 20, 10], backgroundColor: ['#7C3AED', '#F43F5E', '#FBBF24', '#10B981'], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '75%' }
             });
         });
     </script>
