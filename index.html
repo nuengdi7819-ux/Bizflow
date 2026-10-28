@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BizFlow - บัญชีของฉัน (SCB Purple & White Gold Style)</title>
+    <title>BizFlow - บัญชีของฉัน (SCB Premium Gold & White Card)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -12,14 +12,12 @@
         @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
         * { font-family: 'Kanit', sans-serif; }
         
-        /* SCB Signature Purple Gradient Background */
         body { 
             background: linear-gradient(135deg, #28004e 0%, #461474 50%, #300359 100%);
             color: #28004e;
             min-height: 100vh;
         }
 
-        /* White Clean Cards (ตามเรฟตัวอย่าง) */
         .scb-card {
             background: #ffffff;
             border: 1px solid rgba(147, 51, 234, 0.15);
@@ -27,28 +25,31 @@
             color: #1e1b4b;
         }
 
-        /* Sidebar Purple Theme */
         .scb-sidebar {
             background: #1f0038;
             color: #f3e8ff;
             border-right: 1px solid rgba(147, 51, 234, 0.3);
         }
 
-        /* Active Navigation Item (SCB Purple to Violet Pill) */
         .sidebar-item-active {
             background: linear-gradient(135deg, #7c3aed 0%, #9333ea 100%);
             box-shadow: 0 4px 15px rgba(147, 51, 234, 0.4);
             color: #ffffff;
         }
 
-        /* Gold Accent Elements */
         .gold-text {
             background: linear-gradient(135deg, #fde047 0%, #facc15 50%, #eab308 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
-        /* SCB Action Button */
+        /* โลโก้ดีไซน์ใหม่ เด่นชัดและมีมิติเรืองแสง */
+        .logo-glow {
+            background: linear-gradient(135deg, #fde047 0%, #d97706 40%, #7c3aed 100%);
+            box-shadow: 0 0 25px rgba(234, 179, 8, 0.4), 0 0 10px rgba(124, 58, 237, 0.6);
+            border: 1.5px solid rgba(255, 255, 255, 0.4);
+        }
+
         .btn-scb {
             background: linear-gradient(135deg, #7c3aed 0%, #9333ea 100%);
             box-shadow: 0 4px 15px rgba(147, 51, 234, 0.4);
@@ -58,7 +59,6 @@
             background: linear-gradient(135deg, #6d28d9 0%, #7c3aed 100%);
         }
 
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #1f0038; }
         ::-webkit-scrollbar-thumb { background: #7c3aed; border-radius: 4px; }
@@ -69,14 +69,15 @@
     <!-- Sidebar Menu -->
     <aside class="w-full md:w-64 scb-sidebar flex flex-col justify-between p-4 z-20">
         <div>
+            <!-- โลโก้เด่นชัดขึ้น -->
             <div class="flex items-center justify-between px-3 py-4 border-b border-purple-900/50 mb-4">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-400 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-purple-900/50">
-                        <i data-lucide="wallet" class="w-5 h-5 text-amber-200"></i>
+                    <div class="w-12 h-12 rounded-2xl logo-glow flex items-center justify-center text-white transform hover:scale-105 transition duration-300">
+                        <i data-lucide="wallet" class="w-7 h-7 text-amber-100 drop-shadow-md"></i>
                     </div>
                     <div>
-                        <h1 class="font-bold text-lg tracking-wide text-white">บัญชีของฉัน</h1>
-                        <p class="text-[10px] text-purple-300">BizFlow Sync Sheet</p>
+                        <h1 class="font-bold text-lg tracking-wide text-white drop-shadow-sm">บัญชีของฉัน</h1>
+                        <p class="text-[11px] text-amber-300 font-medium">BizFlow Sync Sheet</p>
                     </div>
                 </div>
                 <button class="text-purple-300 hover:text-white p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -84,7 +85,6 @@
 
             <p class="text-[11px] font-semibold text-amber-400 px-3 mb-2 uppercase tracking-wider">เมนูหลัก</p>
 
-            <!-- Navigation Links -->
             <nav class="space-y-1">
                 <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full sidebar-item-active flex items-center gap-3 px-4 py-3 rounded-2xl font-medium transition-all text-left text-sm">
                     <i data-lucide="layout-dashboard" class="w-5 h-5"></i> แดชบอร์ด
@@ -126,7 +126,6 @@
             </nav>
         </div>
 
-        <!-- Bottom Return Button -->
         <div class="mt-6 pt-3 border-t border-purple-900/50">
             <button onclick="switchTab('dashboard')" class="w-full py-3 px-4 rounded-2xl bg-purple-700 text-white font-medium flex items-center justify-center gap-2 shadow-lg text-sm hover:bg-purple-600">
                 <i data-lucide="home" class="w-4 h-4"></i> กลับหน้าแรก
