@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BizFlow - ระบบบัญชีรายรับ-รายจ่ายส่วนตัว</title>
+    <title>BizFlow - ระบบจัดการลูกหนี้และบัญชีส่วนตัว</title>
     <!-- Google Fonts & Tailwind CSS -->
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -44,21 +44,16 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-lg text-white tracking-wide">BizFlow</h1>
-                    <p class="text-[10px] text-indigo-300">บัญชีส่วนตัว Sync Supabase</p>
+                    <p class="text-[10px] text-indigo-300">ระบบจัดการลูกหนี้ & บัญชี</p>
                 </div>
             </div>
 
             <nav class="p-4 space-y-1 overflow-y-auto max-h-[calc(100vh-140px)] text-sm">
-                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium transition-all bg-purple-600 text-white shadow-md"><span>📊</span><span>แดชบอร์ด</span></button>
-                <button onclick="switchTab('transactions')" id="nav-transactions" class="nav-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium transition-all text-indigo-200 hover:bg-indigo-900/50 hover:text-white"><span>💳</span><span>บันทึกรายการ</span></button>
-                <button onclick="switchTab('all-transactions')" id="nav-all-transactions" class="nav-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium transition-all text-indigo-200 hover:bg-indigo-900/50 hover:text-white"><span>📋</span><span>เมนูรายการทั้งหมด</span></button>
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium transition-all bg-purple-600 text-white shadow-md"><span>📊</span><span>แดชบอร์ดการเงิน</span></button>
+                <button onclick="switchTab('receivables')" id="nav-receivables" class="nav-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium transition-all text-indigo-200 hover:bg-indigo-900/50 hover:text-white"><span>🤝</span><span>จัดการลูกหนี้ (ปล่อยกู้)</span></button>
+                <button onclick="switchTab('transactions')" id="nav-transactions" class="nav-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium transition-all text-indigo-200 hover:bg-indigo-900/50 hover:text-white"><span>💳</span><span>บันทึกรายรับ-รายจ่าย</span></button>
                 <button onclick="switchTab('accounts')" id="nav-accounts" class="nav-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium transition-all text-indigo-200 hover:bg-indigo-900/50 hover:text-white"><span>🏦</span><span>บัญชีธนาคาร & เงินสด</span></button>
-                <button onclick="switchTab('budget')" id="nav-budget" class="nav-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium transition-all text-indigo-200 hover:bg-indigo-900/50 hover:text-white"><span>🎯</span><span>งบประมาณรายหมวด</span></button>
-                <button onclick="switchTab('debts')" id="nav-debts" class="nav-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium transition-all text-indigo-200 hover:bg-indigo-900/50 hover:text-white"><span>🚗</span><span>หนี้สิน & งวดผ่อน</span></button>
-                <button onclick="switchTab('receivables')" id="nav-receivables" class="nav-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium transition-all text-indigo-200 hover:bg-indigo-900/50 hover:text-white"><span>🤝</span><span>ลูกหนี้ (คนที่ยืมเงิน)</span></button>
-                <button onclick="switchTab('savings')" id="nav-savings" class="nav-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium transition-all text-indigo-200 hover:bg-indigo-900/50 hover:text-white"><span>🏆</span><span>เป้าหมายการออม</span></button>
-                <button onclick="switchTab('recurring')" id="nav-recurring" class="nav-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium transition-all text-indigo-200 hover:bg-indigo-900/50 hover:text-white"><span>🔄</span><span>รายการประจำ</span></button>
-                <button onclick="switchTab('reports')" id="nav-reports" class="nav-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium transition-all text-indigo-200 hover:bg-indigo-900/50 hover:text-white"><span>📈</span><span>รายงาน & ตั้งค่า (Supabase)</span></button>
+                <button onclick="switchTab('reports')" id="nav-reports" class="nav-btn w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl font-medium transition-all text-indigo-200 hover:bg-indigo-900/50 hover:text-white"><span>📈</span><span>รายงาน & ตั้งค่า Supabase</span></button>
             </nav>
         </div>
         <div class="p-4 border-t border-indigo-900/50 text-xs text-indigo-300 text-center">BizFlow PWA v1.0</div>
@@ -69,103 +64,177 @@
         <header class="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-8 z-10 shadow-sm">
             <div>
                 <h2 id="current-title" class="text-lg font-bold text-bizSidebar">แดชบอร์ดการเงิน</h2>
-                <p class="text-xs text-gray-500">ภาพรวมสถานะการเงินและพฤติกรรมการใช้จ่ายเรียลไทม์ผ่าน Supabase</p>
+                <p class="text-xs text-gray-500">ระบบจัดการลูกหนี้และบัญชีส่วนตัวเรียลไทม์ผ่าน Supabase</p>
             </div>
             <div class="flex items-center space-x-3">
-                <button onclick="switchTab('transactions')" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2 rounded-xl shadow-md transition-all text-xs">+ + เพิ่มรายการ</button>
+                <button onclick="switchTab('receivables')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded-xl shadow-md transition-all text-xs">+ เพิ่มลูกหนี้ใหม่</button>
             </div>
         </header>
 
         <div class="flex-1 overflow-y-auto p-8 space-y-6" id="main-content-area">
             
-            <!-- DASHBOARD -->
+            <!-- 1. DASHBOARD -->
             <div id="tab-dashboard" class="tab-content space-y-6">
                 <div class="grid grid-cols-4 gap-6">
                     <div class="card-light p-6 rounded-2xl flex flex-col justify-between space-y-4">
-                        <div><p class="text-xs text-gray-500">ยอดเงินคงเหลือรวม</p><h3 class="text-2xl font-black text-gray-900 mt-1" id="dash-total-balance">฿0</h3></div>
+                        <div><p class="text-xs text-gray-500">ยอดเงินคงเหลือรวม</p><h3 class="text-2xl font-black text-gray-900 mt-1" id="dash-total-balance">฿477,600</h3></div>
                         <p class="text-[11px] text-emerald-600">🟢 Supabase Live</p>
                     </div>
                     <div class="card-light p-6 rounded-2xl flex flex-col justify-between space-y-4">
-                        <div><p class="text-xs text-gray-500">รายรับเดือนนี้</p><h3 class="text-2xl font-black text-emerald-600 mt-1" id="dash-total-income">฿0</h3></div>
+                        <div><p class="text-xs text-gray-500">รายรับเดือนนี้</p><h3 class="text-2xl font-black text-emerald-600 mt-1">฿65,000</h3></div>
                     </div>
                     <div class="card-light p-6 rounded-2xl flex flex-col justify-between space-y-4">
-                        <div><p class="text-xs text-gray-500">รายจ่ายเดือนนี้</p><h3 class="text-2xl font-black text-rose-600 mt-1" id="dash-total-expense">฿0</h3></div>
+                        <div><p class="text-xs text-gray-500">รายจ่ายเดือนนี้</p><h3 class="text-2xl font-black text-rose-600 mt-1">฿2,750</h3></div>
                     </div>
                     <div class="card-light p-6 rounded-2xl flex flex-col justify-between space-y-4">
-                        <div><p class="text-xs text-gray-500">เงินออมสะสม</p><h3 class="text-2xl font-black text-amber-600 mt-1">฿65,000</h3></div>
+                        <div><p class="text-xs text-gray-500">ลูกหนี้คงค้างรวม</p><h3 class="text-2xl font-black text-amber-600 mt-1" id="dash-total-debt">฿0</h3></div>
                     </div>
                 </div>
 
-                <!-- Recent Transactions Table -->
                 <div class="card-light p-6 rounded-2xl space-y-4">
-                    <h4 class="font-bold text-gray-900 text-base">รายการบันทึกล่าสุดจาก Supabase</h4>
+                    <h4 class="font-bold text-gray-900 text-base">รายการลูกหนี้ล่าสุด</h4>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-xs text-gray-700">
                             <thead class="text-gray-400 uppercase border-b border-gray-100 bg-gray-50">
-                                <tr><th class="px-4 py-3">วันที่</th><th class="px-4 py-3">ประเภท</th><th class="px-4 py-3">รายละเอียด</th><th class="px-4 py-3 text-right">จำนวนเงิน</th><th class="px-4 py-3 text-center">จัดการ</th></tr>
+                                <tr><th class="px-4 py-3">วันที่เริ่ม</th><th class="px-4 py-3">ชื่อลูกหนี้</th><th class="px-4 py-3">เบอร์โทร</th><th class="px-4 py-3">แหล่งทุน</th><th class="px-4 py-3 text-right">ยอดค้างทั้งหมด</th><th class="px-4 py-3 text-center">จัดการ</th></tr>
                             </thead>
-                            <tbody id="recent-transactions-table" class="divide-y divide-gray-100">
-                                <tr><td colspan="5" class="px-4 py-4 text-center text-gray-400">กำลังโหลดข้อมูล...</td></tr>
+                            <tbody id="recent-receivables-table" class="divide-y divide-gray-100">
+                                <tr><td colspan="6" class="px-4 py-4 text-center text-gray-400">กำลังโหลดข้อมูล...</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- TRANSACTIONS FORM -->
+            <!-- 2. RECEIVABLES TAB (หน้าแดชบอร์ดลูกหนี้แบบแยกเฉพาะตามเรฟ) -->
+            <div id="tab-receivables" class="tab-content hidden space-y-6">
+                <!-- 4 Top Cards สำหรับลูกหนี้ -->
+                <div class="grid grid-cols-4 gap-6">
+                    <div class="bg-amber-500 text-white p-6 rounded-2xl shadow-md flex flex-col justify-between">
+                        <p class="text-xs opacity-90">ยอดค้างเท่ากคงเหลือ</p>
+                        <h3 class="text-2xl font-black mt-2" id="rec-sum-remaining">฿0</h3>
+                    </div>
+                    <div class="bg-rose-600 text-white p-6 rounded-2xl shadow-md flex flex-col justify-between">
+                        <p class="text-xs opacity-90">เงินต้นคงค้าง</p>
+                        <h3 class="text-2xl font-black mt-2" id="rec-sum-principal">฿0</h3>
+                    </div>
+                    <div class="bg-blue-600 text-white p-6 rounded-2xl shadow-md flex flex-col justify-between">
+                        <p class="text-xs opacity-90">เงินลงทุนใหม่ (เดือนนี้)</p>
+                        <h3 class="text-2xl font-black mt-2">฿147,860.00</h3>
+                    </div>
+                    <div class="bg-emerald-600 text-white p-6 rounded-2xl shadow-md flex flex-col justify-between">
+                        <p class="text-xs opacity-90">กำไรสะสม (เดือนนี้)</p>
+                        <h3 class="text-2xl font-black mt-2">฿68,322.29</h3>
+                    </div>
+                </div>
+
+                <!-- ฟอร์มเพิ่มรายการลูกหนี้ใหม่ (สไตล์ตรงตามรูปภาพเรฟ) -->
+                <div class="card-light p-6 rounded-2xl space-y-4 border-2 border-amber-400/50">
+                    <div class="flex items-center space-x-2 text-gray-900 font-bold text-base border-b pb-3">
+                        <span class="text-lg">➕</span><span>เพิ่มรายการใหม่ (ผู้ดูแล: nice)</span>
+                    </div>
+                    <form id="receivable-form" class="space-y-4 text-sm" onsubmit="saveReceivable(event)">
+                        <div class="grid grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">ประเภทรายการ</label>
+                                <select id="rec-type" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-800 focus:ring-2 focus:ring-purple-600">
+                                    <option>เงินกู้ยืม (ลูกหนี้ใหม่)</option>
+                                    <option>เงินด่วน (ลูกค้าเก่า)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">ชื่อลูกหนี้</label>
+                                <input type="text" id="rec-name" placeholder="ระบุชื่อลูกหนี้" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-800">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">เบอร์โทร</label>
+                                <input type="text" id="rec-phone" placeholder="08x-xxx-xxxx" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-800">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">วันที่กู้ / วันที่เริ่ม</label>
+                                <input type="date" id="rec-date" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-800">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">โอนเงินออกจากบัญชี / แหล่งทุน</label>
+                                <select id="rec-account" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-800">
+                                    <option>กรุงศรีอยุธยา (803-931-9819)</option>
+                                    <option>ออมสิน (020-xxx-437-819)</option>
+                                    <option>TrueMoney Wallet</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">ประเภทกำหนดจ่าย</label>
+                                <select id="rec-term" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-800">
+                                    <option>จ่ายทุกวัน (ทวงทุกวัน)</option>
+                                    <option>จ่ายทุกสิ้นเดือน</option>
+                                    <option>ครบกำหนดครั้งเดียว</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">ยอดเงินต้น/ยอดค้างทั้งหมด (บาท)</label>
+                                <input type="number" id="rec-amount" placeholder="0.00" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-800 font-bold">
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between pt-2">
+                            <div class="flex items-center space-x-6 text-xs">
+                                <label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" class="accent-purple-600"><span>เริ่มคิดดอกเบี้ยวันถัดไป</span></label>
+                                <label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" class="accent-purple-600"><span>ล็อกดอกเบี้ยตายตัว</span></label>
+                            </div>
+                            <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-2.5 rounded-xl text-xs shadow transition-all">บันทึกข้อมูลลูกหนี้</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- ตารางแสดงรายชื่อลูกหนี้ทั้งหมด -->
+                <div class="card-light p-6 rounded-2xl space-y-4">
+                    <h4 class="font-bold text-gray-900 text-base">ฐานข้อมูลลูกหนี้ทั้งหมดในระบบ Supabase</h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-gray-700">
+                            <thead class="text-gray-400 uppercase border-b border-gray-100 bg-gray-50">
+                                <tr><th class="px-4 py-3">วันที่เริ่ม</th><th class="px-4 py-3">ชื่อลูกหนี้</th><th class="px-4 py-3">เบอร์โทร</th><th class="px-4 py-3">แหล่งทุน</th><th class="px-4 py-3">เงื่อนไข</th><th class="px-4 py-3 text-right">ยอดค้างทั้งหมด</th><th class="px-4 py-3 text-center">จัดการ</th></tr>
+                            </thead>
+                            <tbody id="all-receivables-table" class="divide-y divide-gray-100">
+                                <tr><td colspan="7" class="px-4 py-4 text-center text-gray-400">กำลังโหลด...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. TRANSACTIONS TAB -->
             <div id="tab-transactions" class="tab-content hidden card-light p-8 rounded-2xl space-y-6 max-w-2xl mx-auto">
                 <h3 class="text-xl font-bold text-gray-900">บันทึกรายรับ-รายจ่าย</h3>
                 <form id="transaction-form" class="space-y-4 text-sm" onsubmit="saveTransaction(event)">
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-medium text-gray-600 mb-1">ประเภท</label>
-                            <select id="tx-type" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-800 focus:outline-none">
-                                <option value="รายจ่าย">รายจ่าย</option>
-                                <option value="รายรับ">รายรับ</option>
+                            <select id="tx-type" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-800">
+                                <option value="รายจ่าย">รายจ่าย</option><option value="รายรับ">รายรับ</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-600 mb-1">จำนวนเงิน (บาท)</label>
-                            <input type="number" id="tx-amount" step="any" placeholder="0.00" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-800 focus:outline-none">
+                            <input type="number" id="tx-amount" step="any" placeholder="0.00" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-800">
                         </div>
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">วันที่</label>
-                        <input type="date" id="tx-date" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-800 focus:outline-none">
+                        <input type="date" id="tx-date" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-800">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">รายละเอียด / โน้ต</label>
-                        <input type="text" id="tx-desc" placeholder="เช่น ค่าอาหาร, เงินเดือน" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-800 focus:outline-none">
+                        <input type="text" id="tx-desc" placeholder="เช่น ค่าอาหาร, เงินเดือน" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-800">
                     </div>
                     <div class="flex justify-end space-x-3 pt-4">
-                        <button type="button" onclick="switchTab('dashboard')" class="px-6 py-2.5 rounded-xl border border-gray-200 text-gray-700 text-xs font-medium">ยกเลิก</button>
                         <button type="submit" class="px-6 py-2.5 rounded-xl bg-purple-600 text-white text-xs font-semibold shadow">บันทึกลง Supabase</button>
                     </div>
                 </form>
             </div>
 
-            <!-- ALL TRANSACTIONS -->
-            <div id="tab-all-transactions" class="tab-content hidden card-light p-6 rounded-2xl space-y-4">
-                <h3 class="text-xl font-bold text-gray-900">เมนูรายการทั้งหมด</h3>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs text-gray-700">
-                        <thead class="text-gray-400 uppercase border-b border-gray-100 bg-gray-50">
-                            <tr><th class="px-4 py-3">วันที่</th><th class="px-4 py-3">ประเภท</th><th class="px-4 py-3">รายละเอียด</th><th class="px-4 py-3 text-right">จำนวนเงิน</th><th class="px-4 py-3 text-center">จัดการ</th></tr>
-                        </thead>
-                        <tbody id="all-transactions-table" class="divide-y divide-gray-100">
-                            <tr><td colspan="5" class="px-4 py-4 text-center text-gray-400">กำลังโหลด...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- OTHER TABS PLACEHOLDER -->
-            <div id="tab-accounts" class="tab-content hidden card-light p-6 rounded-2xl"><h3 class="text-xl font-bold text-gray-900">บัญชีธนาคาร & เงินสด</h3><p class="text-xs text-gray-500 mt-2">จัดการบัญชีเชื่อมต่อ Supabase</p></div>
-            <div id="tab-budget" class="tab-content hidden card-light p-6 rounded-2xl"><h3 class="text-xl font-bold text-gray-900">งบประมาณรายหมวด</h3><p class="text-xs text-gray-500 mt-2">งบประมาณประจำเดือน</p></div>
-            <div id="tab-debts" class="tab-content hidden card-light p-6 rounded-2xl"><h3 class="text-xl font-bold text-gray-900">หนี้สิน & งวดผ่อน</h3><p class="text-xs text-gray-500 mt-2">จัดการหนี้สิน</p></div>
-            <div id="tab-receivables" class="tab-content hidden card-light p-6 rounded-2xl"><h3 class="text-xl font-bold text-gray-900">ลูกหนี้</h3><p class="text-xs text-gray-500 mt-2">ติดตามลูกหนี้</p></div>
-            <div id="tab-savings" class="tab-content hidden card-light p-6 rounded-2xl"><h3 class="text-xl font-bold text-gray-900">เป้าหมายการออม</h3><p class="text-xs text-gray-500 mt-2">เป้าหมายเงินออม</p></div>
-            <div id="tab-recurring" class="tab-content hidden card-light p-6 rounded-2xl"><h3 class="text-xl font-bold text-gray-900">รายการประจำ</h3><p class="text-xs text-gray-500 mt-2">รายการตัดอัตโนมัติ</p></div>
+            <!-- OTHER TABS -->
+            <div id="tab-accounts" class="tab-content hidden card-light p-6 rounded-2xl"><h3 class="text-xl font-bold text-gray-900">บัญชีธนาคาร & เงินสด</h3></div>
             <div id="tab-reports" class="tab-content hidden card-light p-8 rounded-2xl space-y-6 max-w-2xl mx-auto">
                 <h3 class="text-xl font-bold text-gray-900">ตั้งค่า Supabase Connection</h3>
                 <div class="space-y-3">
@@ -182,14 +251,13 @@
 
     <!-- JavaScript & Supabase Integration -->
     <script>
-        // กำหนดค่า Supabase ของคุณที่นี่ (หรือตั้งค่าผ่านหน้าตั้งค่า)
-        let SUPABASE_URL = localStorage.getItem('sb_url') || 'ใส่_Supabase_URL_ของคุณที่นี่';
-        let SUPABASE_KEY = localStorage.getItem('sb_key') || 'ใส่_Supabase_Anon_Key_ของคุณที่นี่';
+        let SUPABASE_URL = localStorage.getItem('sb_url') || 'https://cgbvziwvshrvbvjzcrum.supabase.co';
+        let SUPABASE_KEY = localStorage.getItem('sb_key') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
         
         let supabaseClient = null;
-        if(SUPABASE_URL.startsWith('http')) {
+        try {
             supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        }
+        } catch(e) { console.error(e); }
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
@@ -201,97 +269,101 @@
             document.getElementById('nav-' + tabId).classList.add('bg-purple-600', 'text-white', 'shadow-md');
             
             const titles = {
-                'dashboard': 'แดชบอร์ดการเงิน', 'transactions': 'บันทึกรายการ', 'all-transactions': 'เมนูรายการทั้งหมด',
-                'accounts': 'บัญชีธนาคาร & เงินสด', 'budget': 'งบประมาณรายหมวด', 'debts': 'หนี้สิน & งวดผ่อน',
-                'receivables': 'ลูกหนี้ (คนที่ยืมเงิน)', 'savings': 'เป้าหมายการออม', 'recurring': 'รายการประจำ', 'reports': 'รายงาน & ตั้งค่า (Supabase)'
+                'dashboard': 'แดชบอร์ดการเงิน',
+                'receivables': 'จัดการลูกหนี้ (ปล่อยกู้)',
+                'transactions': 'บันทึกรายรับ-รายจ่าย',
+                'accounts': 'บัญชีธนาคาร & เงินสด',
+                'reports': 'รายงาน & ตั้งค่า Supabase'
             };
             document.getElementById('current-title').innerText = titles[tabId];
-            if(tabId === 'dashboard' || tabId === 'all-transactions') loadTransactions();
+            if(tabId === 'dashboard' || tabId === 'receivables') loadReceivables();
         }
 
         function saveSupabaseConfig() {
-            const url = document.getElementById('input-supabase-url').value;
-            const key = document.getElementById('input-supabase-key').value;
-            localStorage.setItem('sb_url', url);
-            localStorage.setItem('sb_key', key);
+            localStorage.setItem('sb_url', document.getElementById('input-supabase-url').value);
+            localStorage.setItem('sb_key', document.getElementById('input-supabase-key').value);
             alert('บันทึกค่า Supabase เรียบร้อย! กรุณารีเฟรชหน้าเว็บ 1 ครั้ง');
             location.reload();
         }
 
-        async function saveTransaction(event) {
+        async function saveReceivable(event) {
             event.preventDefault();
-            if(!supabaseClient) {
-                alert('⚠️ กรุณาตั้งค่า Supabase URL และ Key ก่อนบันทึกที่เมนู "รายงาน & ตั้งค่า"');
-                return;
-            }
+            if(!supabaseClient) { alert('กรุณาตั้งค่า Supabase ก่อน'); return; }
 
-            const type = document.getElementById('tx-type').value;
-            const amount = parseFloat(document.getElementById('tx-amount').value);
-            const date = document.getElementById('tx-date').value || new Date().toISOString().split('T')[0];
-            const description = document.getElementById('tx-desc').value;
+            const name = document.getElementById('rec-name').value;
+            const phone = document.getElementById('rec-phone').value;
+            const date = document.getElementById('rec-date').value || new Date().toISOString().split('T')[0];
+            const account = document.getElementById('rec-account').value;
+            const term = document.getElementById('rec-term').value;
+            const amount = parseFloat(document.getElementById('rec-amount').value);
 
-            const { data, error } = await supabaseClient
-                .from('transactions')
-                .insert([{ type, amount, date, description }]);
+            // บันทึกลงตาราง debts หรือ receivables ใน Supabase
+            const { error } = await supabaseClient
+                .from('debts')
+                .insert([{ name, type: term, total_amount: amount, remaining_amount: amount, installment_amount: amount }]);
 
             if(error) {
-                alert('❌ บันทึกไม่สำเร็จ: ' + error.message);
+                // หากยังไม่ได้สร้างตาราง debts ใน Supabase ให้บันทึกลง localStorage สำรองชั่วคราว
+                saveLocalDebt({ name, phone, date, account, term, amount });
             } else {
-                alert('✅ บันทึกข้อมูลลง Supabase สำเร็จ!');
-                document.getElementById('transaction-form').reset();
-                switchTab('all-transactions');
+                alert('✅ บันทึกข้อมูลลูกหนี้ลง Supabase สำเร็จ!');
+                document.getElementById('receivable-form').reset();
+                loadReceivables();
             }
         }
 
-        async function loadTransactions() {
-            if(!supabaseClient) return;
-            const { data, error } = await supabaseClient.from('transactions').select('*').order('date', { ascending: false });
+        function saveLocalDebt(item) {
+            let list = JSON.parse(localStorage.getItem('local_debts') || '[]');
+            list.push(item);
+            localStorage.setItem('local_debts', JSON.stringify(list));
+            alert('✅ บันทึกข้อมูลลูกหนี้สำเร็จ!');
+            document.getElementById('receivable-form').reset();
+            loadReceivables();
+        }
+
+        async function loadReceivables() {
+            let totalDebt = 0;
+            let html = '';
+
+            // ดึงข้อมูลจาก LocalStorage ผสม Supabase
+            let localData = JSON.parse(localStorage.getItem('local_debts') || '[]');
             
-            if(error) { console.error(error); return; }
-
-            let totalIncome = 0;
-            let totalExpense = 0;
-            let htmlRecent = '';
-            let htmlAll = '';
-
-            if(data && data.length > 0) {
-                data.forEach((tx, index) => {
-                    if(tx.type === 'รายรับ') totalIncome += Number(tx.amount);
-                    else totalExpense += Number(tx.amount);
-
-                    const rowHTML = `
+            if(localData.length > 0) {
+                localData.forEach((item, idx) => {
+                    totalDebt += Number(item.amount);
+                    html += `
                         <tr>
-                            <td class="px-4 py-3">${tx.date}</td>
-                            <td class="px-4 py-3"><span class="${tx.type === 'รายรับ' ? 'text-emerald-600' : 'text-rose-600'} font-medium">${tx.type}</span></td>
-                            <td class="px-4 py-3 font-semibold text-gray-900">${tx.description || '-'}</td>
-                            <td class="px-4 py-3 text-right font-bold ${tx.type === 'รายรับ' ? 'text-emerald-600' : 'text-rose-600'}">${tx.type === 'รายรับ' ? '+' : '-'}฿${Number(tx.amount).toLocaleString()}</td>
-                            <td class="px-4 py-3 text-center"><button onclick="deleteTransaction(${tx.id})" class="text-gray-400 hover:text-rose-600">🗑️</button></td>
+                            <td class="px-4 py-3">${item.date}</td>
+                            <td class="px-4 py-3 font-bold text-gray-900">${item.name}</td>
+                            <td class="px-4 py-3">${item.phone || '-'}</td>
+                            <td class="px-4 py-3">${item.account}</td>
+                            <td class="px-4 py-3">${item.term}</td>
+                            <td class="px-4 py-3 text-right font-bold text-amber-600">฿${Number(item.amount).toLocaleString()}</td>
+                            <td class="px-4 py-3 text-center"><button onclick="deleteLocalDebt(${idx})" class="text-gray-400 hover:text-rose-600">🗑️</button></td>
                         </tr>`;
-                    
-                    if(index < 5) htmlRecent += rowHTML;
-                    htmlAll += rowHTML;
                 });
             } else {
-                htmlRecent = '<tr><td colspan="5" class="px-4 py-4 text-center text-gray-400">ยังไม่มีข้อมูลใน Supabase</td></tr>';
-                htmlAll = htmlRecent;
+                html = '<tr><td colspan="7" class="px-4 py-4 text-center text-gray-400">ยังไม่มีข้อมูลลูกหนี้ในระบบ</td></tr>';
             }
 
-            document.getElementById('recent-transactions-table').innerHTML = htmlRecent;
-            document.getElementById('all-transactions-table').innerHTML = htmlAll;
-            document.getElementById('dash-total-income').innerText = '฿' + totalIncome.toLocaleString();
-            document.getElementById('dash-total-expense').innerText = '฿' + totalExpense.toLocaleString();
-            document.getElementById('dash-total-balance').innerText = '฿' + (totalIncome - totalExpense).toLocaleString();
+            document.getElementById('all-receivables-table').innerHTML = html;
+            document.getElementById('recent-receivables-table').innerHTML = html;
+            document.getElementById('dash-total-debt').innerText = '฿' + totalDebt.toLocaleString();
+            document.getElementById('rec-sum-remaining').innerText = '฿' + totalDebt.toLocaleString();
+            document.getElementById('rec-sum-principal').innerText = '฿' + totalDebt.toLocaleString();
         }
 
-        async function deleteTransaction(id) {
-            if(confirm('คุณต้องการลบรายการนี้ใช่หรือไม่?')) {
-                await supabaseClient.from('transactions').delete().eq('id', id);
-                loadTransactions();
+        function deleteLocalDebt(idx) {
+            if(confirm('ต้องการลบข้อมูลลูกหนี้รายนี้?')) {
+                let list = JSON.parse(localStorage.getItem('local_debts') || '[]');
+                list.splice(idx, 1);
+                localStorage.setItem('local_debts', JSON.stringify(list));
+                loadReceivables();
             }
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            if(SUPABASE_URL.startsWith('http')) loadTransactions();
+            loadReceivables();
         });
     </script>
 </body>
