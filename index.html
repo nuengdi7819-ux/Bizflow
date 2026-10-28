@@ -3,86 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BizFlow - บัญชีส่วนตัว Sync Sheet</title>
-    <!-- Tailwind CSS -->
+    <title>BizFlow - บัญชีส่วนตัว Sync Sheet (Cosmic Fortune)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
         * { font-family: 'Kanit', sans-serif; }
-        body { background-color: #0b0714; color: #f3f4f6; }
+        
+        /* Cosmic Galaxy Gradient Background */
+        body { 
+            background: radial-gradient(circle at 20% 20%, #1e0b36 0%, #0a0518 50%, #030108 100%);
+            color: #f3f4f6;
+            min-height: 100vh;
+        }
+
+        /* Glassmorphism Cards with Cosmic Glow */
         .glass-card {
-            background: rgba(22, 16, 38, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(12px);
+            background: rgba(25, 14, 45, 0.65);
+            border: 1px solid rgba(168, 85, 247, 0.18);
+            backdrop-filter: blur(16px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
+
+        .glass-card:hover {
+            border-color: rgba(192, 132, 252, 0.35);
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.25);
+        }
+
+        /* Active Navigation Item (Galaxy Flame) */
         .sidebar-item-active {
-            background: linear-gradient(90deg, #4f46e5 0%, #3b82f6 100%);
-            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+            background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 50%, #2563eb 100%);
+            box-shadow: 0 0 18px rgba(124, 58, 237, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
+
+        /* Cosmic Fortune Gold Accent Button */
+        .btn-fortune {
+            background: linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+        }
+        .btn-fortune:hover {
+            box-shadow: 0 0 25px rgba(52, 211, 153, 0.7);
+        }
+
+        /* Gold Gradient Text */
+        .gold-text {
+            background: linear-gradient(135deg, #fde047 0%, #eab308 50%, #ca8a04 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
         /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #0b0714; }
-        ::-webkit-scrollbar-thumb { background: #2e2448; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #4f46e5; }
+        ::-webkit-scrollbar-track { background: #0a0518; }
+        ::-webkit-scrollbar-thumb { background: #4c1d95; border-radius: 4px; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col md:flex-row">
+<body class="min-h-screen flex flex-col md:flex-row relative overflow-x-hidden">
 
-    <!-- Sidebar -->
-    <aside class="w-full md:w-64 glass-card border-r border-gray-800 flex flex-col justify-between p-4 z-20">
+    <!-- Cosmic Background Stars Effect -->
+    <div class="fixed inset-0 pointer-events-none z-0 opacity-40">
+        <div class="absolute w-96 h-96 bg-purple-600/20 rounded-full blur-3xl top-[-50px] left-[-50px]"></div>
+        <div class="absolute w-96 h-96 bg-blue-600/20 rounded-full blur-3xl bottom-[-50px] right-[-50px]"></div>
+        <div class="absolute w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
+    </div>
+
+    <!-- Sidebar Menu -->
+    <aside class="w-full md:w-64 glass-card border-r border-purple-900/40 flex flex-col justify-between p-4 z-20">
         <div>
-            <!-- Logo -->
-            <div class="flex items-center gap-3 px-3 py-4 border-b border-gray-800/60 mb-6">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
-                    <i data-lucide="wallet" class="w-6 h-6"></i>
+            <div class="flex items-center gap-3 px-3 py-4 border-b border-purple-900/40 mb-6">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-400 via-purple-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-purple-500/40">
+                    <i data-lucide="sparkles" class="w-6 h-6 text-amber-200"></i>
                 </div>
                 <div>
-                    <h1 class="font-bold text-xl tracking-wide bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">BizFlow</h1>
-                    <p class="text-xs text-indigo-400 font-medium">บัญชีส่วนตัว Sync Sheet</p>
+                    <h1 class="font-bold text-xl tracking-wide bg-gradient-to-r from-amber-200 via-purple-200 to-indigo-200 bg-clip-text text-transparent">BizFlow</h1>
+                    <p class="text-xs text-amber-400 font-medium">กาแล็กซี่การเงินมงคล 🌌✨</p>
                 </div>
             </div>
 
-            <!-- Menu Links -->
+            <!-- Navigation Links -->
             <nav class="space-y-1.5">
-                <a href="#" class="sidebar-item-active flex items-center gap-3 px-4 py-3 rounded-xl text-white font-medium transition-all">
-                    <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
-                    แดชบอร์ด
-                </a>
-                <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800/50 font-medium transition-all">
-                    <i data-lucide="receipt" class="w-5 h-5"></i>
-                    รายการบันทึก
-                </a>
-                <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800/50 font-medium transition-all">
-                    <i data-lucide="target" class="w-5 h-5"></i>
-                    งบประมาณ
-                </a>
-                <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800/50 font-medium transition-all">
-                    <i data-lucide="hand-coins" class="w-5 h-5"></i>
-                    หนี้สิน & ลูกหนี้
-                </a>
-                <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800/50 font-medium transition-all">
-                    <i data-lucide="piggy-bank" class="w-5 h-5"></i>
-                    เป้าหมายการออม
-                </a>
-                <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800/50 font-medium transition-all">
-                    <i data-lucide="landmark" class="w-5 h-5"></i>
-                    บัญชีธนาคาร
-                </a>
-                <a href="#" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-gray-800/50 font-medium transition-all">
-                    <i data-lucide="pie-chart" class="w-5 h-5"></i>
-                    รายงานสรุป
-                </a>
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full sidebar-item-active flex items-center gap-3 px-4 py-3 rounded-xl text-white font-medium transition-all text-left">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5 text-amber-300"></i> แดชบอร์ดมงคล
+                </button>
+                <button onclick="switchTab('transactions')" id="nav-transactions" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-purple-200/70 hover:text-white hover:bg-purple-900/30 font-medium transition-all text-left">
+                    <i data-lucide="receipt" class="w-5 h-5"></i> รายการบันทึก
+                </button>
+                <button onclick="switchTab('budget')" id="nav-budget" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-purple-200/70 hover:text-white hover:bg-purple-900/30 font-medium transition-all text-left">
+                    <i data-lucide="target" class="w-5 h-5"></i> งบประมาณ
+                </button>
+                <button onclick="switchTab('debts')" id="nav-debts" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-purple-200/70 hover:text-white hover:bg-purple-900/30 font-medium transition-all text-left">
+                    <i data-lucide="hand-coins" class="w-5 h-5"></i> หนี้สิน & ลูกหนี้
+                </button>
+                <button onclick="switchTab('savings')" id="nav-savings" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-purple-200/70 hover:text-white hover:bg-purple-900/30 font-medium transition-all text-left">
+                    <i data-lucide="piggy-bank" class="w-5 h-5"></i> เป้าหมายการออม
+                </button>
+                <button onclick="switchTab('accounts')" id="nav-accounts" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-purple-200/70 hover:text-white hover:bg-purple-900/30 font-medium transition-all text-left">
+                    <i data-lucide="landmark" class="w-5 h-5"></i> บัญชีธนาคาร
+                </button>
+                <button onclick="switchTab('reports')" id="nav-reports" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-purple-200/70 hover:text-white hover:bg-purple-900/30 font-medium transition-all text-left">
+                    <i data-lucide="pie-chart" class="w-5 h-5"></i> รายงานสรุป
+                </button>
             </nav>
         </div>
 
-        <!-- Sync Status Widget -->
-        <div class="mt-6 pt-4 border-t border-gray-800/60">
+        <div class="mt-6 pt-4 border-t border-purple-900/40">
             <div class="glass-card p-3 rounded-xl flex items-center justify-between">
                 <div class="flex items-center gap-2">
                     <span class="relative flex h-3 w-3">
@@ -90,184 +117,252 @@
                         <span id="sync-dot" class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
                     </span>
                     <div>
-                        <p class="text-xs font-semibold text-gray-200">Supabase Sync</p>
-                        <p id="sync-status" class="text-[10px] text-emerald-400">เรียลไทม์ พร้อมใช้งาน</p>
+                        <p class="text-xs font-semibold text-purple-200">Supabase Sync</p>
+                        <p id="sync-status" class="text-[10px] text-emerald-400">เชื่อมต่อคลาวด์มงคลแล้ว</p>
                     </div>
                 </div>
-                <button onclick="toggleConfigModal()" class="p-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-lg transition">
+                <button onclick="toggleConfigModal()" class="p-2 text-purple-300 hover:text-white hover:bg-purple-800/40 rounded-lg transition">
                     <i data-lucide="settings" class="w-4 h-4"></i>
                 </button>
             </div>
         </div>
     </aside>
 
-    <!-- Main Content -->
-    <main class="flex-1 p-4 md:p-8 space-y-6 overflow-y-auto">
+    <!-- Main Content Area -->
+    <main class="flex-1 p-4 md:p-8 space-y-6 overflow-y-auto z-10">
 
-        <!-- Top Header -->
         <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-                <h2 class="text-2xl font-bold text-white tracking-wide">แดชบอร์ดการเงิน</h2>
-                <p class="text-xs text-gray-400">ภาพรวมการเงินและรายการบันทึกทั้งหมดของคุณ</p>
+                <h2 id="page-title" class="text-2xl font-bold gold-text tracking-wide">แดชบอร์ดมงคล</h2>
+                <p id="page-subtitle" class="text-xs text-purple-300/70">ภาพรวมขุมทรัพย์และการเงินทั้งหมดของคุณ</p>
             </div>
             <div class="flex items-center gap-3">
-                <button onclick="openModal('income')" class="px-4 py-2.5 rounded-xl bg-emerald-600/90 hover:bg-emerald-600 text-white font-medium flex items-center gap-2 shadow-lg shadow-emerald-900/40 transition">
-                    <i data-lucide="plus-circle" class="w-4 h-4"></i> + เพิ่มรายการ
+                <button onclick="openModal()" class="btn-fortune px-5 py-2.5 rounded-xl text-white font-medium flex items-center gap-2 transition transform hover:scale-105">
+                    <i data-lucide="plus-circle" class="w-5 h-5"></i> + เพิ่มรายการรับทรัพย์
                 </button>
-                <div class="w-10 h-10 rounded-xl bg-purple-900/60 border border-purple-500/30 flex items-center justify-center font-bold text-purple-200">
-                    TH
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-purple-700 p-[1px]">
+                    <div class="w-full h-full bg-slate-950 rounded-xl flex items-center justify-center font-bold text-amber-300">
+                        TH
+                    </div>
                 </div>
             </div>
         </header>
 
-        <!-- KPI Cards Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <!-- Card 1 -->
-            <div class="glass-card p-5 rounded-2xl relative overflow-hidden group hover:border-indigo-500/50 transition duration-300">
-                <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-indigo-500/10 rounded-full blur-xl group-hover:bg-indigo-500/20 transition"></div>
-                <p class="text-xs font-medium text-gray-400">ยอดเงินคงเหลือรวม</p>
-                <h3 id="total-balance" class="text-2xl font-bold text-white mt-1">฿0</h3>
-                <div class="flex items-center gap-1.5 mt-2">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                    <span class="text-[11px] text-emerald-400 font-medium">อัปเดตเรียลไทม์</span>
+        <!-- TAB 1: DASHBOARD -->
+        <div id="tab-dashboard" class="space-y-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="glass-card p-5 rounded-2xl relative overflow-hidden border-t-2 border-t-amber-400/60">
+                    <p class="text-xs font-medium text-purple-300">ยอดเงินคงเหลือรวม (ถุงเงิน)</p>
+                    <h3 id="total-balance" class="text-2xl font-bold gold-text mt-1">฿0</h3>
+                    <p class="text-[11px] text-emerald-400 mt-2 flex items-center gap-1"><i data-lucide="zap" class="w-3 h-3"></i> อัปเดตเรียลไทม์</p>
+                </div>
+                <div class="glass-card p-5 rounded-2xl relative overflow-hidden border-t-2 border-t-emerald-400/60">
+                    <p class="text-xs font-medium text-purple-300">รายรับรับโชคเดือนนี้</p>
+                    <h3 id="monthly-income" class="text-2xl font-bold text-emerald-400 mt-1">฿0</h3>
+                    <p class="text-[11px] text-emerald-300/70 mt-2">เงินไหลเข้าต่อเนื่อง</p>
+                </div>
+                <div class="glass-card p-5 rounded-2xl relative overflow-hidden border-t-2 border-t-rose-500/60">
+                    <p class="text-xs font-medium text-purple-300">รายจ่ายเดือนนี้</p>
+                    <h3 id="monthly-expense" class="text-2xl font-bold text-rose-400 mt-1">฿0</h3>
+                    <p class="text-[11px] text-purple-300/60 mt-2">บริหารจัดการสมดุล</p>
+                </div>
+                <div class="glass-card p-5 rounded-2xl relative overflow-hidden border-t-2 border-t-indigo-400/60">
+                    <p class="text-xs font-medium text-purple-300">เงินออมมั่งคั่งสะสม</p>
+                    <h3 id="total-savings" class="text-2xl font-bold text-indigo-300 mt-1">฿0</h3>
+                    <p class="text-[11px] text-indigo-200/70 mt-2">ขยายพูนถอกมั่งคั่ง</p>
                 </div>
             </div>
 
-            <!-- Card 2 -->
-            <div class="glass-card p-5 rounded-2xl relative overflow-hidden group hover:border-emerald-500/50 transition duration-300">
-                <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition"></div>
-                <p class="text-xs font-medium text-gray-400">รายรับเดือนนี้</p>
-                <h3 id="monthly-income" class="text-2xl font-bold text-emerald-400 mt-1">฿0</h3>
-                <p class="text-[11px] text-gray-400 mt-2">รวมรายการฝาก/เงินเดือน</p>
-            </div>
-
-            <!-- Card 3 -->
-            <div class="glass-card p-5 rounded-2xl relative overflow-hidden group hover:border-rose-500/50 transition duration-300">
-                <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-rose-500/10 rounded-full blur-xl group-hover:bg-rose-500/20 transition"></div>
-                <p class="text-xs font-medium text-gray-400">รายจ่ายเดือนนี้</p>
-                <h3 id="monthly-expense" class="text-2xl font-bold text-rose-400 mt-1">฿0</h3>
-                <p class="text-[11px] text-gray-400 mt-2">รายจ่ายผันแปร & ประจำ</p>
-            </div>
-
-            <!-- Card 4 -->
-            <div class="glass-card p-5 rounded-2xl relative overflow-hidden group hover:border-amber-500/50 transition duration-300">
-                <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-amber-500/10 rounded-full blur-xl group-hover:bg-amber-500/20 transition"></div>
-                <p class="text-xs font-medium text-gray-400">เงินออมสะสม</p>
-                <h3 id="total-savings" class="text-2xl font-bold text-amber-400 mt-1">฿0</h3>
-                <p class="text-[11px] text-gray-400 mt-2">จากเป้าหมายการออม</p>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="glass-card p-5 rounded-2xl lg:col-span-2">
+                    <h3 class="font-semibold text-purple-100 mb-4 flex items-center gap-2">
+                        <i data-lucide="trending-up" class="w-4 h-4 text-amber-400"></i> เปรียบเทียบ รายรับ - รายจ่าย (ภาพรวมกาแล็กซี่)
+                    </h3>
+                    <div class="h-64 relative w-full"><canvas id="barChart"></canvas></div>
+                </div>
+                <div class="glass-card p-5 rounded-2xl">
+                    <h3 class="font-semibold text-purple-100 mb-4 flex items-center gap-2">
+                        <i data-lucide="history" class="w-4 h-4 text-purple-400"></i> รายการล่าสุด
+                    </h3>
+                    <div class="overflow-y-auto max-h-60 space-y-3 pr-1" id="recent-transactions-list">
+                        <div class="text-center text-purple-300/50 py-8 text-xs">กำลังโหลดข้อมูลมงคล...</div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Charts Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Bar Chart -->
-            <div class="glass-card p-5 rounded-2xl lg:col-span-2 flex flex-col justify-between">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-semibold text-gray-200">เปรียบเทียบ รายรับ - รายจ่าย (6 เดือนล่าสุด)</h3>
-                </div>
-                <div class="h-64 relative w-full">
-                    <canvas id="barChart"></canvas>
+        <!-- TAB 2: TRANSACTIONS -->
+        <div id="tab-transactions" class="space-y-4 hidden">
+            <div class="glass-card p-6 rounded-2xl">
+                <h3 class="font-semibold text-purple-100 mb-4">ประวัติรายการรับ-จ่าย ทั้งหมด</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-purple-100">
+                        <thead class="bg-purple-950/80 text-xs uppercase text-purple-300 border-b border-purple-900/60">
+                            <tr>
+                                <th class="p-3">วันที่</th>
+                                <th class="p-3">ประเภท</th>
+                                <th class="p-3">หมวดหมู่</th>
+                                <th class="p-3">บัญชี</th>
+                                <th class="p-3">บันทึก</th>
+                                <th class="p-3 text-right">จำนวนเงิน</th>
+                            </tr>
+                        </thead>
+                        <tbody id="full-transactions-table" class="divide-y divide-purple-900/40">
+                            <tr><td colspan="6" class="text-center py-6 text-purple-300/50">กำลังโหลด...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
+        </div>
 
-            <!-- Recent Transactions Table -->
-            <div class="glass-card p-5 rounded-2xl flex flex-col justify-between">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-semibold text-gray-200">รายการล่าสุด</h3>
-                    <span class="text-xs text-indigo-400 font-medium">Sync ล่าสุด</span>
-                </div>
-                <div class="overflow-y-auto max-h-60 space-y-3 pr-1" id="recent-transactions-list">
-                    <!-- Dynamic List loaded here -->
-                    <div class="text-center text-gray-500 py-8 text-xs">กำลังโหลดข้อมูล...</div>
-                </div>
+        <!-- TAB 3: BUDGET -->
+        <div id="tab-budget" class="space-y-4 hidden">
+            <div class="glass-card p-6 rounded-2xl text-center py-12">
+                <i data-lucide="target" class="w-12 h-12 text-amber-400 mx-auto mb-3"></i>
+                <h3 class="text-lg font-bold text-white">ระบบจัดการงบประมาณมงคล</h3>
+                <p class="text-xs text-purple-300/70 mt-1">วางแผนค่าใช้จ่ายให้สมดุลและควบคุมทรัพย์สินได้ตรงเป้า</p>
+            </div>
+        </div>
+
+        <!-- TAB 4: DEBTS -->
+        <div id="tab-debts" class="space-y-4 hidden">
+            <div class="glass-card p-6 rounded-2xl text-center py-12">
+                <i data-lucide="hand-coins" class="w-12 h-12 text-purple-400 mx-auto mb-3"></i>
+                <h3 class="text-lg font-bold text-white">จัดการหนี้สิน & ลูกหนี้</h3>
+                <p class="text-xs text-purple-300/70 mt-1">ติดตามบัญชีเงินยืม-คืนเงินได้อย่างแม่นยำ</p>
+            </div>
+        </div>
+
+        <!-- TAB 5: SAVINGS -->
+        <div id="tab-savings" class="space-y-4 hidden">
+            <div class="glass-card p-6 rounded-2xl text-center py-12">
+                <i data-lucide="piggy-bank" class="w-12 h-12 text-emerald-400 mx-auto mb-3"></i>
+                <h3 class="text-lg font-bold text-white">เป้าหมายออมทรัพย์เรียกโชค</h3>
+                <p class="text-xs text-purple-300/70 mt-1">ตั้งเป้าหมายขยายพูนถอกเงินออมเพื่ออนาคตมั่งคั่ง</p>
+            </div>
+        </div>
+
+        <!-- TAB 6: ACCOUNTS -->
+        <div id="tab-accounts" class="space-y-4 hidden">
+            <div class="glass-card p-6 rounded-2xl text-center py-12">
+                <i data-lucide="landmark" class="w-12 h-12 text-indigo-400 mx-auto mb-3"></i>
+                <h3 class="text-lg font-bold text-white">ขุมทรัพย์บัญชีธนาคาร</h3>
+                <p class="text-xs text-purple-300/70 mt-1">จัดสรรกระเป๋าเงินและคลังทรัพย์สินของคุณ</p>
+            </div>
+        </div>
+
+        <!-- TAB 7: REPORTS -->
+        <div id="tab-reports" class="space-y-4 hidden">
+            <div class="glass-card p-6 rounded-2xl text-center py-12">
+                <i data-lucide="pie-chart" class="w-12 h-12 text-blue-400 mx-auto mb-3"></i>
+                <h3 class="text-lg font-bold text-white">รายงานวิเคราะห์ดวงการเงิน</h3>
+                <p class="text-xs text-purple-300/70 mt-1">สรุปภาพรวมสถิติทางการเงินเชิงลึก</p>
             </div>
         </div>
     </main>
 
     <!-- Modal Form (เพิ่มรายการ) -->
-    <div id="tx-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
-        <div class="glass-card w-full max-w-md p-6 rounded-2xl border border-gray-700 shadow-2xl space-y-4">
-            <div class="flex justify-between items-center border-b border-gray-800 pb-3">
-                <h3 class="text-lg font-bold text-white">เพิ่มรายการใหม่</h3>
-                <button onclick="closeModal()" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+    <div id="tx-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+        <div class="glass-card w-full max-w-md p-6 rounded-2xl border border-purple-500/40 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-purple-900/60 pb-3">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i data-lucide="sparkles" class="w-5 h-5 text-amber-400"></i> เพิ่มรายการรับทรัพย์
+                </h3>
+                <button onclick="closeModal()" class="text-purple-300 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             
             <form id="tx-form" onsubmit="handleFormSubmit(event)" class="space-y-3">
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1">ประเภทรายการ</label>
-                    <select id="tx-type" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-white text-sm focus:border-indigo-500 outline-none">
-                        <option value="รายรับ">รายรับ (+)</option>
-                        <option value="รายจ่าย">รายจ่าย (-)</option>
+                    <label class="block text-xs text-purple-200 mb-1">ประเภทรายการ</label>
+                    <select id="tx-type" class="w-full bg-purple-950/90 border border-purple-700/50 rounded-xl p-2.5 text-white text-sm focus:border-amber-400 outline-none">
+                        <option value="รายรับ">รายรับ (+ รับโชค)</option>
+                        <option value="รายจ่าย">รายจ่าย (- สร้างสมดุล)</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1">หมวดหมู่</label>
-                    <input type="text" id="tx-category" required placeholder="เช่น อาหาร, เงินเดือน, ค่าน้ำไฟ" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-white text-sm focus:border-indigo-500 outline-none">
+                    <label class="block text-xs text-purple-200 mb-1">หมวดหมู่</label>
+                    <input type="text" id="tx-category" required placeholder="เช่น อาหาร, เงินเดือน, ธุรกิจ, โชคลาภ" class="w-full bg-purple-950/90 border border-purple-700/50 rounded-xl p-2.5 text-white text-sm focus:border-amber-400 outline-none">
                 </div>
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1">จำนวนเงิน (บาท)</label>
-                    <input type="number" id="tx-amount" step="0.01" required placeholder="0.00" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-white text-sm focus:border-indigo-500 outline-none">
+                    <label class="block text-xs text-purple-200 mb-1">จำนวนเงิน (บาท)</label>
+                    <input type="number" id="tx-amount" step="0.01" required placeholder="0.00" class="w-full bg-purple-950/90 border border-purple-700/50 rounded-xl p-2.5 text-white text-sm focus:border-amber-400 outline-none">
                 </div>
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1">บัญชีที่ใช้</label>
-                    <input type="text" id="tx-account" required placeholder="เช่น เงินสด, K-Bank, SCB" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-white text-sm focus:border-indigo-500 outline-none">
+                    <label class="block text-xs text-purple-200 mb-1">บัญชีรับ-จ่าย</label>
+                    <input type="text" id="tx-account" required placeholder="เช่น เงินสด, K-Bank, SCB" class="w-full bg-purple-950/90 border border-purple-700/50 rounded-xl p-2.5 text-white text-sm focus:border-amber-400 outline-none">
                 </div>
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1">บันทึกเพิ่มเติม (Note)</label>
-                    <input type="text" id="tx-note" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-white text-sm focus:border-indigo-500 outline-none">
+                    <label class="block text-xs text-purple-200 mb-1">บันทึกเพิ่มเติม (Note)</label>
+                    <input type="text" id="tx-note" placeholder="รายละเอียดเสริมดวง..." class="w-full bg-purple-950/90 border border-purple-700/50 rounded-xl p-2.5 text-white text-sm focus:border-amber-400 outline-none">
                 </div>
                 
                 <div class="flex gap-2 pt-3">
-                    <button type="button" onclick="closeModal()" class="flex-1 py-2.5 rounded-xl bg-gray-800 text-gray-300 font-medium text-sm hover:bg-gray-700">ยกเลิก</button>
-                    <button type="submit" class="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm shadow-lg shadow-indigo-600/30">บันทึกรายการ</button>
+                    <button type="button" onclick="closeModal()" class="flex-1 py-2.5 rounded-xl bg-purple-900/60 text-purple-200 font-medium text-sm hover:bg-purple-800/60">ยกเลิก</button>
+                    <button type="submit" class="flex-1 py-2.5 rounded-xl btn-fortune text-white font-medium text-sm">บันทึกนำโชค</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Modal Form (ตั้งค่า Supabase API Key) -->
-    <div id="config-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
-        <div class="glass-card w-full max-w-md p-6 rounded-2xl border border-gray-700 shadow-2xl space-y-4">
-            <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+    <!-- Modal Config Supabase -->
+    <div id="config-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+        <div class="glass-card w-full max-w-md p-6 rounded-2xl border border-purple-500/40 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-purple-900/60 pb-3">
                 <h3 class="text-lg font-bold text-white">ตั้งค่าการเชื่อมต่อ Supabase</h3>
-                <button onclick="toggleConfigModal()" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <button onclick="toggleConfigModal()" class="text-purple-300 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            
             <div class="space-y-3">
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1">Supabase Project URL</label>
-                    <input type="text" id="cfg-url" placeholder="https://xxxx.supabase.co" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-white text-sm focus:border-indigo-500 outline-none">
+                    <label class="block text-xs text-purple-200 mb-1">Supabase Project URL</label>
+                    <input type="text" id="cfg-url" placeholder="https://xxxx.supabase.co" class="w-full bg-purple-950/90 border border-purple-700/50 rounded-xl p-2.5 text-white text-sm focus:border-amber-400 outline-none">
                 </div>
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1">Supabase Anon Key</label>
-                    <input type="password" id="cfg-key" placeholder="eyJhbGciOiJIUzI1Ni..." class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-white text-sm focus:border-indigo-500 outline-none">
+                    <label class="block text-xs text-purple-200 mb-1">Supabase Anon / Publishable Key</label>
+                    <input type="password" id="cfg-key" placeholder="sb_publishable_..." class="w-full bg-purple-950/90 border border-purple-700/50 rounded-xl p-2.5 text-white text-sm focus:border-amber-400 outline-none">
                 </div>
-                <div class="flex gap-2 pt-3">
-                    <button onclick="saveSupabaseConfig()" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm shadow-lg shadow-indigo-600/30">เชื่อมต่อและรีโหลด</button>
+                <div class="pt-3">
+                    <button onclick="saveSupabaseConfig()" class="w-full py-2.5 rounded-xl btn-fortune text-white font-medium text-sm">เชื่อมต่อและรีโหลด</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Application Script Logic -->
     <script>
-        // --- 1. Supabase Credentials Configuration ---
-        // คุณสามารถใส่ Project URL และ Anon Key ของคุณตรงนี้ล่วงหน้าได้เลยครับ
-        let SUPABASE_URL = localStorage.getItem('BIZFLOW_SUPABASE_URL') || "https://cgbvziwvshrvbvjcrum.supabase.co"; 
+        let SUPABASE_URL = localStorage.getItem('BIZFLOW_SUPABASE_URL') || ""; 
         let SUPABASE_ANON_KEY = localStorage.getItem('BIZFLOW_SUPABASE_KEY') || ""; 
-
         let supabaseClient = null;
+
+        const tabTitles = {
+            'dashboard': { title: 'แดชบอร์ดมงคล', subtitle: 'ภาพรวมขุมทรัพย์และการเงินทั้งหมดของคุณ' },
+            'transactions': { title: 'รายการบันทึก', subtitle: 'ประวัติรายรับและรายจ่ายทั้งหมด' },
+            'budget': { title: 'งบประมาณ', subtitle: 'ควบคุมและวางแผนค่าใช้จ่าย' },
+            'debts': { title: 'หนี้สิน & ลูกหนี้', subtitle: 'ติดตามยอดค้างชำระและเงินยืม' },
+            'savings': { title: 'เป้าหมายการออม', subtitle: 'บรรลุเป้าหมายทางการเงินของคุณ' },
+            'accounts': { title: 'บัญชีธนาคาร', subtitle: 'จัดการบัญชีและกระเป๋าเงิน' },
+            'reports': { title: 'รายงานสรุป', subtitle: 'วิเคราะห์สถิติทางการเงินเชิงลึก' }
+        };
+
+        function switchTab(tabId) {
+            ['dashboard', 'transactions', 'budget', 'debts', 'savings', 'accounts', 'reports'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden');
+                document.getElementById(`nav-${t}`).className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-purple-200/70 hover:text-white hover:bg-purple-900/30 font-medium transition-all text-left";
+            });
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            document.getElementById(`nav-${tabId}`).className = "w-full sidebar-item-active flex items-center gap-3 px-4 py-3 rounded-xl text-white font-medium transition-all text-left";
+            
+            document.getElementById('page-title').innerText = tabTitles[tabId].title;
+            document.getElementById('page-subtitle').innerText = tabTitles[tabId].subtitle;
+        }
 
         function initSupabase() {
             if (SUPABASE_URL && SUPABASE_ANON_KEY) {
                 try {
                     supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                    document.getElementById('sync-status').innerText = "ซิงค์ข้อมูลเรียลไทม์";
+                    document.getElementById('sync-status').innerText = "ซิงค์ข้อมูลคลาวด์มงคลแล้ว";
                     document.getElementById('sync-status').className = "text-[10px] text-emerald-400";
                     subscribeRealtime();
                     fetchTransactions();
                 } catch (err) {
-                    console.error("Supabase Init Error:", err);
                     setOfflineState();
                 }
             } else {
@@ -276,81 +371,68 @@
         }
 
         function setOfflineState() {
-            document.getElementById('sync-status').innerText = "รอการเชื่อมต่อ API";
+            document.getElementById('sync-status').innerText = "รอการตั้งค่า API";
             document.getElementById('sync-status').className = "text-[10px] text-amber-400";
-            document.getElementById('sync-ping').className = "hidden";
-            document.getElementById('sync-dot').className = "relative inline-flex rounded-full h-3 w-3 bg-amber-500";
         }
 
-        // --- 2. Realtime Listener ---
         function subscribeRealtime() {
             if (!supabaseClient) return;
-            supabaseClient
-                .channel('public:transactions')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, payload => {
-                    fetchTransactions();
-                })
+            supabaseClient.channel('public:transactions')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => fetchTransactions())
                 .subscribe();
         }
 
-        // --- 3. Fetch Data & Update Dashboard ---
         async function fetchTransactions() {
             if (!supabaseClient) return;
-            const { data, error } = await supabaseClient
-                .from('transactions')
-                .select('*')
-                .order('created_at', { ascending: false });
-
-            if (error) {
-                console.error("Fetch Error:", error);
-                return;
-            }
-
-            renderDashboard(data || []);
+            const { data, error } = await supabaseClient.from('transactions').select('*').order('created_at', { ascending: false });
+            if (error) return;
+            renderData(data || []);
         }
 
-        function renderDashboard(items) {
-            let balance = 0;
-            let income = 0;
-            let expense = 0;
-
-            const listContainer = document.getElementById('recent-transactions-list');
-            listContainer.innerHTML = '';
+        function renderData(items) {
+            let balance = 0, income = 0, expense = 0;
+            const recentList = document.getElementById('recent-transactions-list');
+            const fullTable = document.getElementById('full-transactions-table');
+            recentList.innerHTML = '';
+            fullTable.innerHTML = '';
 
             if (items.length === 0) {
-                listContainer.innerHTML = `<div class="text-center text-gray-500 py-6 text-xs">ยังไม่มีข้อมูลรายการ</div>`;
+                recentList.innerHTML = `<div class="text-center text-purple-300/50 py-6 text-xs">ยังไม่มีรายการรับทรัพย์</div>`;
+                fullTable.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-purple-300/50">ยังไม่มีรายการรับทรัพย์</td></tr>`;
             }
 
             items.forEach((item, index) => {
                 const amt = parseFloat(item.amount || 0);
-                if (item.type === 'รายรับ') {
-                    income += amt;
-                    balance += amt;
-                } else {
-                    expense += amt;
-                    balance -= amt;
-                }
+                const isIncome = item.type === 'รายรับ';
+                if (isIncome) { income += amt; balance += amt; } else { expense += amt; balance -= amt; }
 
-                if (index < 6) { // แสดง 6 รายการล่าสุด
-                    const isIncome = item.type === 'รายรับ';
+                if (index < 6) {
                     const el = document.createElement('div');
-                    el.className = 'flex justify-between items-center p-2.5 rounded-xl bg-gray-900/50 border border-gray-800/50';
+                    el.className = 'flex justify-between items-center p-2.5 rounded-xl bg-purple-950/40 border border-purple-900/40';
                     el.innerHTML = `
                         <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-lg ${isIncome ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'} flex items-center justify-center">
+                            <div class="w-8 h-8 rounded-lg ${isIncome ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'} flex items-center justify-center">
                                 <i data-lucide="${isIncome ? 'arrow-down-left' : 'arrow-up-right'}" class="w-4 h-4"></i>
                             </div>
                             <div>
-                                <p class="text-xs font-semibold text-gray-200">${item.category || 'ทั่วไป'}</p>
-                                <p class="text-[10px] text-gray-400">${item.account || 'บัญชี'} • ${item.note || ''}</p>
+                                <p class="text-xs font-semibold text-purple-100">${item.category || 'ทั่วไป'}</p>
+                                <p class="text-[10px] text-purple-300/70">${item.account || 'บัญชี'} • ${item.note || ''}</p>
                             </div>
                         </div>
-                        <span class="text-xs font-bold ${isIncome ? 'text-emerald-400' : 'text-rose-400'}">
-                            ${isIncome ? '+' : '-'}฿${amt.toLocaleString()}
-                        </span>
-                    `;
-                    listContainer.appendChild(el);
+                        <span class="text-xs font-bold ${isIncome ? 'text-emerald-400' : 'text-rose-400'}">${isIncome ? '+' : '-'}฿${amt.toLocaleString()}</span>`;
+                    recentList.appendChild(el);
                 }
+
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-purple-900/30 transition';
+                row.innerHTML = `
+                    <td class="p-3 text-xs text-purple-300">${new Date(item.created_at || Date.now()).toLocaleDateString('th-TH')}</td>
+                    <td class="p-3"><span class="px-2 py-1 rounded-md text-[10px] font-medium ${isIncome ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'}">${item.type}</span></td>
+                    <td class="p-3 font-medium text-white">${item.category}</td>
+                    <td class="p-3 text-purple-200">${item.account}</td>
+                    <td class="p-3 text-purple-300">${item.note || '-'}</td>
+                    <td class="p-3 text-right font-bold ${isIncome ? 'text-emerald-400' : 'text-rose-400'}">${isIncome ? '+' : '-'}฿${amt.toLocaleString()}</td>`;
+                fullTable.appendChild(row);
             });
 
             document.getElementById('total-balance').innerText = `฿${balance.toLocaleString()}`;
@@ -359,7 +441,6 @@
             lucide.createIcons();
         }
 
-        // --- 4. Form Submit Handler (CRUD - Insert) ---
         async function handleFormSubmit(e) {
             e.preventDefault();
             const type = document.getElementById('tx-type').value;
@@ -369,33 +450,22 @@
             const note = document.getElementById('tx-note').value;
 
             if (!supabaseClient) {
-                alert("กรุณาเชื่อมต่อ Supabase API Key ก่อนบันทึกข้อมูลครับ");
+                alert("กรุณาตั้งค่า Supabase API Key ก่อนบันทึกข้อมูลครับ");
                 toggleConfigModal();
                 return;
             }
 
-            const { data, error } = await supabaseClient
-                .from('transactions')
-                .insert([
-                    { type, category, amount, account, note, created_by: 'User' }
-                ]);
-
-            if (error) {
-                alert("เกิดข้อผิดพลาด: " + error.message);
-            } else {
-                closeModal();
-                document.getElementById('tx-form').reset();
-                fetchTransactions();
-            }
+            const { error } = await supabaseClient.from('transactions').insert([{ type, category, amount, account, note, created_by: 'User' }]);
+            if (error) alert("เกิดข้อผิดพลาด: " + error.message);
+            else { closeModal(); document.getElementById('tx-form').reset(); fetchTransactions(); }
         }
 
-        // --- 5. UI Helpers (Modal) ---
         function openModal() { document.getElementById('tx-modal').classList.remove('hidden'); }
         function closeModal() { document.getElementById('tx-modal').classList.add('hidden'); }
-        function toggleConfigModal() { 
+        function toggleConfigModal() {
             document.getElementById('cfg-url').value = SUPABASE_URL;
             document.getElementById('cfg-key').value = SUPABASE_ANON_KEY;
-            document.getElementById('config-modal').classList.toggle('hidden'); 
+            document.getElementById('config-modal').classList.toggle('hidden');
         }
 
         function saveSupabaseConfig() {
@@ -403,51 +473,15 @@
             const key = document.getElementById('cfg-key').value.trim();
             localStorage.setItem('BIZFLOW_SUPABASE_URL', url);
             localStorage.setItem('BIZFLOW_SUPABASE_KEY', key);
-            SUPABASE_URL = url;
-            SUPABASE_ANON_KEY = key;
+            SUPABASE_URL = url; SUPABASE_ANON_KEY = key;
             toggleConfigModal();
             initSupabase();
         }
 
-        // --- 6. Chart.js Initialization ---
-        function initChart() {
-            const ctx = document.getElementById('barChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.'],
-                    datasets: [
-                        {
-                            label: 'รายรับ',
-                            data: [65000, 70000, 68000, 85000, 72000, 100000],
-                            backgroundColor: '#10b981',
-                            borderRadius: 6
-                        },
-                        {
-                            label: 'รายจ่าย',
-                            data: [32000, 45000, 39000, 41000, 38000, 4050],
-                            backgroundColor: '#f43f5e',
-                            borderRadius: 6
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#9ca3af' } } },
-                    scales: {
-                        x: { grid: { display: false }, ticks: { color: '#9ca3af' } },
-                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } }
-                    }
-                }
-            });
-        }
-
-        // Page Load Init
         window.onload = () => {
             lucide.createIcons();
-            initChart();
             initSupabase();
+            if(!SUPABASE_URL) toggleConfigModal();
         };
     </script>
 </body>
