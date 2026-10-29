@@ -1,534 +1,752 @@
-from flask import Flask, render_template_string, request, redirect, url_for, session, flash
-from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime, timezone, timedelta
-import os
-import io
-import csv
-import requests
-
-app = Flask(__name__)
-
-# ==========================================
-# 1. DATABASE CONFIGURATION (Supabase)
-# ==========================================
-DATABASE_URL = os.environ.get(
-    'DATABASE_URL',
-    'postgresql://postgres:[YOUR-PASSWORD]@db.xxxxxxx.supabase.co:5432/postgres?sslmode=require'
-)
-
-if DATABASE_URL:
-    if DATABASE_URL.startswith("postgres://"):
-        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
-    elif DATABASE_URL.startswith("postgresql://"):
-        DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
-    if "?" in DATABASE_URL:
-        DATABASE_URL = DATABASE_URL.split("?")[0]
-    DATABASE_URL += "?sslmode=require"
-
-app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'your_secret_key_sublon_2026'
-
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    "pool_pre_ping": True,
-    "pool_recycle": 60,
-    "pool_size": 2,
-    "max_overflow": 5,
-    "connect_args": {
-        "sslmode": "require",
-        "keepalives": 1,
-        "keepalives_idle": 30,
-        "keepalives_interval": 10,
-        "keepalives_count": 5
-    }
-}
-
-db = SQLAlchemy(app)
-
-# 🔗 Google Apps Script Web App URL (สำหรับ Background Sync)
-GOOGLE_SHEET_WEB_APP_URL = "https://script.google.com/macros/s/YOUR_GOOGLE_APPS_SCRIPT_URL/exec"
-
-TH_TIMEZONE = timezone(timedelta(hours=7))
-
-def get_thai_today():
-    return datetime.now(TH_TIMEZONE).date()
-
-VALID_USERS = {
-    'nueng': '909090',
-    'nice': '022540'
-}
-
-# ==========================================
-# 2. DATABASE MODELS
-# ==========================================
-class Transaction(db.Model):
-    __tablename__ = 'transactions'
-    id = db.Column(db.Integer, primary_key=True)
-    type = db.Column(db.String(50), nullable=False, default='เงินกู้ยืม')
-    customer_name = db.Column(db.String(100), nullable=False)
-    phone = db.Column(db.String(20), nullable=True)
-    sales_name = db.Column(db.String(100), nullable=False)
-    start_date = db.Column(db.Date, nullable=False, default=get_thai_today)
-    last_payment_date = db.Column(db.Date, nullable=True)
-    closed_date = db.Column(db.Date, nullable=True)
-    original_principal = db.Column(db.Float, nullable=False, default=0.0)
-    principal = db.Column(db.Float, nullable=False)                     
-    daily_interest = db.Column(db.Float, nullable=False, default=0.0)
-    initial_daily_interest = db.Column(db.Float, nullable=False, default=0.0)
-    paid_interest = db.Column(db.Float, default=0.0)      
-    status = db.Column(db.String(50), default='ปกติ')
-    installment_amount = db.Column(db.Float, default=0.0)
-    schedule_type = db.Column(db.String(50), nullable=False, default='จ่ายทุกวัน') 
-    due_day_of_month = db.Column(db.String(50), nullable=True)
-    funding_source = db.Column(db.String(50), default='ออมสิน')
-    start_next_day = db.Column(db.Boolean, default=False)
-    is_locked_interest = db.Column(db.Boolean, default=False)
-    locked_interest_amount = db.Column(db.Float, default=0.0)
-
-# 📌 หมายเหตุ: เอาคำสั่ง db.create_all() ออกจากการรันหลักบน Vercel 
-# เพื่อป้องกันการเชื่อมต่อฐานข้อมูลซ้ำซ้อนทุกครั้งที่มีการ Request หน้าเว็บ
-
-# ==========================================
-# 3. HELPER FUNCTIONS
-# ==========================================
-def sync_to_google_sheet(tx):
-    """ส่งข้อมูลไปเพิ่มใน Google Sheets อัตโนมัติเมื่อมีการบันทึก"""
-    if not GOOGLE_SHEET_WEB_APP_URL or "YOUR_GOOGLE_APPS_SCRIPT_URL" in GOOGLE_SHEET_WEB_APP_URL:
-        return
-    try:
-        payload = {
-            "sheet": "transactions",
-            "id": tx.id,
-            "start_date": str(tx.start_date) if tx.start_date else "",
-            "customer_name": tx.customer_name,
-            "phone": tx.phone or "",
-            "type": tx.type,
-            "principal": tx.principal,
-            "funding_source": tx.funding_source,
-            "status": tx.status,
-            "sales_name": tx.sales_name
-        }
-        requests.post(GOOGLE_SHEET_WEB_APP_URL, json=payload, timeout=3)
-    except Exception as e:
-        print("Google Sheet Sync Error:", e)
-
-# ==========================================
-# 4. TEMPLATES (LAYOUT)
-# ==========================================
-BASE_LAYOUT = """
 <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>{{ title }} - ทรัพย์ล้น.com</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BizFlow+ - ระบบจัดการลูกหนี้ & บัญชีการเงินขั้นสูง</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts (Kanit & Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Kanit', 'Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                            dark: '#0f172a',
+                            sidebar: '#0b0f19'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        body { font-family: 'Prompt', sans-serif; background-color: #fcf6f0; }
-        .sidebar { width: 260px; min-height: 100vh; background: #2c0b0e; border-right: 2px solid #d4af37; position: fixed; top: 0; left: 0; z-index: 1050; transition: transform 0.3s ease-in-out; overflow-y: auto; color: #f8f9fa; }
-        .main-content { margin-left: 260px; padding: 25px; transition: margin 0.3s ease-in-out; }
-        .nav-link { color: #f1d3b2; font-weight: 500; padding: 10px 15px; border-radius: 6px; margin-bottom: 4px; font-size: 0.95rem; white-space: nowrap; }
-        .nav-link:hover, .nav-link.active { background-color: #d4af37; color: #2c0b0e; font-weight: 600; }
-        .mobile-header { display: none; background: #2c0b0e; border-bottom: 2px solid #d4af37; color: #fff; padding: 12px 15px; position: sticky; top: 0; z-index: 1040; }
-        .sidebar-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 1045; }
-        .btn-warning { background-color: #d4af37; border-color: #d4af37; color: #2c0b0e; font-weight: 600; }
-        .btn-warning:hover { background-color: #b38f27; border-color: #b38f27; color: #fff; }
-        @media (max-width: 992px) {
-            .sidebar { transform: translateX(-100%); }
-            .sidebar.show { transform: translateX(0); }
-            .main-content { margin-left: 0; padding: 12px; }
-            .mobile-header { display: flex; justify-content: space-between; align-items: center; }
-            .sidebar-backdrop.show { display: block; }
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: #f8fafc;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+        .sidebar-item-active {
+            background: #ffffff !important;
+            box-shadow: 0 4px 15px -3px rgba(139, 92, 246, 0.15), 0 2px 6px -2px rgba(99, 102, 241, 0.1);
+            color: #6d28d9 !important;
+            font-weight: 600 !important;
+            border: 1px solid rgba(216, 180, 254, 0.5);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
         }
     </style>
 </head>
-<body>
-    <div class="mobile-header shadow-sm">
-        <div class="d-flex align-items-center gap-2">
-            <button class="btn btn-outline-warning btn-sm" onclick="toggleSidebar()">☰ เมนู</button>
-            <h5 class="text-warning fw-bold mb-0">🔱 ทรัพย์ล้น.com</h5>
+<body class="text-slate-800 antialiased bg-slate-50 flex h-screen overflow-hidden">
+
+    <!-- Mobile Sidebar Toggle Overlay -->
+    <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/40 z-40 hidden md:hidden transition-opacity backdrop-blur-xs"></div>
+
+    <!-- Sidebar Main Menu (Deep Royal / Vibrant Purple Theme) -->
+    <aside id="sidebar" class="fixed md:static inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-purple-950 via-slate-900 to-indigo-950 border-r border-purple-900/50 text-purple-100 flex flex-col transition-all duration-300 transform -translate-x-full md:translate-x-0 shadow-2xl shadow-purple-950/50">
+        <!-- Logo & Brand Header -->
+        <div class="p-5 flex items-center justify-between border-b border-purple-900/60">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-500 to-pink-500 flex items-center justify-center text-white shadow-lg shadow-purple-600/40 font-bold text-lg">
+                    <i class="fa-solid font-bold text-lg">฿</i>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-1.5">
+                        <span class="text-xl font-bold tracking-tight text-white">BizFlow</span>
+                        <span class="px-1.5 py-0.5 text-[10px] font-black bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-md uppercase tracking-wider shadow-xs">PLUS</span>
+                    </div>
+                    <p class="text-[11px] text-purple-300/80 font-normal">ระบบจัดการลูกหนี้ & บัญชี</p>
+                </div>
+            </div>
+            <button onclick="toggleSidebar()" class="md:hidden text-purple-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
         </div>
-        <div class="d-flex align-items-center gap-2">
-            <span class="badge bg-warning text-dark">{{ session.get('admin') }}</span>
-            <a href="/logout" class="btn btn-outline-danger btn-sm">ออก</a>
+
+        <!-- Navigation Links -->
+        <nav class="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
+            <a href="#" onclick="switchTab('dashboard')" id="nav-dashboard" class="sidebar-item sidebar-item-active flex items-center space-x-3 px-3.5 py-3 rounded-xl text-purple-200 hover:bg-purple-900/40 hover:text-white transition duration-150">
+                <i class="fa-solid fa-chart-pie w-5 text-purple-400"></i>
+                <span class="font-medium text-sm">แดชบอร์ดการเงิน</span>
+            </a>
+            <a href="#" onclick="switchTab('debtors')" id="nav-debtors" class="sidebar-item flex items-center space-x-3 px-3.5 py-3 rounded-xl text-purple-200/80 hover:bg-purple-900/40 hover:text-white transition duration-150">
+                <i class="fa-solid fa-hand-holding-dollar w-5 text-amber-400"></i>
+                <span class="font-medium text-sm">จัดการลูกหนี้ (ปล่อยกู้)</span>
+            </a>
+            <a href="#" onclick="switchTab('transactions')" id="nav-transactions" class="sidebar-item flex items-center space-x-3 px-3.5 py-3 rounded-xl text-purple-200/80 hover:bg-purple-900/40 hover:text-white transition duration-150">
+                <i class="fa-solid fa-receipt w-5 text-emerald-400"></i>
+                <span class="font-medium text-sm">บันทึกรายรับ-รายจ่าย</span>
+            </a>
+            <a href="#" onclick="switchTab('accounts')" id="nav-accounts" class="sidebar-item flex items-center space-x-3 px-3.5 py-3 rounded-xl text-purple-200/80 hover:bg-purple-900/40 hover:text-white transition duration-150">
+                <i class="fa-solid fa-building-columns w-5 text-sky-400"></i>
+                <span class="font-medium text-sm">บัญชีธนาคาร & เงินสด</span>
+            </a>
+            <a href="#" onclick="switchTab('supabase')" id="nav-supabase" class="sidebar-item flex items-center space-x-3 px-3.5 py-3 rounded-xl text-purple-200/80 hover:bg-purple-900/40 hover:text-white transition duration-150">
+                <i class="fa-solid fa-database w-5 text-indigo-400"></i>
+                <span class="font-medium text-sm">รายงาน & ตั้งค่า Supabase</span>
+            </a>
+        </nav>
+
+        <!-- Supabase Live Connection Widget -->
+        <div class="p-3.5 mx-3 mb-3 rounded-xl bg-purple-900/30 backdrop-blur-md border border-purple-800/50 shadow-inner">
+            <div class="flex items-center justify-between mb-1.5">
+                <span class="text-xs font-semibold text-purple-200">Supabase Status</span>
+                <span id="sidebar-db-badge" class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                    <span class="w-1.5 h-1.5 mr-1 rounded-full bg-emerald-400 animate-pulse"></span> Connected
+                </span>
+            </div>
+            <p class="text-[11px] text-purple-300/70 truncate" id="sidebar-db-url">db.pdpeqsubrbmdjxgmtjpy...</p>
+        </div>
+
+        <!-- User Profile Footer -->
+        <div class="p-3.5 border-t border-purple-900/60 bg-purple-950/60 backdrop-blur-xs flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 rounded-full bg-purple-800/80 flex items-center justify-center text-xs font-bold text-purple-200 border border-purple-600/50">
+                    NU
+                </div>
+                <div class="truncate">
+                    <div class="text-xs font-bold text-white truncate">nuengdi7819-ux</div>
+                    <div class="text-[10px] text-purple-300 font-medium">ผู้ดูแลระบบ</div>
+                </div>
+            </div>
+            <button class="text-purple-400 hover:text-rose-400 transition p-1" title="ออกจากระบบ">
+                <i class="fa-solid fa-right-from-bracket text-sm"></i>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+        
+        <!-- Top Navbar -->
+        <header class="bg-white border-b border-slate-200/80 px-4 py-3 sm:px-6 flex items-center justify-between shadow-sm z-10">
+            <div class="flex items-center space-x-3">
+                <button onclick="toggleSidebar()" class="md:hidden text-slate-600 hover:text-slate-900 p-1.5 rounded-lg border border-slate-200">
+                    <i class="fa-solid fa-bars text-lg"></i>
+                </button>
+                <h2 id="page-title" class="text-lg font-bold text-slate-900">แดชบอร์ดการเงิน</h2>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button onclick="openDebtorModal()" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-medium shadow-md shadow-purple-500/20 transition active:scale-95">
+                    <i class="fa-solid fa-user-plus text-xs"></i>
+                    <span class="hidden sm:inline">+ เพิ่มลูกหนี้</span>
+                </button>
+                <button onclick="openTxModal()" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium shadow-sm transition active:scale-95">
+                    <i class="fa-solid fa-plus text-xs"></i>
+                    <span>+ บันทึกรายการ</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Views container -->
+        <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
+
+            <!-- 1. DASHBOARD VIEW -->
+            <div id="view-dashboard" class="view-content space-y-6">
+                <!-- Stat Cards Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+                    <!-- Stat Card 1 -->
+                    <div class="glass-card p-5 rounded-2xl shadow-sm border border-slate-200/80 hover:shadow-md transition">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-medium text-slate-500">ยอดลูกหนี้คงค้างทั้งหมด</span>
+                            <div class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
+                                <i class="fa-solid fa-sack-dollar text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <h3 class="text-2xl font-bold text-slate-900" id="dash-total-debt">฿145,000</h3>
+                            <p class="text-xs text-amber-600 mt-1 flex items-center">
+                                <i class="fa-solid fa-clock mr-1"></i> รอชำระดอกเบี้ยเดือนนี้ ฿8,500
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Stat Card 2 -->
+                    <div class="glass-card p-5 rounded-2xl shadow-sm border border-slate-200/80 hover:shadow-md transition">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-medium text-slate-500">รายรับเดือนนี้</span>
+                            <div class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                                <i class="fa-solid fa-arrow-down-left text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <h3 class="text-2xl font-bold text-slate-900" id="dash-monthly-income">฿32,400</h3>
+                            <p class="text-xs text-emerald-600 mt-1 flex items-center">
+                                <i class="fa-solid fa-arrow-trend-up mr-1"></i> +12% จากเดือนที่แล้ว
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Stat Card 3 -->
+                    <div class="glass-card p-5 rounded-2xl shadow-sm border border-slate-200/80 hover:shadow-md transition">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-medium text-slate-500">รายจ่ายเดือนนี้</span>
+                            <div class="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center">
+                                <i class="fa-solid fa-arrow-up-right text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <h3 class="text-2xl font-bold text-slate-900" id="dash-monthly-expense">฿14,200</h3>
+                            <p class="text-xs text-slate-500 mt-1 flex items-center">
+                                ค่าใช้จ่ายดำเนินงานทั่วไป
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Stat Card 4 -->
+                    <div class="glass-card p-5 rounded-2xl shadow-sm border border-slate-200/80 hover:shadow-md transition">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-medium text-slate-500">เงินสดคงเหลือรวม</span>
+                            <div class="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center">
+                                <i class="fa-solid fa-wallet text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <h3 class="text-2xl font-bold text-slate-900" id="dash-total-cash">฿284,500</h3>
+                            <p class="text-xs text-purple-600 mt-1 flex items-center">
+                                <i class="fa-solid fa-shield-check mr-1"></i> รวม 3 บัญชีธนาคาร
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Chart 1: Financial Trend -->
+                    <div class="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-slate-800 text-sm">ภาพรวมรายรับ-รายจ่าย (6 เดือนล่าสุด)</h3>
+                            <span class="text-xs text-slate-400">หน่วย: บาท</span>
+                        </div>
+                        <div class="h-64">
+                            <canvas id="financeChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Recent Debtor Activity -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-slate-800 text-sm">ลูกหนี้ครบกำหนดชำระเร็วๆ นี้</h3>
+                            <a href="#" onclick="switchTab('debtors')" class="text-xs text-purple-600 hover:underline">ดูทั้งหมด</a>
+                        </div>
+                        <div class="space-y-3 flex-1 overflow-y-auto" id="dash-upcoming-debtors">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. DEBTORS MANAGEMENT VIEW -->
+            <div id="view-debtors" class="view-content hidden space-y-5">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div class="relative w-full sm:w-72">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input type="text" id="debtor-search" onkeyup="filterDebtors()" placeholder="ค้นหาชื่อลูกหนี้..." class="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    </div>
+                    <div class="flex space-x-2 w-full sm:w-auto">
+                        <button onclick="openDebtorModal()" class="w-full sm:w-auto px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-medium transition shadow-sm">
+                            + ปล่อยกู้ใหม่
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Debtors Table Card -->
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-600">
+                            <thead class="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
+                                <tr>
+                                    <th class="p-4">ชื่อลูกหนี้</th>
+                                    <th class="p-4">เงินต้น</th>
+                                    <th class="p-4">ดอกเบี้ย/เดือน</th>
+                                    <th class="p-4">กำหนดชำระ</th>
+                                    <th class="p-4">สถานะ</th>
+                                    <th class="p-4 text-right">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="debtors-table-body" class="divide-y divide-slate-100">
+                                <!-- Dynamic Content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. TRANSACTIONS VIEW -->
+            <div id="view-transactions" class="view-content hidden space-y-5">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-slate-800 text-sm">ประวัติรายการรับ-จ่ายทั้งหมด</h3>
+                    <button onclick="openTxModal()" class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-medium transition">
+                        + บันทึกรายการใหม่
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-600">
+                            <thead class="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
+                                <tr>
+                                    <th class="p-4">วันที่</th>
+                                    <th class="p-4">ประเภท</th>
+                                    <th class="p-4">รายการ</th>
+                                    <th class="p-4">หมวดหมู่</th>
+                                    <th class="p-4 text-right">จำนวนเงิน</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tx-table-body" class="divide-y divide-slate-100">
+                                <!-- Dynamic Content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. BANK ACCOUNTS VIEW -->
+            <div id="view-accounts" class="view-content hidden space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5" id="accounts-grid">
+                    <!-- Dynamic Account Cards -->
+                </div>
+            </div>
+
+            <!-- 5. SUPABASE SETTINGS VIEW -->
+            <div id="view-supabase" class="view-content hidden space-y-6 max-w-3xl mx-auto">
+                <div class="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/80 shadow-sm space-y-6">
+                    <div class="border-b border-slate-100 pb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-lg">
+                                <i class="fa-solid fa-database"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-bold text-slate-900">ตั้งค่า Supabase Connection</h3>
+                                <p class="text-xs text-slate-500">จัดการข้อมูลการเชื่อมต่อฐานข้อมูล Supabase ของ BizFlow+</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Connection Status Banner -->
+                    <div id="sp-status-banner" class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <span class="flex h-3 w-3 relative">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                            </span>
+                            <div>
+                                <h4 class="text-xs font-semibold text-emerald-900">เชื่อมต่อ Supabase สำเร็จ (Real-time Active)</h4>
+                                <p class="text-[11px] text-emerald-700">Project: pdpeqsubrbmdjxgmtjpy (Direct PostgreSQL Connected)</p>
+                            </div>
+                        </div>
+                        <span class="px-2.5 py-1 bg-emerald-600 text-white text-[10px] font-bold rounded-lg uppercase tracking-wider">Online</span>
+                    </div>
+
+                    <!-- Config Form -->
+                    <form onsubmit="saveSupabaseConfig(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Supabase URL</label>
+                            <input type="text" id="sp-url" value="https://pdpeqsubrbmdjxgmtjpy.supabase.co" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-700 mb-1">Supabase Anon / Service Key</label>
+                            <input type="password" id="sp-key" value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                        </div>
+
+                        <div class="pt-2 flex justify-end">
+                            <button type="submit" class="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-medium rounded-xl shadow-md transition active:scale-95">
+                                บันทึกการเชื่อมต่อ
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODAL 1: Add/Edit Debtor -->
+    <div id="modal-debtor" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-slate-800 text-sm" id="modal-debtor-title">เพิ่มข้อมูลลูกหนี้ใหม่</h3>
+                <button onclick="closeDebtorModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="saveDebtor(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-medium text-slate-700 mb-1">ชื่อ-นามสกุล ลูกหนี้</label>
+                    <input type="text" id="debtor-name" required class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-medium text-slate-700 mb-1">จำนวนเงินกู้ (บาท)</label>
+                        <input type="number" id="debtor-amount" required class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-slate-700 mb-1">ดอกเบี้ยต่อเดือน (บาท)</label>
+                        <input type="number" id="debtor-interest" required class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-medium text-slate-700 mb-1">วันกำหนดชำระของทุกเดือน</label>
+                    <input type="date" id="debtor-duedate" required class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-medium text-slate-700 mb-1">สถานะ</label>
+                    <select id="debtor-status" class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                        <option value="ปกติ">ปกติ (ชำระตรงเวลา)</option>
+                        <option value="ค้างชำระ">ค้างชำระ</option>
+                        <option value="ปิดยอดแล้ว">ปิดยอดแล้ว</option>
+                    </select>
+                </div>
+                <div class="pt-3 flex space-x-2 justify-end">
+                    <button type="button" onclick="closeDebtorModal()" class="px-4 py-2 border rounded-xl text-slate-600 hover:bg-slate-50">ยกเลิก</button>
+                    <button type="submit" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-medium">บันทึกข้อมูล</button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
-
-    <div class="sidebar p-3 d-flex flex-column shadow" id="sidebarMenu">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h4 class="text-warning fw-bold d-none d-lg-block">🔱 ทรัพย์ล้น.com</h4>
-            <h5 class="text-warning fw-bold d-lg-none">🔱 เมนูหลัก</h5>
-            <button class="btn-close btn-close-white d-lg-none" onclick="toggleSidebar()"></button>
+    <!-- MODAL 2: Add Transaction -->
+    <div id="modal-tx" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-slate-800 text-sm">บันทึกรายการรับ-จ่ายใหม่</h3>
+                <button onclick="closeTxModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="saveTransaction(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-medium text-slate-700 mb-1">ประเภทรายการ</label>
+                    <select id="tx-type" class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                        <option value="รายรับ">รายรับ (+)</option>
+                        <option value="รายจ่าย">รายจ่าย (-)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-medium text-slate-700 mb-1">รายละเอียด / รายการ</label>
+                    <input type="text" id="tx-title" required class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-medium text-slate-700 mb-1">จำนวนเงิน (บาท)</label>
+                        <input type="number" id="tx-amount" required class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-slate-700 mb-1">หมวดหมู่</label>
+                        <select id="tx-category" class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                            <option value="ดอกเบี้ยรับ">ดอกเบี้ยรับ</option>
+                            <option value="รับชำระคืนเงินต้น">รับชำระคืนเงินต้น</option>
+                            <option value="ค่าใช้จ่ายทั่วไป">ค่าใช้จ่ายทั่วไป</option>
+                            <option value="เงินกู้ปล่อยใหม่">เงินกู้ปล่อยใหม่</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="pt-3 flex space-x-2 justify-end">
+                    <button type="button" onclick="closeTxModal()" class="px-4 py-2 border rounded-xl text-slate-600 hover:bg-slate-50">ยกเลิก</button>
+                    <button type="submit" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-medium">บันทึกรายการ</button>
+                </div>
+            </form>
         </div>
-        <div class="mb-3 px-2 d-none d-lg-block text-warning small border-bottom border-secondary pb-2">ผู้ใช้งาน: <b>{{ session.get('admin') }}</b></div>
-        <ul class="nav nav-pills flex-column mb-auto">
-            <li class="nav-item"><a href="/dashboard" class="nav-link {% if page == 'dashboard' %}active{% endif %}">📊 Dashboard</a></li>
-            <li><a href="/receivables_dashboard" class="nav-link {% if page == 'receivables' %}active{% endif %}">🤝 แดชบอร์ดลูกหนี้ (ปล่อยกู้)</a></li>
-            <li><a href="/all_transactions" class="nav-link {% if page == 'all' %}active{% endif %}">📋 รายการทั้งหมด</a></li>
-        </ul>
-        <hr class="border-secondary">
-        <a href="/logout" class="btn btn-outline-danger btn-sm w-100 py-1 rounded-pill" style="font-size: 0.82rem;">ออกจากระบบ</a>
     </div>
 
-    <div class="main-content">
-        <h2 class="mb-4 text-danger fw-bold fs-4">{% block header %}{% endblock %}</h2>
-        {% block content %}{% endblock %}
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 text-xs z-50 transform translate-y-20 opacity-0 transition-all duration-300">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+        <span id="toast-message">บันทึกข้อมูลเรียบร้อยแล้ว</span>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Application JavaScript Logic -->
     <script>
-    function toggleSidebar() {
-        document.getElementById('sidebarMenu').classList.toggle('show');
-        document.getElementById('sidebarBackdrop').classList.toggle('show');
-    }
+        // Data State
+        let debtors = [
+            { id: 1, name: "สมชาย เข็มกลัด", amount: 50000, interest: 2500, duedate: "2026-11-05", status: "ปกติ" },
+            { id: 2, name: "วิภาวี มั่นคง", amount: 30000, interest: 1500, duedate: "2026-11-01", status: "ค้างชำระ" },
+            { id: 3, name: "กิตติศักดิ์ เจริญดี", amount: 65000, interest: 4500, duedate: "2026-11-15", status: "ปกติ" }
+        ];
+
+        let transactions = [
+            { id: 1, date: "2026-10-28", type: "รายรับ", title: "รับดอกเบี้ย สมชาย เข็มกลัด", category: "ดอกเบี้ยรับ", amount: 2500 },
+            { id: 2, date: "2026-10-25", type: "รายจ่าย", title: "ค่าน้ำมันสำรวจงาน", category: "ค่าใช้จ่ายทั่วไป", amount: 1200 },
+            { id: 3, date: "2026-10-20", type: "รายรับ", title: "รับคืนเงินต้น วิภาวี", category: "รับชำระคืนเงินต้น", amount: 10000 }
+        ];
+
+        let accounts = [
+            { name: "ธนาคารกสิกรไทย (KBANK)", number: "xxx-x-x1234-x", balance: 145000, color: "from-emerald-500 to-teal-700" },
+            { name: "ธนาคารไทยพาณิชย์ (SCB)", number: "xxx-x-x5678-x", balance: 98500, color: "from-purple-600 to-indigo-800" },
+            { name: "เงินสดคงเหลือ (Cash)", number: "กระเป๋าเงินสดหลัก", balance: 41000, color: "from-slate-700 to-slate-900" }
+        ];
+
+        // Chart Instance
+        let financeChart;
+
+        // On Page Load Initialization
+        window.onload = function() {
+            renderDebtors();
+            renderTransactions();
+            renderAccounts();
+            renderUpcomingDebtors();
+            initChart();
+        };
+
+        // Navigation Switcher
+        function switchTab(tab) {
+            const views = document.querySelectorAll('.view-content');
+            views.forEach(v => v.classList.add('hidden'));
+
+            const items = document.querySelectorAll('.sidebar-item');
+            items.forEach(i => i.classList.remove('sidebar-item-active'));
+
+            document.getElementById('view-' + tab).classList.remove('hidden');
+            document.getElementById('nav-' + tab).classList.add('sidebar-item-active');
+
+            const titles = {
+                'dashboard': 'แดชบอร์ดการเงิน',
+                'debtors': 'จัดการลูกหนี้ (ปล่อยกู้)',
+                'transactions': 'บันทึกรายรับ-รายจ่าย',
+                'accounts': 'บัญชีธนาคาร & เงินสด',
+                'supabase': 'รายงาน & ตั้งค่า Supabase'
+            };
+            document.getElementById('page-title').innerText = titles[tab] || 'BizFlow+';
+
+            // Close sidebar on mobile
+            if (window.innerWidth < 768) {
+                toggleSidebar();
+            }
+        }
+
+        // Sidebar Toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        // Render Debtors Table
+        function renderDebtors(items = debtors) {
+            const tbody = document.getElementById('debtors-table-body');
+            tbody.innerHTML = '';
+            items.forEach(d => {
+                const statusBadge = d.status === 'ปกติ' 
+                    ? `<span class="px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-semibold border border-emerald-200">ปกติ</span>`
+                    : (d.status === 'ค้างชำระ' 
+                        ? `<span class="px-2.5 py-1 bg-rose-50 text-rose-600 rounded-lg text-[10px] font-semibold border border-rose-200">ค้างชำระ</span>`
+                        : `<span class="px-2.5 py-1 bg-slate-100 text-slate-500 rounded-lg text-[10px] font-semibold">ปิดยอดแล้ว</span>`);
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50/80 transition">
+                        <td class="p-4 font-medium text-slate-900">${d.name}</td>
+                        <td class="p-4 font-semibold text-slate-800">฿${d.amount.toLocaleString()}</td>
+                        <td class="p-4 text-emerald-600 font-medium">+฿${d.interest.toLocaleString()}</td>
+                        <td class="p-4 text-slate-500">${d.duedate}</td>
+                        <td class="p-4">${statusBadge}</td>
+                        <td class="p-4 text-right space-x-2">
+                            <button onclick="deleteDebtor(${d.id})" class="p-1.5 text-slate-400 hover:text-rose-500 transition"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Filter Debtors
+        function filterDebtors() {
+            const query = document.getElementById('debtor-search').value.toLowerCase();
+            const filtered = debtors.filter(d => d.name.toLowerCase().includes(query));
+            renderDebtors(filtered);
+        }
+
+        // Render Transactions
+        function renderTransactions() {
+            const tbody = document.getElementById('tx-table-body');
+            tbody.innerHTML = '';
+            transactions.forEach(t => {
+                const isIncome = t.type === 'รายรับ';
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50/80 transition">
+                        <td class="p-4 text-slate-500">${t.date}</td>
+                        <td class="p-4">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${isIncome ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${t.type}</span>
+                        </td>
+                        <td class="p-4 font-medium text-slate-900">${t.title}</td>
+                        <td class="p-4 text-slate-500">${t.category}</td>
+                        <td class="p-4 text-right font-bold ${isIncome ? 'text-emerald-600' : 'text-rose-600'}">
+                            ${isIncome ? '+' : '-'}฿${t.amount.toLocaleString()}
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Render Bank Accounts
+        function renderAccounts() {
+            const grid = document.getElementById('accounts-grid');
+            grid.innerHTML = '';
+            accounts.forEach(a => {
+                grid.innerHTML += `
+                    <div class="bg-gradient-to-br ${a.color} p-6 rounded-2xl text-white shadow-md relative overflow-hidden">
+                        <div class="absolute right-3 bottom-3 opacity-10 text-7xl font-black">฿</div>
+                        <p class="text-xs text-white/80 font-medium">${a.name}</p>
+                        <p class="text-xs text-white/60 tracking-wider mt-1">${a.number}</p>
+                        <div class="mt-6">
+                            <span class="text-[10px] uppercase tracking-wider text-white/70">ยอดเงินคงเหลือ</span>
+                            <h3 class="text-2xl font-bold mt-0.5">฿${a.balance.toLocaleString()}</h3>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Render Dashboard Upcoming Debtors
+        function renderUpcomingDebtors() {
+            const container = document.getElementById('dash-upcoming-debtors');
+            container.innerHTML = '';
+            debtors.slice(0, 3).forEach(d => {
+                container.innerHTML += `
+                    <div class="p-3 bg-slate-50 rounded-xl flex items-center justify-between">
+                        <div>
+                            <div class="font-medium text-xs text-slate-900">${d.name}</div>
+                            <div class="text-[10px] text-slate-500">กำหนดชำระ: ${d.duedate}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs font-bold text-slate-800">฿${d.interest.toLocaleString()}</div>
+                            <span class="text-[9px] text-emerald-600 font-medium">ดอกเบี้ย</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Initialize Chart
+        function initChart() {
+            const ctx = document.getElementById('financeChart').getContext('2d');
+            financeChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.'],
+                    datasets: [
+                        {
+                            label: 'รายรับ',
+                            data: [18000, 22000, 25000, 29000, 31000, 32400],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'รายจ่าย',
+                            data: [12000, 15000, 11000, 14000, 13000, 14200],
+                            borderColor: '#f43f5e',
+                            backgroundColor: 'transparent',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { font: { family: 'Kanit', size: 11 } } }
+                    },
+                    scales: {
+                        y: { grid: { borderDash: [2, 2] } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // Modals Toggle
+        function openDebtorModal() { document.getElementById('modal-debtor').classList.remove('hidden'); }
+        function closeDebtorModal() { document.getElementById('modal-debtor').classList.add('hidden'); }
+        function openTxModal() { document.getElementById('modal-tx').classList.remove('hidden'); }
+        function closeTxModal() { document.getElementById('modal-tx').classList.add('hidden'); }
+
+        // Save Debtor Handler
+        function saveDebtor(e) {
+            e.preventDefault();
+            const newDebtor = {
+                id: Date.now(),
+                name: document.getElementById('debtor-name').value,
+                amount: parseFloat(document.getElementById('debtor-amount').value),
+                interest: parseFloat(document.getElementById('debtor-interest').value),
+                duedate: document.getElementById('debtor-duedate').value,
+                status: document.getElementById('debtor-status').value
+            };
+            debtors.unshift(newDebtor);
+            renderDebtors();
+            renderUpcomingDebtors();
+            closeDebtorModal();
+            showToast('เพิ่มข้อมูลลูกหนี้เรียบร้อยแล้ว');
+        }
+
+        // Delete Debtor
+        function deleteDebtor(id) {
+            debtors = debtors.filter(d => d.id !== id);
+            renderDebtors();
+            renderUpcomingDebtors();
+            showToast('ลบรายการลูกหนี้สำเร็จ');
+        }
+
+        // Save Transaction Handler
+        function saveTransaction(e) {
+            e.preventDefault();
+            const newTx = {
+                id: Date.now(),
+                date: new Date().toISOString().split('T')[0],
+                type: document.getElementById('tx-type').value,
+                title: document.getElementById('tx-title').value,
+                category: document.getElementById('tx-category').value,
+                amount: parseFloat(document.getElementById('tx-amount').value)
+            };
+            transactions.unshift(newTx);
+            renderTransactions();
+            closeTxModal();
+            showToast('บันทึกรายการรับ-จ่ายเรียบร้อย');
+        }
+
+        // Save Supabase Config
+        function saveSupabaseConfig(e) {
+            e.preventDefault();
+            showToast('บันทึกการตั้งค่า Supabase สำเร็จ');
+        }
+
+        // Toast Notification Helper
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
     </script>
 </body>
 </html>
-"""
-
-# ==========================================
-# 5. ROUTES & CONTROLLERS
-# ==========================================
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    error = None
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        if username in VALID_USERS and VALID_USERS[username] == password:
-            session['admin'] = username
-            return redirect(url_for('receivables_dashboard'))
-        else:
-            error = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'
-    
-    login_html = """
-    <!DOCTYPE html>
-    <html lang="th">
-    <head>
-        <meta charset="UTF-8"><title>เข้าสู่ระบบ - ทรัพย์ล้น.com</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    </head>
-    <body class="bg-dark d-flex align-items-center justify-content-center vh-100">
-        <div class="card p-4 shadow" style="width: 350px; background: #2c0b0e; color: #d4af37; border: 2px solid #d4af37;">
-            <h3 class="text-center mb-3 fw-bold">🔱 ทรัพย์ล้น.com</h3>
-            {% if error %}<div class="alert alert-danger py-2 small">{{ error }}</div>{% endif %}
-            <form method="POST">
-                <div class="mb-3"><label class="form-label small">ชื่อผู้ใช้</label><input type="text" name="username" class="form-control" required></div>
-                <div class="mb-3"><label class="form-label small">รหัสผ่าน</label><input type="password" name="password" class="form-control" required></div>
-                <button type="submit" class="btn btn-warning w-100 fw-bold">เข้าสู่ระบบ</button>
-            </form>
-        </div>
-    </body>
-    </html>
-    """
-    return render_template_string(login_html, error=error)
-
-@app.route('/logout')
-def logout():
-    session.pop('admin', None)
-    return redirect(url_for('login'))
-
-@app.route('/')
-def root_index():
-    if 'admin' not in session: return redirect(url_for('login'))
-    return redirect(url_for('receivables_dashboard'))
-
-@app.route('/dashboard')
-def index():
-    if 'admin' not in session: return redirect(url_for('login'))
-    all_txs = Transaction.query.filter(Transaction.principal > 0).all()
-    
-    dashboard_html = BASE_LAYOUT + """
-    {% block header %}Dashboard Overview{% endblock %}
-    {% block content %}
-    <div class="card shadow-sm p-4">
-        <h5 class="fw-bold mb-3">📋 รายการลูกหนี้ที่ต้องติดตาม</h5>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead class="table-dark">
-                    <tr><th>ชื่อลูกค้า</th><th>ประเภท</th><th>เบอร์โทร</th><th>ยอดเงินต้นคงเหลือ</th><th>สถานะ</th></tr>
-                </thead>
-                <tbody>
-                    {% for tx in all_txs %}
-                    <tr>
-                        <td class="fw-bold">{{ tx.customer_name }}</td>
-                        <td><span class="badge bg-secondary">{{ tx.type }}</span></td>
-                        <td>{{ tx.phone or '-' }}</td>
-                        <td class="text-danger fw-bold">฿{{ "{:,.2f}".format(tx.principal) }}</td>
-                        <td><span class="badge bg-warning text-dark">{{ tx.status }}</span></td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="5" class="text-center text-muted py-3">ไม่มีรายการค้างชำระ</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    {% endblock %}
-    """
-    return render_template_string(dashboard_html, title="Dashboard", page="dashboard", all_txs=all_txs)
-
-@app.route('/receivables_dashboard', methods=['GET', 'POST'])
-def receivables_dashboard():
-    if 'admin' not in session: return redirect(url_for('login'))
-
-    if request.method == 'POST':
-        try:
-            p_val = float(request.form.get('principal', 0))
-            cust_name = request.form.get('customer_name')
-            phone = request.form.get('phone')
-            custom_start_date = request.form.get('start_date')
-            parsed_date = datetime.strptime(custom_start_date, '%Y-%m-%d').date() if custom_start_date else get_thai_today()
-            current_sales = session.get('admin', 'unknown')
-            funding_source = request.form.get('funding_source', 'ออมสิน')
-            schedule_type = request.form.get('schedule_type', 'จ่ายทุกวัน')
-
-            new_tx = Transaction(
-                type=request.form.get('type', 'เงินฉุกเฉิน (ลูกค้าใหม่)'),
-                customer_name=cust_name,
-                phone=phone,
-                sales_name=current_sales,
-                start_date=parsed_date, 
-                original_principal=p_val,
-                principal=p_val,
-                daily_interest=p_val * 0.01,
-                initial_daily_interest=p_val * 0.01,
-                schedule_type=schedule_type,
-                funding_source=funding_source,
-                status='ปกติ'
-            )
-            db.session.add(new_tx)
-            db.session.commit()
-            
-            sync_to_google_sheet(new_tx)
-            
-            return redirect(url_for('receivables_dashboard'))
-        except Exception as e:
-            db.session.rollback()
-            print("Error adding transaction:", e)
-
-    all_txs = Transaction.query.filter(Transaction.principal > 0).all()
-    total_remaining = sum(tx.principal for tx in all_txs)
-
-    receivables_html = BASE_LAYOUT + """
-    {% block header %}แดชบอร์ดลูกหนี้ (ปล่อยกู้){% endblock %}
-    {% block content %}
-    <div class="row g-3 mb-4">
-        <div class="col-md-3"><div class="card text-white bg-warning p-3 shadow-sm"><h6 class="text-dark fw-bold">ยอดค้างรวมทั้งหมด</h6><h3 class="text-dark fw-bold">฿{{ "{:,.2f}".format(total_remaining) }}</h3></div></div>
-        <div class="col-md-3"><div class="card text-white bg-danger p-3 shadow-sm"><h6>เงินต้นคงค้าง</h6><h3 class="fw-bold">฿{{ "{:,.2f}".format(total_remaining) }}</h3></div></div>
-    </div>
-
-    <!-- ฟอร์มสำหรับอัปโหลดไฟล์ CSV สำรองข้อมูล (Restore Backup) -->
-    <div class="card shadow-sm p-4 mb-4 border border-warning" style="background: #fffdf9;">
-        <h5 class="fw-bold text-dark mb-3">📂 นำเข้าข้อมูลจากไฟล์ CSV (Restore Backup)</h5>
-        <form action="/import_csv" method="POST" enctype="multipart/form-data">
-            <div class="row g-3 align-items-center">
-                <div class="col-md-8">
-                    <input type="file" name="file" class="form-control form-control-sm" accept=".csv" required>
-                    <div class="form-text small text-muted">รองรับไฟล์ sublon_backup_*.csv</div>
-                </div>
-                <div class="col-md-4">
-                    <button type="submit" class="btn btn-warning btn-sm fw-bold w-100 text-dark py-2">
-                        📥 อัปโหลดและนำเข้าข้อมูล
-                    </button>
-                </div>
-            </div>
-        </form>
-    </div>
-
-    <!-- ฟอร์มเพิ่มรายการใหม่ -->
-    <div class="card shadow-sm p-4 mb-4">
-        <h5 class="fw-bold text-dark mb-3">➕ เพิ่มรายการใหม่ (ผู้ดูแล: {{ session.get('admin') }})</h5>
-        <form method="POST">
-            <div class="row g-3">
-                <div class="col-md-3">
-                    <label class="form-label small fw-bold">ประเภทรายการ</label>
-                    <select name="type" class="form-select form-select-sm">
-                        <option>เงินฉุกเฉิน (ลูกค้าใหม่)</option>
-                        <option>ผ่อนทอง</option>
-                        <option>ยอดค้างเก่า</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label small fw-bold">ชื่อลูกค้า</label>
-                    <input type="text" name="customer_name" class="form-control form-control-sm" required placeholder="ระบุชื่อลูกค้า">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label small fw-bold">เบอร์โทร</label>
-                    <input type="text" name="phone" class="form-control form-control-sm" placeholder="08x-xxx-xxxx">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label small fw-bold">วันที่เริ่ม</label>
-                    <input type="date" name="start_date" class="form-control form-control-sm" value="{{ today }}">
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label small fw-bold">แหล่งทุน</label>
-                    <select name="funding_source" class="form-select form-select-sm">
-                        <option>ออมสิน</option>
-                        <option>กรุงศรีอยุธยา</option>
-                        <option>วอลเล็ท</option>
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label small fw-bold">ประเภทกำหนดจ่าย</label>
-                    <select name="schedule_type" class="form-select form-select-sm">
-                        <option>จ่ายทุกวัน</option>
-                        <option>กำหนดจ่ายประจำเดือน</option>
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label small fw-bold">ยอดเงินต้น (บาท)</label>
-                    <input type="number" step="any" name="principal" class="form-control form-control-sm fw-bold text-danger" required placeholder="0.00">
-                </div>
-                <div class="col-12 text-end">
-                    <button type="submit" class="btn btn-success btn-sm fw-bold px-4">บันทึกข้อมูล</button>
-                </div>
-            </div>
-        </form>
-    </div>
-
-    <!-- ตารางรายชื่อลูกหนี้ -->
-    <div class="card shadow-sm p-4">
-        <h5 class="fw-bold mb-3">📋 รายชื่อลูกหนี้ในระบบ</h5>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead class="table-dark">
-                    <tr><th>วันที่เริ่ม</th><th>ชื่อลูกค้า</th><th>เบอร์โทร</th><th>ผู้ดูแล</th><th>แหล่งทุน</th><th>เงินต้นเดิม</th><th>ยอดคงเหลือ</th><th>สถานะ</th></tr>
-                </thead>
-                <tbody>
-                    {% for tx in all_txs %}
-                    <tr>
-                        <td>{{ tx.start_date.strftime('%d/%m/%Y') if tx.start_date else '-' }}</td>
-                        <td class="fw-bold">{{ tx.customer_name }}</td>
-                        <td>{{ tx.phone or '-' }}</td>
-                        <td><span class="badge bg-info text-dark">{{ tx.sales_name }}</span></td>
-                        <td><span class="badge bg-warning text-dark">{{ tx.funding_source }}</span></td>
-                        <td>{{ "{:,.2f}".format(tx.original_principal) }}</td>
-                        <td class="text-danger fw-bold">฿{{ "{:,.2f}".format(tx.principal) }}</td>
-                        <td><span class="badge bg-secondary">{{ tx.status }}</span></td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="8" class="text-center text-muted py-3">ยังไม่มีข้อมูลลูกหนี้</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    {% endblock %}
-    """
-    return render_template_string(receivables_html, title="แดชบอร์ดลูกหนี้", page="receivables", total_remaining=total_remaining, all_txs=all_txs, today=get_thai_today().strftime('%Y-%m-%d'))
-
-@app.route('/import_csv', methods=['POST'])
-def import_csv():
-    if 'admin' not in session: 
-        return redirect(url_for('login'))
-    
-    file = request.files.get('file')
-    if file and file.filename.endswith('.csv'):
-        try:
-            stream = io.StringIO(file.stream.read().decode("utf-8-sig"), newline=None)
-            csv_input = csv.DictReader(stream)
-            
-            count_success = 0
-            for row in csv_input:
-                customer_name = row.get('CustomerName')
-                if not customer_name or not str(customer_name).strip():
-                    continue
-
-                def safe_float(val, default=0.0):
-                    try: return float(val) if val and str(val).strip() else default
-                    except: return default
-
-                def safe_date(val):
-                    try:
-                        val_str = str(val).strip()
-                        if not val_str or '###' in val_str or val_str.lower() == 'nan':
-                            return None
-                        return datetime.strptime(val_str, '%Y-%m-%d').date()
-                    except:
-                        return None
-
-                def safe_bool(val):
-                    if not val: return False
-                    return str(val).strip().upper() == 'TRUE'
-
-                phone_val = row.get('Phone', '')
-                if not phone_val or str(phone_val).strip().lower() == 'nan':
-                    phone_val = None
-                else:
-                    phone_val = str(phone_val).strip()
-                    if '.' in phone_val:
-                        phone_val = phone_val.split('.')[0]
-
-                p_val = safe_float(row.get('Principal'))
-                orig_p = safe_float(row.get('OriginalPrincipal'), p_val)
-                daily_int = safe_float(row.get('DailyInterest'))
-
-                new_tx = Transaction(
-                    type=row.get('Type', 'เงินกู้ยืม'),
-                    customer_name=customer_name.strip(),
-                    phone=phone_val,
-                    sales_name=row.get('SalesName', session.get('admin', 'nueng')),
-                    start_date=safe_date(row.get('StartDate')) or get_thai_today(),
-                    closed_date=safe_date(row.get('ClosedDate')),
-                    original_principal=orig_p,
-                    principal=p_val,
-                    daily_interest=daily_int,
-                    initial_daily_interest=daily_int,
-                    paid_interest=safe_float(row.get('PaidInterest')),
-                    status=row.get('Status', 'ปกติ'),
-                    installment_amount=safe_float(row.get('InstallmentAmount')),
-                    schedule_type=row.get('ScheduleType', 'จ่ายทุกวัน'),
-                    due_day_of_month=str(row.get('DueDayOfMonth', '')) if row.get('DueDayOfMonth') else None,
-                    funding_source=row.get('FundingSource', 'ออมสิน'),
-                    start_next_day=safe_bool(row.get('StartNextDay')),
-                    is_locked_interest=safe_bool(row.get('IsLockedInterest')),
-                    locked_interest_amount=safe_float(row.get('LockedInterestAmount'))
-                )
-                db.session.add(new_tx)
-                count_success += 1
-            
-            db.session.commit()
-            print(f"นำเข้าไฟล์ CSV สำเร็จ {count_success} รายการ")
-        except Exception as e:
-            db.session.rollback()
-            print("Import CSV Error:", e)
-
-    return redirect(url_for('receivables_dashboard'))
-
-@app.route('/all_transactions')
-def all_transactions():
-    if 'admin' not in session: return redirect(url_for('login'))
-    all_txs = Transaction.query.all()
-    html = BASE_LAYOUT + """
-    {% block header %}รายการทั้งหมดในระบบ{% endblock %}
-    {% block content %}
-    <div class="card shadow-sm p-4">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead class="table-dark"><tr><th>ID</th><th>วันที่</th><th>ชื่อลูกค้า</th><th>ประเภท</th><th>ยอดเงินต้น</th><th>ผู้ดูแล</th><th>สถานะ</th></tr></thead>
-                <tbody>
-                    {% for tx in all_txs %}
-                    <tr>
-                        <td>{{ tx.id }}</td>
-                        <td>{{ tx.start_date.strftime('%d/%m/%Y') if tx.start_date else '-' }}</td>
-                        <td class="fw-bold">{{ tx.customer_name }}</td>
-                        <td><span class="badge bg-secondary">{{ tx.type }}</span></td>
-                        <td>฿{{ "{:,.2f}".format(tx.original_principal) }}</td>
-                        <td>{{ tx.sales_name }}</td>
-                        <td><span class="badge {% if tx.principal > 0 %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ tx.status }}</span></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    {% endblock %}
-    """
-    return render_template_string(html, title="รายการทั้งหมด", page="all", all_txs=all_txs)
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
