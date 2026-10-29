@@ -12,6 +12,7 @@ from supabase import create_client, Client
 app = Flask(__name__)
 app.secret_key = 'bizflow_secure_secret_key'
 
+# ตั้งค่าการเชื่อมต่อ Supabase
 SUPABASE_URL = "https://pdpeqsubrbmdjxgmtjpy.supabase.co"
 SUPABASE_KEY = "sb_publishable_ZSKb3jQeqfP8oSIajLhFWA_sOBMd4-H"
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -1092,6 +1093,3 @@ def export_csv():
     for d in debtors_database: writer.writerow([d['id'], d['name'], d['phone'], d['principal'], d['status'], d['date']])
     output.seek(0)
     return Response(output, mimetype="text/csv", headers={"Content-Disposition": "attachment;filename=debtors.csv"})
-
-if __name__ == '__main__':
-    app.run(debug=True)
