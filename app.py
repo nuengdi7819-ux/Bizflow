@@ -5,6 +5,7 @@ import io
 import urllib.request
 import urllib.parse
 import json
+import random
 from datetime import datetime
 
 app = Flask(__name__)
@@ -13,11 +14,8 @@ app.secret_key = 'bizflow_secure_secret_key'
 # ฐานข้อมูลลูกหนี้
 debtors_database = []
 
-# ข้อมูล Username และ Password สำหรับเข้าสู่หน้าบ้านสมาชิก
-MEMBER_CREDENTIALS = {
-    'username': 'user',
-    'password': '123'
-}
+# ระบบเก็บข้อมูลการขอ OTP ชั่วคราวของสมาชิก (เบอร์โทร -> OTP ล่าสุด)
+pending_otp_sessions = {}
 
 # ฐานข้อมูลผู้ใช้งานระบบหลังบ้าน (แอดมิน)
 users_database = [
@@ -28,7 +26,6 @@ activity_logs = [
     {'time': '30/10/2026 08:30', 'user': 'Owner', 'action': 'เข้าสู่ระบบหลังบ้าน', 'ip': '127.0.0.1'}
 ]
 
-# ตั้งค่าระบบ (ใส่ Telegram Token และ Chat ID ของคุณให้เรียบร้อย)
 system_config = {
     'company_name': 'BizFlow+ Financial Services',
     'telegram_token': '9203750510:AAFJhUvWRf4mOSozUSkz0I0I9Jca-xImuTo',
@@ -48,7 +45,6 @@ def format_num_filter(value):
     except:
         return "0"
 
-# ฟังก์ชันส่งข้อความแจ้งเตือนเข้า Telegram
 def send_telegram_alert(message):
     token = system_config.get('telegram_token')
     chat_id = system_config.get('telegram_chat_id')
@@ -126,6 +122,9 @@ ADMIN_TEMPLATE = """
                     <div class="space-y-1">
                         <button onclick="switchTab('debtors')" id="nav-debtors" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-medium text-xs text-purple-200/80 hover:bg-purple-900/30">
                             <i class="fa-solid fa-users text-sm text-amber-400 w-5"></i><span>รายชื่อลูกหนี้ & คำขอกู้</span>
+                        </button>
+                        <button onclick="switchTab('otp_requests')" id="nav-otp_requests" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-medium text-xs text-purple-200/80 hover:bg-purple-900/30">
+                            <i class="fa-solid fa-key text-sm text-rose-400 w-5"></i><span>🔑 อนุมัติรหัส OTP ลูกค้า</span>
                         </button>
                         <a href="/apply" target="_blank" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-medium text-xs text-emerald-300 hover:bg-emerald-950/40 border border-emerald-500/30 mt-1">
                             <i class="fa-solid fa-globe text-sm text-emerald-400 w-5"></i><span>🔗 หน้าบ้านสมาชิก (/apply)</span>
@@ -230,6 +229,7 @@ ADMIN_TEMPLATE = """
                 </div>
             </div>
 
+            <!-- Tab: จัดการคำขอกู้ -->
             <div id="section-debtors" class="hidden space-y-6">
                 <div class="bg-white rounded-2xl border border-slate-200 p-4 md:p-6 shadow-sm overflow-x-auto">
                     <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
@@ -254,6 +254,47 @@ ADMIN_TEMPLATE = """
                         </thead>
                         <tbody id="debtor-table-body" class="divide-y divide-slate-100"></tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- Tab: อนุมัติรหัส OTP ลูกค้า -->
+            <div id="section-otp_requests" class="hidden space-y-6">
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center">
+                        <i class="fa-solid fa-key text-rose-500 mr-2"></i> คำขอรหัส OTP จากสมาชิกหน้าเว็บ
+                    </h3>
+                    <p class="text-xs text-slate-500">เมื่อลูกค้ากรอกเบอร์โทรขอเข้าสู่ระบบ แอดมินจะเห็นรหัส OTP ชั่วคราวที่ถูกสุ่มขึ้นมาใหม่ตรงนี้ ให้นำรหัสนี้แจ้งลูกค้า</p>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs bg-white rounded-xl border">
+                            <thead class="bg-slate-100 text-slate-600">
+                                <tr>
+                                    <th class="p-3">เบอร์โทรศัพท์มือถือ</th>
+                                    <th class="p-3">เวลาที่ขอ OTP</th>
+                                    <th class="p-3 text-center">รหัส OTP ชั่วคราว (สุ่มใหม่)</th>
+                                    <th class="p-3 text-right">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y">
+                                {% if otp_list %}
+                                    {% for phone, data in otp_list.items() %}
+                                    <tr>
+                                        <td class="p-3 font-mono font-bold text-purple-800 text-sm"><i class="fa-solid fa-phone mr-1"></i>{{ phone }}</td>
+                                        <td class="p-3 text-slate-500">{{ data.time }}</td>
+                                        <td class="p-3 text-center">
+                                            <span class="px-3 py-1.5 bg-rose-100 text-rose-800 rounded-xl font-mono font-black text-base tracking-widest shadow-inner">{{ data.otp }}</span>
+                                        </td>
+                                        <td class="p-3 text-right">
+                                            <a href="/clear-otp?phone={{ phone }}" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-bold">รีเซ็ต/ลบ OTP</a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr><td colspan="4" class="p-6 text-center text-slate-400">ยังไม่มีเบอร์โทรขอรหัส OTP ในขณะนี้</td></tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -450,7 +491,7 @@ ADMIN_TEMPLATE = """
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
 
         function switchTab(tab) {
-            ['dashboard', 'debtors', 'banking', 'transactions', 'contracts', 'annual_reports', 'settings'].forEach(s => {
+            ['dashboard', 'debtors', 'otp_requests', 'banking', 'transactions', 'contracts', 'annual_reports', 'settings'].forEach(s => {
                 const sec = document.getElementById('section-' + s);
                 const nav = document.getElementById('nav-' + s);
                 if (sec) sec.classList.add('hidden');
@@ -506,14 +547,16 @@ ADMIN_TEMPLATE = """
 </html>
 """
 
+# หน้า Login สมาชิกแบบกรอกเบอร์โทร + ขอ OTP จากแอดมิน
 LOGIN_MEMBER_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BizFlow+ - เข้าสู่ระบบสมาชิก</title>
+    <title>BizFlow+ - เข้าสู่ระบบสมาชิกด้วยเบอร์โทร & OTP</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style> body { font-family: 'Kanit', sans-serif; background: linear-gradient(135deg, #18092e 0%, #0d061a 100%); min-height: 100vh; } </style>
 </head>
@@ -522,7 +565,7 @@ LOGIN_MEMBER_TEMPLATE = """
         <div class="text-center mb-6">
             <div class="w-12 h-12 rounded-2xl bg-purple-600 text-white flex items-center justify-center font-black text-2xl mx-auto mb-3 shadow-lg">B</div>
             <h1 class="text-xl font-black text-slate-900">เข้าสู่ระบบสมาชิก BizFlow+</h1>
-            <p class="text-xs text-slate-500 mt-1">กรอก Username และ Password เพื่อเข้าสู่หน้าแบบฟอร์มยื่นกู้</p>
+            <p class="text-xs text-slate-500 mt-1">กรอกเบอร์โทรศัพท์และขอรหัส OTP จากแอดมินเพื่อเข้าใช้งาน</p>
         </div>
 
         {% if error %}
@@ -531,18 +574,31 @@ LOGIN_MEMBER_TEMPLATE = """
         </div>
         {% endif %}
 
+        {% if success_msg %}
+        <div class="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-xl text-center font-semibold">
+            {{ success_msg }}
+        </div>
+        {% endif %}
+
         <form action="/apply-login" method="POST" class="space-y-4">
             <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Username</label>
-                <input type="text" name="username" required placeholder="ชื่อผู้ใช้งาน" class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm">
+                <label class="block text-xs font-semibold text-slate-600 mb-1"><i class="fa-solid fa-phone mr-1 text-purple-600"></i> เบอร์โทรศัพท์มือถือ</label>
+                <input type="text" name="phone" required placeholder="เช่น 0891234567" value="{{ phone_val or '' }}" class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-bold text-purple-900">
             </div>
+
             <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Password</label>
-                <input type="password" name="password" required placeholder="รหัสผ่าน" class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm">
+                <label class="block text-xs font-semibold text-slate-600 mb-1"><i class="fa-solid fa-key mr-1 text-purple-600"></i> รหัส OTP (สอดคล้องกับที่ขอจากแอดมิน)</label>
+                <input type="text" name="otp_code" required placeholder="กรอกรหัส OTP 4 หลัก" class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-mono tracking-widest text-center text-lg font-bold">
             </div>
-            <button type="submit" class="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold shadow-lg mt-2">
-                เข้าสู่ระบบ
-            </button>
+
+            <div class="flex gap-2 pt-2">
+                <button type="submit" name="action" value="request_otp" class="flex-1 py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold text-xs shadow">
+                    ขอรหัส OTP ใหม่
+                </button>
+                <button type="submit" name="action" value="verify_login" class="flex-1 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold text-xs shadow">
+                    ยืนยัน OTP เข้าสู่ระบบ
+                </button>
+            </div>
         </form>
     </div>
 </body>
@@ -565,7 +621,7 @@ APPLY_TEMPLATE = """
     <div class="max-w-xl w-full bg-white rounded-3xl shadow-2xl p-6 md:p-8 border border-purple-100">
         <div class="text-center mb-6">
             <h1 class="text-xl md:text-2xl font-black text-slate-900">แบบฟอร์มยื่นกู้ & ทำสัญญาออนไลน์</h1>
-            <p class="text-xs text-slate-500 mt-1">กรอกข้อมูลและเซ็นสัญญาเพื่อส่งขอกู้</p>
+            <p class="text-xs text-slate-500 mt-1">ยืนยันตัวตนด้วยเบอร์โทรศัพท์สำเร็จ กรอกข้อมูลและเซ็นสัญญาเพื่อส่งขอกู้</p>
         </div>
 
         <form action="/submit-application" method="POST" enctype="multipart/form-data" class="space-y-4" onsubmit="prepareSignature()">
@@ -575,8 +631,8 @@ APPLY_TEMPLATE = """
                     <input type="text" name="name" required placeholder="เช่น สมชาย ใจดี" class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">เบอร์โทรศัพท์</label>
-                    <input type="text" name="phone" required placeholder="0891234567" class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-bold text-purple-700">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">เบอร์โทรศัพท์ (ยืนยันแล้ว)</label>
+                    <input type="text" name="phone" readonly value="{{ session.get('verified_phone', '') }}" class="w-full px-4 py-2.5 bg-purple-50 border border-purple-200 rounded-xl text-sm font-bold text-purple-800 cursor-not-allowed">
                 </div>
             </div>
 
@@ -658,6 +714,9 @@ APPLY_TEMPLATE = """
 </html>
 """
 
+# เก็บคำขอ OTP ที่รอแอดมินแจ้ง
+active_otp_requests = {}
+
 @app.route('/')
 def admin_dashboard():
     return render_template_string(ADMIN_TEMPLATE, 
@@ -665,24 +724,61 @@ def admin_dashboard():
                                  users=users_database,
                                  logs=activity_logs,
                                  config=system_config,
+                                 otp_list=active_otp_requests,
                                  bank_kbank=bank_accounts['kbank'],
                                  bank_scb=bank_accounts['scb'],
                                  bank_cash=bank_accounts['cash'])
 
 @app.route('/apply')
 def apply_form():
-    if not session.get('member_logged_in'):
+    if not session.get('member_verified'):
         return render_template_string(LOGIN_MEMBER_TEMPLATE)
     return render_template_string(APPLY_TEMPLATE)
 
 @app.route('/apply-login', methods=['POST'])
 def apply_login():
-    u = request.form.get('username')
-    p = request.form.get('password')
-    if u == MEMBER_CREDENTIALS['username'] and p == MEMBER_CREDENTIALS['password']:
-        session['member_logged_in'] = True
-        return redirect(url_for('apply_form'))
-    return render_template_string(LOGIN_MEMBER_TEMPLATE, error="Username หรือ Password ไม่ถูกต้อง!")
+    phone = request.form.get('phone', '').strip()
+    action = request.form.get('action')
+    otp_input = request.form.get('otp_code', '').strip()
+
+    if not phone:
+        return render_template_string(LOGIN_MEMBER_TEMPLATE, error="กรุณากรอกเบอร์โทรศัพท์มือถือ!")
+
+    if action == 'request_otp':
+        # สุ่มรหัส OTP ใหม่ 4 หลัก (ไม่ซ้ำเดิม)
+        new_otp = str(random.randint(1000, 9999))
+        active_otp_requests[phone] = {
+            'otp': new_otp,
+            'time': datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+        }
+        
+        # ส่งแจ้งเตือนเข้า Telegram ให้แอดมินทราบทันทีว่ามีเบอร์นี้ขอ OTP
+        send_telegram_alert(f"🔑 <b>มีคำขอรหัส OTP ใหม่!</b>\n📞 เบอร์โทร: <code>{phone}</code>\n🔢 รหัส OTP: <b>{new_otp}</b>\n\n(แจ้งรหัสนี้ให้ลูกค้าเพื่อเข้าสู่ระบบ)")
+        
+        return render_template_string(LOGIN_MEMBER_TEMPLATE, 
+                                     phone_val=phone,
+                                     success_msg=f"ส่งคำขอ OTP สำหรับเบอร์ {phone} สำเร็จ! กรุณาติดต่อขอรหัสจากแอดมิน")
+
+    elif action == 'verify_login':
+        if phone in active_otp_requests and active_otp_requests[phone]['otp'] == otp_input:
+            session['member_verified'] = True
+            session['verified_phone'] = phone
+            # ลบ OTP ออกหลังใช้งานเพื่อความปลอดภัย (ใช้ครั้งเดียวทิ้ง)
+            del active_otp_requests[phone]
+            return redirect(url_for('apply_form'))
+        else:
+            return render_template_string(LOGIN_MEMBER_TEMPLATE, 
+                                         phone_val=phone,
+                                         error="รหัส OTP ไม่ถูกต้อง หรือยังไม่ได้กดขอรหัสจากแอดมิน!")
+
+    return render_template_string(LOGIN_MEMBER_TEMPLATE)
+
+@app.route('/clear-otp')
+def clear_otp():
+    phone = request.args.get('phone')
+    if phone in active_otp_requests:
+        del active_otp_requests[phone]
+    return redirect(url_for('admin_dashboard'))
 
 @app.route('/update-bank', methods=['POST'])
 def update_bank():
@@ -747,15 +843,18 @@ def submit_application():
         'outstanding_balance': amount,
         'available_credit': amount * 0.2,
         'transactions': [{'tx_id': f"TXN-2026-00{len(debtors_database)+1}", 'date': datetime.now().strftime('%d/%m/%Y %H:%M'), 'type': 'เบิกเงินกู้ใหม่', 'amount': f"+฿{amount:,.0f}", 'status': 'รอตรวจสอบ'}],
-        'internal_notes': 'ยื่นกู้ผ่านหน้าเว็บสมาชิก'
+        'internal_notes': 'ยื่นกู้ผ่านหน้าเว็บสมาชิกด้วย OTP'
     }
     debtors_database.insert(0, new_entry)
     
-    # ส่งแจ้งเตือนเข้า Telegram อัตโนมัติเมื่อมีคนยื่นกู้
     msg = f"🚨 <b>มีคำขอกู้เงินใหม่เข้ามา!</b>\n👤 ชื่อ: {name}\n📞 โทร: {phone}\n💰 ยอดกู้: ฿{amount:,.0f}\n📅 รูปแบบ: {new_entry['payment_term']}"
     send_telegram_alert(msg)
 
-    activity_logs.insert(0, {'time': datetime.now().strftime('%d/%m/%Y %H:%M'), 'user': 'สมาชิก (Member)', 'action': f'ลูกค้ายื่นกู้ใหม่: {name} (฿{amount:,.0f})', 'ip': client_ip})
+    activity_logs.insert(0, {'time': datetime.now().strftime('%d/%m/%Y %H:%M'), 'user': f'สมาชิก ({phone})', 'action': f'ลูกค้ายื่นกู้ใหม่: {name} (฿{amount:,.0f})', 'ip': client_ip})
+    
+    # ล้างสถานะ Verified เพื่อความปลอดภัยหลังส่งกู้เสร็จ
+    session.pop('member_verified', None)
+    
     return "<script>alert('ยื่นคำขอกู้เรียบร้อย!'); window.location.href='/apply';</script>"
 
 @app.route('/clear-data')
