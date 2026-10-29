@@ -49,12 +49,14 @@ bank_accounts = {
 
 personal_finance = {
     'monthly_income': 55000,
-    'savings_cash': 15000,
-    'savings_gold': 20000,
-    'savings_stocks': 12000,
-    'food_expense': 4500,
-    'misc_expense': 2000
+    'savings_cash': 0,
+    'savings_gold': 0,
+    'savings_stocks': 0,
+    'food_expense': 0
 }
+
+# รายการจิปาถะรายวัน (เริ่มต้นว่างเปล่าเพื่อให้กรอกข้อมูลจริง)
+daily_misc_expenses = []
 
 household_debts = [
     {'id': 'd1', 'name': 'Line BK', 'outstanding': 9200, 'detail': 'ดอกเบี้ย 20%, ปิดจบเดือนที่ 1'},
@@ -63,16 +65,16 @@ household_debts = [
 ]
 
 household_expenses = [
-    {'id': 'e1', 'name': 'งดรถยนต์', 'amount': 13588, 'installments': 59, 'note': 'เหลือ 59 งวด', 'status': 'รอจ่าย', 'is_variable': False},
-    {'id': 'e2', 'name': 'งดมอเตอร์ไซค์ 1', 'amount': 3396, 'installments': 10, 'note': 'เหลือ 10 งวด', 'status': 'รอจ่าย', 'is_variable': False},
-    {'id': 'e3', 'name': 'งดมอเตอร์ไซค์ 2', 'amount': 2122, 'installments': 21, 'note': 'เหลือ 21 งวด', 'status': 'รอจ่าย', 'is_variable': False},
-    {'id': 'e4', 'name': 'ประกันรถยนต์ 1', 'amount': 1540, 'installments': 0, 'note': 'ผ่อน 10 เดือน/ปี', 'status': 'รอจ่าย', 'is_variable': False},
-    {'id': 'e5', 'name': 'ประกันรถยนต์ 2', 'amount': 1860, 'installments': 2, 'note': 'เหลืออีก 2 เดือนจบ', 'status': 'รอจ่าย', 'is_variable': False},
-    {'id': 'e6', 'name': 'ค่าห้องพัก', 'amount': 7000, 'installments': 0, 'note': 'ยอดผันแปรตามหน่วยไฟ/น้ำ', 'status': 'รอจ่าย', 'is_variable': True},
-    {'id': 'e7', 'name': 'แชร์วง 5 หมื่น', 'amount': 3000, 'installments': 3, 'note': 'เหลือ 3 งวด (จ่ายทุก 15)', 'status': 'รอจ่าย', 'is_variable': False},
-    {'id': 'e8', 'name': 'แชร์วง 9 หมื่น', 'amount': 5000, 'installments': 17, 'note': 'เหลือ 17 งวด (จ่ายทุก 27)', 'status': 'รอจ่าย', 'is_variable': False},
-    {'id': 'e9', 'name': 'ประกันชีวิต', 'amount': 2100, 'installments': 0, 'note': 'จ่ายประจำเดือน', 'status': 'รอจ่าย', 'is_variable': False},
-    {'id': 'e10', 'name': 'ค่าเน็ต', 'amount': 1500, 'installments': 0, 'note': 'ยอดผันแปรตามการใช้งาน/ส่วนลด', 'status': 'รอจ่าย', 'is_variable': True}
+    {'id': 'e1', 'name': 'งดรถยนต์', 'amount': 13588, 'installments': 59, 'note': 'งวดคงเหลือ', 'status': 'รอจ่าย', 'is_variable': False, 'has_installments': True},
+    {'id': 'e2', 'name': 'งดมอเตอร์ไซค์ 1', 'amount': 3396, 'installments': 10, 'note': 'งวดคงเหลือ', 'status': 'รอจ่าย', 'is_variable': False, 'has_installments': True},
+    {'id': 'e3', 'name': 'งดมอเตอร์ไซค์ 2', 'amount': 2122, 'installments': 21, 'note': 'งวดคงเหลือ', 'status': 'รอจ่าย', 'is_variable': False, 'has_installments': True},
+    {'id': 'e4', 'name': 'ประกันรถยนต์ 1', 'amount': 1540, 'installments': 10, 'note': 'งวดคงเหลือ', 'status': 'รอจ่าย', 'is_variable': False, 'has_installments': True},
+    {'id': 'e5', 'name': 'ประกันรถยนต์ 2', 'amount': 1860, 'installments': 2, 'note': 'งวดคงเหลือ', 'status': 'รอจ่าย', 'is_variable': False, 'has_installments': True},
+    {'id': 'e6', 'name': 'ค่าห้องพัก', 'amount': 0, 'installments': 0, 'note': 'ยอดผันแปรตามไฟ/น้ำ', 'status': 'รอจ่าย', 'is_variable': True, 'has_installments': False},
+    {'id': 'e7', 'name': 'แชร์วง 5 หมื่น', 'amount': 3000, 'installments': 3, 'note': 'งวดคงเหลือ', 'status': 'รอจ่าย', 'is_variable': False, 'has_installments': True},
+    {'id': 'e8', 'name': 'แชร์วง 9 หมื่น', 'amount': 5000, 'installments': 17, 'note': 'งวดคงเหลือ', 'status': 'รอจ่าย', 'is_variable': False, 'has_installments': True},
+    {'id': 'e9', 'name': 'ประกันชีวิต', 'amount': 2100, 'installments': 0, 'note': 'จ่ายประจำเดือน', 'status': 'รอจ่าย', 'is_variable': False, 'has_installments': False},
+    {'id': 'e10', 'name': 'ค่าเน็ต', 'amount': 0, 'installments': 0, 'note': 'ยอดผันแปรตามการใช้จริง', 'status': 'รอจ่าย', 'is_variable': True, 'has_installments': False}
 ]
 
 @app.template_filter('format_num')
@@ -417,37 +419,55 @@ ADMIN_TEMPLATE = """
                         </div>
                     </div>
 
-                    <!-- ช่องแยกกระเป๋าสะสมการออม (เงินสด / ทองคำ / หุ้น) -->
+                    <!-- ช่องพอร์ตสะสมทรัพย์สิน & การออมแยกประเภท (สามารถพิมพ์แก้ไขยอดได้เองทันที) -->
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
-                            <h4 class="font-bold text-sm text-slate-800">🏆 พอร์ตสะสมทรัพย์สิน & การออมแยกประเภท</h4>
-                            <button onclick="openSavingsModal()" class="px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold shadow">+ บันทึกการออมเพิ่ม</button>
+                            <h4 class="font-bold text-sm text-slate-800">🏆 พอร์ตสะสมทรัพย์สิน & การออมแยกประเภท (แก้ไขยอดได้เอง)</h4>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1">
-                                <span class="text-xs font-bold text-emerald-800 uppercase"><i class="fa-solid fa-money-bill-wave mr-1"></i> เงินสด / เงินฝาก</span>
-                                <div class="text-xl font-black text-emerald-900" id="savings-cash-val">฿{{ personal_finance.savings_cash | format_num }}</div>
+                            <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-2">
+                                <label class="text-xs font-bold text-emerald-800 uppercase block"><i class="fa-solid fa-money-bill-wave mr-1"></i> เงินสด / เงินฝาก (บาท)</label>
+                                <input type="number" id="savings-cash-input" value="{{ personal_finance.savings_cash }}" onchange="saveSavingsPortfolio()" class="w-full px-3 py-2 bg-white border border-emerald-300 rounded-xl font-mono font-bold text-emerald-900 text-lg">
                             </div>
-                            <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-1">
-                                <span class="text-xs font-bold text-amber-800 uppercase"><i class="fa-solid fa-coins mr-1"></i> ทองคำสะสม</span>
-                                <div class="text-xl font-black text-amber-900" id="savings-gold-val">฿{{ personal_finance.savings_gold | format_num }}</div>
+                            <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-2">
+                                <label class="text-xs font-bold text-amber-800 uppercase block"><i class="fa-solid fa-coins mr-1"></i> ทองคำสะสม (บาท)</label>
+                                <input type="number" id="savings-gold-input" value="{{ personal_finance.savings_gold }}" onchange="saveSavingsPortfolio()" class="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl font-mono font-bold text-amber-900 text-lg">
                             </div>
-                            <div class="p-4 rounded-2xl bg-blue-50 border border-blue-200 space-y-1">
-                                <span class="text-xs font-bold text-blue-800 uppercase"><i class="fa-solid fa-chart-line mr-1"></i> หุ้น / กองทุน</span>
-                                <div class="text-xl font-black text-blue-900" id="savings-stocks-val">฿{{ personal_finance.savings_stocks | format_num }}</div>
+                            <div class="p-4 rounded-2xl bg-blue-50 border border-blue-200 space-y-2">
+                                <label class="text-xs font-bold text-blue-800 uppercase block"><i class="fa-solid fa-chart-line mr-1"></i> หุ้น / กองทุน (บาท)</label>
+                                <input type="number" id="savings-stocks-input" value="{{ personal_finance.savings_stocks }}" onchange="saveSavingsPortfolio()" class="w-full px-3 py-2 bg-white border border-blue-300 rounded-xl font-mono font-bold text-blue-900 text-lg">
                             </div>
                         </div>
                     </div>
 
-                    <!-- ค่าใช้จ่ายผันแปรประจำวัน: ค่ากิน & จิปาถะ -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5 bg-slate-50 border rounded-3xl">
-                        <div class="space-y-1">
-                            <label class="text-xs font-bold text-slate-700 uppercase">🍲 ค่ากินประจำเดือน (บาท)</label>
-                            <input type="number" id="expense-food" value="{{ personal_finance.food_expense }}" onchange="updateCalculations()" class="w-full px-3 py-2 bg-white border rounded-xl text-sm font-bold text-slate-800">
+                    <!-- ส่วนกรอกค่ากิน & จิปาถะรายวัน -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-5 bg-slate-50 border rounded-3xl">
+                        <!-- ค่ากินประจำเดือน -->
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-700 uppercase block">🍲 ค่ากินประจำเดือน (บาท)</label>
+                            <input type="number" id="expense-food" value="{{ personal_finance.food_expense }}" onchange="updateCalculations()" placeholder="กรอกยอดค่ากินสะสม..." class="w-full px-3.5 py-2.5 bg-white border rounded-xl text-sm font-bold text-slate-800">
                         </div>
-                        <div class="space-y-1">
-                            <label class="text-xs font-bold text-slate-700 uppercase">🛍️ ค่าใช้จ่ายจิปาถะ (บาท)</label>
-                            <input type="number" id="expense-misc" value="{{ personal_finance.misc_expense }}" onchange="updateCalculations()" class="w-full px-3 py-2 bg-white border rounded-xl text-sm font-bold text-slate-800">
+
+                        <!-- ค่าใช้จ่ายจิปาถะ กรอกเป็นรายวัน -->
+                        <div class="space-y-3">
+                            <label class="text-xs font-bold text-slate-700 uppercase block">🛍️ ค่าใช้จ่ายจิปาถะ (บันทึกรายวัน)</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="misc-desc-input" placeholder="รายการ (เช่น ซื้อของใช้, ค่ากาแฟ)" class="flex-1 px-3 py-2 bg-white border rounded-xl text-xs font-semibold">
+                                <input type="number" id="misc-amt-input" placeholder="จำนวนเงิน" class="w-28 px-3 py-2 bg-white border rounded-xl text-xs font-bold font-mono">
+                                <button onclick="addDailyMisc()" class="px-3 py-2 bg-purple-600 text-white rounded-xl text-xs font-bold shadow">+ เพิ่ม</button>
+                            </div>
+
+                            <!-- ตารางจิปาถะรายวัน -->
+                            <div class="max-h-36 overflow-y-auto border rounded-xl bg-white">
+                                <table class="w-full text-left text-xs">
+                                    <thead class="bg-slate-100 text-slate-600 sticky top-0">
+                                        <tr><th class="p-2">วันที่/เวลา</th><th class="p-2">รายการ</th><th class="p-2 text-right">จำนวน</th><th class="p-2 text-center">ลบ</th></tr>
+                                    </thead>
+                                    <tbody id="misc-table-body" class="divide-y">
+                                        <tr><td colspan="4" class="p-3 text-center text-slate-400">ยังไม่มีรายการจิปาถะวันนี้</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
@@ -483,10 +503,10 @@ ADMIN_TEMPLATE = """
                         </div>
                     </div>
 
-                    <!-- รายการค่าใช้จ่ายประจำต่อเดือน -->
+                    <!-- รายการค่าใช้จ่ายประจำต่อเดือน (งวดคงเหลือแก้ไขได้เอง) -->
                     <div class="space-y-3 pt-4">
                         <div class="flex items-center justify-between">
-                            <h4 class="font-bold text-sm text-slate-800">รายการค่าใช้จ่ายประจำต่อเดือน (กรอกยอดที่ชำระจริงของแต่ละเดือนได้)</h4>
+                            <h4 class="font-bold text-sm text-slate-800">รายการค่าใช้จ่ายประจำต่อเดือน (งวดคงเหลือพิมพ์แก้ไขได้เอง)</h4>
                             <button onclick="resetMonthlyExpenses()" class="px-3 py-1.5 bg-slate-200 text-slate-700 rounded-xl text-xs font-bold">รีเซ็ตสถานะจ่ายทุกเดือน</button>
                         </div>
                         <div class="overflow-x-auto">
@@ -506,8 +526,16 @@ ADMIN_TEMPLATE = """
                                                 <input type="hidden" id="exp-amt-{{ exp.id }}" value="{{ exp.amount }}">
                                             {% endif %}
                                         </td>
-                                        <td class="p-3 text-slate-600 font-bold" id="exp-inst-{{ exp.id }}">
-                                            {% if exp.installments > 0 %}เหลือ {{ exp.installments }} งวด{% else %}{{ exp.note }}{% endif %}
+                                        <td class="p-3 text-slate-600 font-bold">
+                                            {% if exp.has_installments %}
+                                                <div class="flex items-center gap-1">
+                                                    <span>เหลือ</span>
+                                                    <input type="number" id="exp-inst-input-{{ exp.id }}" value="{{ exp.installments }}" onchange="updateInstallmentValue('{{ exp.id }}')" class="w-16 px-2 py-0.5 bg-slate-50 border rounded font-mono font-bold text-slate-800 text-center">
+                                                    <span>งวด</span>
+                                                </div>
+                                            {% else %}
+                                                <span>{{ exp.note }}</span>
+                                            {% endif %}
                                         </td>
                                         <td class="p-3 text-center">
                                             <button onclick="toggleExpenseStatus('{{ exp.id }}', this)" class="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-lg font-bold text-[11px] expense-status-btn" data-exp-id="{{ exp.id }}">{{ exp.status }}</button>
@@ -674,31 +702,6 @@ ADMIN_TEMPLATE = """
         </div>
     </div>
 
-    <!-- Modal: เพิ่มเงินออมสะสมแยกประเภท -->
-    <div id="savingsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <h3 class="text-lg font-black text-slate-900">เพิ่มการออม / สะสมทรัพย์สิน</h3>
-            <div class="space-y-3 text-xs">
-                <div>
-                    <label class="block font-semibold mb-1">เลือกประเภททรัพย์สินที่ออม</label>
-                    <select id="savings_type_select" class="w-full px-3 py-2 bg-slate-50 border rounded-xl text-sm font-bold">
-                        <option value="cash">เงินสด / เงินฝาก</option>
-                        <option value="gold">ทองคำ</option>
-                        <option value="stocks">หุ้น / กองทุน</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block font-semibold mb-1">จำนวนเงินออมเพิ่ม (บาท)</label>
-                    <input type="number" id="add_savings_input" class="w-full px-3 py-2 bg-slate-50 border rounded-xl text-sm font-bold text-emerald-700">
-                </div>
-                <div class="flex gap-2 pt-2">
-                    <button type="button" onclick="closeSavingsModal()" class="flex-1 py-2 bg-slate-200 rounded-xl font-bold">ยกเลิก</button>
-                    <button type="button" onclick="submitAddSavings()" class="flex-1 py-2 bg-emerald-600 text-white rounded-xl font-bold shadow">บันทึก</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Modal: ที่มาของยอดเงินในกล่อง -->
     <div id="boxModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
@@ -713,11 +716,66 @@ ADMIN_TEMPLATE = """
         let householdDebts = {{ household_debts | tojson }};
         let householdExpenses = {{ household_expenses | tojson }};
         let personalFinance = {{ personal_finance | tojson }};
+        let dailyMiscExpenses = [];
 
         let expenseChart = null;
 
+        function saveSavingsPortfolio() {
+            personalFinance.savings_cash = parseFloat(document.getElementById('savings-cash-input').value) || 0;
+            personalFinance.savings_gold = parseFloat(document.getElementById('savings-gold-input').value) || 0;
+            personalFinance.savings_stocks = parseFloat(document.getElementById('savings-stocks-input').value) || 0;
+        }
+
+        function updateInstallmentValue(expId) {
+            const exp = householdExpenses.find(e => e.id === expId);
+            const input = document.getElementById('exp-inst-input-' + expId);
+            if (exp && input) {
+                exp.installments = parseInt(input.value) || 0;
+            }
+        }
+
+        function addDailyMisc() {
+            const desc = document.getElementById('misc-desc-input').value.strip ? document.getElementById('misc-desc-input').value.strip() : document.getElementById('misc-desc-input').value;
+            const amt = parseFloat(document.getElementById('misc-amt-input').value) || 0;
+            if (!desc || amt <= 0) {
+                alert('กรุณากรอกรายการและจำนวนเงินที่ถูกต้อง');
+                return;
+            }
+            const timeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+            dailyMiscExpenses.push({ id: Date.now(), time: timeStr, desc: desc, amt: amt });
+            
+            document.getElementById('misc-desc-input').value = '';
+            document.getElementById('misc-amt-input').value = '';
+            
+            renderMiscTable();
+            updateCalculations();
+        }
+
+        function removeMiscItem(id) {
+            dailyMiscExpenses = dailyMiscExpenses.filter(item => item.id !== id);
+            renderMiscTable();
+            updateCalculations();
+        }
+
+        function renderMiscTable() {
+            const tbody = document.getElementById('misc-table-body');
+            if (dailyMiscExpenses.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-slate-400">ยังไม่มีรายการจิปาถะวันนี้</td></tr>';
+                return;
+            }
+            let html = '';
+            dailyMiscExpenses.forEach(item => {
+                html += `<tr>
+                    <td class="p-2 font-mono text-slate-500">${item.time}</td>
+                    <td class="p-2 font-semibold text-slate-800">${item.desc}</td>
+                    <td class="p-2 text-right font-mono font-bold text-rose-600">฿${item.amt.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    <td class="p-2 text-center"><button onclick="removeMiscItem(${item.id})" class="text-rose-500 hover:text-rose-700 font-bold"><i class="fa-solid fa-trash"></i></button></td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+
         function updateCalculations() {
-            // คำนวณยอดเงินที่จ่ายจริงในรอบเดือนนี้เฉพาะรายการที่ขึ้นสถานะ 'จ่ายแล้ว'
             let paidExpensesSum = 0;
             householdExpenses.forEach(exp => {
                 const btn = document.querySelector(`.expense-status-btn[data-exp-id="${exp.id}"]`);
@@ -728,17 +786,15 @@ ADMIN_TEMPLATE = """
                 }
             });
 
-            // รวมค่ากิน และค่าใช้จ่ายจิปาถะ
             const food = parseFloat(document.getElementById('expense-food').value) || 0;
-            const misc = parseFloat(document.getElementById('expense-misc').value) || 0;
             personalFinance.food_expense = food;
-            personalFinance.misc_expense = misc;
 
-            const totalSpent = paidExpensesSum + food + misc;
+            const miscTotal = dailyMiscExpenses.reduce((sum, item) => sum + item.amt, 0);
+
+            const totalSpent = paidExpensesSum + food + miscTotal;
             const income = personalFinance.monthly_income || 1;
             const remaining = income - totalSpent;
 
-            // อัปเดตการแสดงผลของหลอด Progress Bar รายได้
             document.getElementById('spent-val').innerText = '฿' + totalSpent.toLocaleString('en-US', {minimumFractionDigits: 2});
             document.getElementById('net-remaining-val').innerText = '฿' + remaining.toLocaleString('en-US', {minimumFractionDigits: 2});
 
@@ -756,8 +812,7 @@ ADMIN_TEMPLATE = """
             document.getElementById('spent-percent-text').innerText = 'ใช้ไป ' + spentPercent.toFixed(1) + '% ของรายรับ';
             document.getElementById('remaining-percent-text').innerText = 'คงเหลือ ' + ((remaining / income) * 100).toFixed(1) + '%';
 
-            // อัปเดตกราฟวงกลม
-            updatePieChart(paidExpensesSum, food, misc);
+            updatePieChart(paidExpensesSum, food, miscTotal);
         }
 
         function updatePieChart(paidExpenses, food, misc) {
@@ -818,27 +873,6 @@ ADMIN_TEMPLATE = """
             alert('บันทึกรายรับใหม่สำเร็จ!');
         }
 
-        function openSavingsModal() { document.getElementById('savingsModal').classList.remove('hidden'); }
-        function closeSavingsModal() { document.getElementById('savingsModal').classList.add('hidden'); }
-        function submitAddSavings() {
-            const type = document.getElementById('savings_type_select').value;
-            const amt = parseFloat(document.getElementById('add_savings_input').value) || 0;
-            if (amt <= 0) return;
-
-            if (type === 'cash') {
-                personalFinance.savings_cash += amt;
-                document.getElementById('savings-cash-val').innerText = '฿' + personalFinance.savings_cash.toLocaleString('en-US', {minimumFractionDigits: 2});
-            } else if (type === 'gold') {
-                personalFinance.savings_gold += amt;
-                document.getElementById('savings-gold-val').innerText = '฿' + personalFinance.savings_gold.toLocaleString('en-US', {minimumFractionDigits: 2});
-            } else if (type === 'stocks') {
-                personalFinance.savings_stocks += amt;
-                document.getElementById('savings-stocks-val').innerText = '฿' + personalFinance.savings_stocks.toLocaleString('en-US', {minimumFractionDigits: 2});
-            }
-            closeSavingsModal();
-            alert('บันทึกการออมเพิ่มสำเร็จ!');
-        }
-
         function openPayDebtModal(id, name, outstanding) {
             document.getElementById('pay_debt_id').value = id;
             document.getElementById('pay_debt_title').innerText = 'ชำระหนี้: ' + name + ' (คงเหลือ ฿' + outstanding.toLocaleString() + ')';
@@ -865,17 +899,18 @@ ADMIN_TEMPLATE = """
             if (btn.innerText === 'รอจ่าย') {
                 btn.innerText = 'จ่ายแล้ว';
                 btn.className = "px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg font-bold text-[11px] expense-status-btn";
-                // หักงวดคงเหลือลง 1 งวดถ้ามีรายการ
-                if (exp.installments > 0) {
+                if (exp.has_installments && exp.installments > 0) {
                     exp.installments = Math.max(0, exp.installments - 1);
-                    document.getElementById('exp-inst-' + expId).innerText = 'เหลือ ' + exp.installments + ' งวด';
+                    const instInput = document.getElementById('exp-inst-input-' + expId);
+                    if (instInput) instInput.value = exp.installments;
                 }
             } else {
                 btn.innerText = 'รอจ่าย';
                 btn.className = "px-2.5 py-1 bg-amber-100 text-amber-800 rounded-lg font-bold text-[11px] expense-status-btn";
-                if (exp.installments >= 0 && exp.note.includes('งวด')) {
+                if (exp.has_installments) {
                     exp.installments += 1;
-                    document.getElementById('exp-inst-' + expId).innerText = 'เหลือ ' + exp.installments + ' งวด';
+                    const instInput = document.getElementById('exp-inst-input-' + expId);
+                    if (instInput) instInput.value = exp.installments;
                 }
             }
             updateCalculations();
