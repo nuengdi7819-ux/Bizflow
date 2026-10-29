@@ -12,7 +12,6 @@ from supabase import create_client, Client
 app = Flask(__name__)
 app.secret_key = 'bizflow_secure_secret_key'
 
-# ตั้งค่าการเชื่อมต่อ Supabase
 SUPABASE_URL = "https://pdpeqsubrbmdjxgmtjpy.supabase.co"
 SUPABASE_KEY = "sb_publishable_ZSKb3jQeqfP8oSIajLhFWA_sOBMd4-H"
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -261,6 +260,73 @@ ADMIN_TEMPLATE = """
                         </div>
                         <h3 class="text-2xl font-black">฿{{ total_profit | format_num }}</h3>
                         <p class="text-[10px] text-emerald-200 mt-1 underline">คลิกดูประวัติ</p>
+                    </div>
+                </div>
+
+                <!-- ตารางความเคลื่อนไหวล่างแดชบอร์ด -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- ตารางลูกหนี้ที่อนุมัติแล้ว -->
+                    <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-slate-800 text-sm">👥 รายชื่อลูกหนี้ที่ใช้งานอยู่ในระบบ</h3>
+                            <button onclick="switchTab('debtors')" class="text-xs text-purple-600 font-bold hover:underline">ดูทั้งหมด</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs border rounded-xl overflow-hidden">
+                                <thead class="bg-slate-50 text-slate-500">
+                                    <tr><th class="p-2.5">ชื่อ-เบอร์โทร</th><th class="p-2.5 text-right">เงินต้นกู้</th><th class="p-2.5 text-center">จัดการ</th></tr>
+                                </thead>
+                                <tbody class="divide-y">
+                                    {% set active_debtors = debtors | selectattr('status', 'equalto', 'ปกติ') | list %}
+                                    {% for d in active_debtors[:5] %}
+                                    <tr>
+                                        <td class="p-2.5">
+                                            <div class="font-bold text-slate-800">{{ d.name }}</div>
+                                            <div class="text-[10px] text-slate-400 font-mono">{{ d.phone }}</div>
+                                        </td>
+                                        <td class="p-2.5 text-right font-mono font-bold text-rose-600">฿{{ d.principal | format_num }}</td>
+                                        <td class="p-2.5 text-center">
+                                            <button onclick="openDebtorDetail('{{ d.id }}')" class="px-2.5 py-1 bg-purple-100 text-purple-800 rounded-lg font-bold">ดูรายละเอียด</button>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr><td colspan="3" class="p-4 text-center text-slate-400">ยังไม่มีลูกหนี้ที่อนุมัติแล้ว</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- รายการคำขอกู้ใหม่รออนุมัติ -->
+                    <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-slate-800 text-sm">⌛ คำขอกู้ใหม่ที่รออนุมัติ</h3>
+                            <span class="px-2 py-0.5 bg-amber-100 text-amber-800 rounded font-bold text-xs">{{ pending_count }} รายการ</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs border rounded-xl overflow-hidden">
+                                <thead class="bg-slate-50 text-slate-500">
+                                    <tr><th class="p-2.5">ชื่อ-เบอร์โทร</th><th class="p-2.5 text-right">วงเงินที่ขอกู้</th><th class="p-2.5 text-center">จัดการ</th></tr>
+                                </thead>
+                                <tbody class="divide-y">
+                                    {% set pending_debtors = debtors | selectattr('status', 'equalto', 'รออนุมัติ') | list %}
+                                    {% for d in pending_debtors %}
+                                    <tr>
+                                        <td class="p-2.5">
+                                            <div class="font-bold text-slate-800">{{ d.name }}</div>
+                                            <div class="text-[10px] text-slate-400 font-mono">{{ d.phone }}</div>
+                                        </td>
+                                        <td class="p-2.5 text-right font-mono font-bold text-purple-700">฿{{ d.principal | format_num }}</td>
+                                        <td class="p-2.5 text-center">
+                                            <button onclick="openDebtorDetail('{{ d.id }}')" class="px-2.5 py-1 bg-amber-500 text-white rounded-lg font-bold">พิจารณาอนุมัติ</button>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr><td colspan="3" class="p-4 text-center text-slate-400">ไม่มีคำขอกู้ที่รออนุมัติในขณะนี้</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -748,9 +814,10 @@ ADMIN_TEMPLATE = """
                 </div>
             `;
 
+            let cleanId = encodeURIComponent(debtor.id);
             let actionHtml = '';
             if (debtor.status === 'รออนุมัติ') {
-                actionHtml += `<a href="/approve-debtor/${debtor.id}" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow flex items-center"><i class="fa-solid fa-check mr-1.5"></i> อนุมัติคำขอกู้เงิน</a>`;
+                actionHtml += `<a href="/approve-debtor?debtor_id=${cleanId}" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow flex items-center"><i class="fa-solid fa-check mr-1.5"></i> อนุมัติคำขอกู้เงิน</a>`;
             }
             actionHtml += `<button onclick="openEditDebtor('${debtor.id}', ${debtor.principal || 0}, '${debtor.interest_type || 'ดอกลอย'}', ${dailyRate})" class="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-xs shadow"><i class="fa-solid fa-pen-to-square mr-1.5"></i> แก้ไขวงเงิน/ดอกเบี้ย</button>`;
             
@@ -1038,13 +1105,15 @@ def clear_otp():
     pending_otp_requests = [i for i in pending_otp_requests if i['phone'] != phone]
     return redirect(url_for('admin_dashboard'))
 
-@app.route('/approve-debtor/<debtor_id>')
-def approve_debtor(debtor_id):
+@app.route('/approve-debtor')
+def approve_debtor():
     if not session.get('admin_logged_in'): return redirect(url_for('admin_login'))
-    try:
-        supabase.table("debtors").update({'status': 'ปกติ'}).eq('id', debtor_id).execute()
-    except Exception as e:
-        print(f"Approve Error: {e}")
+    debtor_id = request.args.get('debtor_id')
+    if debtor_id:
+        try:
+            supabase.table("debtors").update({'status': 'ปกติ'}).eq('id', debtor_id).execute()
+        except Exception as e:
+            print(f"Approve Error: {e}")
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/update-debtor-specs', methods=['POST'])
