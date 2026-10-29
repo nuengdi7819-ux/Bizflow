@@ -19,7 +19,11 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 def get_debtors_from_db():
     try:
         response = supabase.table("debtors").select("*").execute()
-        return response.data if response.data else []
+        data = response.data if response.data else []
+        for d in data:
+            if 'old_arrears' not in d:
+                d['old_arrears'] = 0
+        return data
     except Exception as e:
         print(f"Supabase Fetch Error: {e}")
         return []
@@ -914,7 +918,7 @@ ADMIN_TEMPLATE = """
 
         function openPayOldModal(phone, currentOld) {
             document.getElementById('pay_old_phone').value = phone;
-            document.getElementById('pay_title').innerText = 'รับชำระยอดค้างเก่า (คงเหลือ ฿' + currentOld.toLocaleString() + ')';
+            document.getElementById('pay_old_title').innerText = 'รับชำระยอดค้างเก่า (คงเหลือ ฿' + currentOld.toLocaleString() + ')';
             document.getElementById('pay_old_amount').value = '';
             document.getElementById('pay_old_date').value = new Date().toISOString().split('T')[0];
             document.getElementById('payOldArrearsModal').classList.remove('hidden');
