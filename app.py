@@ -17,13 +17,14 @@ debtors_database = []
 # ระบบเก็บข้อมูลการขอ OTP ชั่วคราวของสมาชิก (เบอร์โทร -> OTP ล่าสุด)
 pending_otp_sessions = {}
 
-# ฐานข้อมูลผู้ใช้งานระบบหลังบ้าน (แอดมิน)
+# ฐานข้อมูลผู้ใช้งานระบบหลังบ้าน (กำหนดตายตัวตามที่คุณต้องการ)
 users_database = [
-    {'id': 1, 'name': 'Owner (คุณสมชาย)', 'username': 'owner', 'role': 'Owner / Super Admin', 'status': 'ใช้งานอยู่', 'last_login': '30/10/2026 08:30'}
+    {'id': 1, 'name': 'Nice (แอดมิน)', 'username': 'nice', 'password': '022540', 'role': 'Super Admin', 'status': 'ใช้งานอยู่', 'last_login': '30/10/2026 08:30'},
+    {'id': 2, 'name': 'Nueng (แอดมิน)', 'username': 'nueng', 'password': '909090', 'role': 'Super Admin', 'status': 'ใช้งานอยู่', 'last_login': '30/10/2026 08:30'}
 ]
 
 activity_logs = [
-    {'time': '30/10/2026 08:30', 'user': 'Owner', 'action': 'เข้าสู่ระบบหลังบ้าน', 'ip': '127.0.0.1'}
+    {'time': '30/10/2026 08:30', 'user': 'System', 'action': 'เริ่มต้นระบบหลังบ้าน', 'ip': '127.0.0.1'}
 ]
 
 system_config = {
@@ -59,6 +60,49 @@ def send_telegram_alert(message):
     except Exception as e:
         print(f"Telegram Error: {e}")
         return False
+
+ADMIN_LOGIN_TEMPLATE = """
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BizFlow+ - เข้าสู่ระบบหลังบ้าน (Admin Login)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style> body { font-family: 'Kanit', sans-serif; background: linear-gradient(135deg, #18092e 0%, #0d061a 100%); min-height: 100vh; } </style>
+</head>
+<body class="flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-white rounded-3xl shadow-2xl p-8 border border-purple-100 text-slate-800">
+        <div class="text-center mb-6">
+            <div class="w-12 h-12 rounded-2xl bg-purple-600 text-white flex items-center justify-center font-black text-2xl mx-auto mb-3 shadow-lg">B</div>
+            <h1 class="text-xl font-black text-slate-900">BizFlow+ ระบบหลังบ้าน</h1>
+            <p class="text-xs text-slate-500 mt-1">กรุณาเข้าสู่ระบบด้วย Username และ Password ของแอดมิน</p>
+        </div>
+
+        {% if error %}
+        <div class="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl text-center font-bold">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form action="/admin-login" method="POST" class="space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Username</label>
+                <input type="text" name="username" required placeholder="ชื่อผู้ใช้งานแอดมิน" class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Password</label>
+                <input type="password" name="password" required placeholder="รหัสผ่าน" class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm">
+            </div>
+            <button type="submit" class="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold shadow-lg mt-2">
+                เข้าสู่ระบบหลังบ้าน
+            </button>
+        </form>
+    </div>
+</body>
+</html>
+"""
 
 ADMIN_TEMPLATE = """
 <!DOCTYPE html>
@@ -163,9 +207,14 @@ ADMIN_TEMPLATE = """
                 </div>
             </nav>
         </div>
-        <div class="p-4 border-t border-purple-900/40 text-xs text-purple-300/60 flex items-center justify-between">
-            <span>ผู้ดูแลระบบ: Owner</span>
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <div class="p-4 border-t border-purple-900/40 space-y-3">
+            <div class="text-xs text-purple-300/80 flex items-center justify-between">
+                <span>แอดมิน: <b class="text-white">{{ session.get('admin_user', 'Admin') }}</b></span>
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            </div>
+            <a href="/admin-logout" class="w-full py-2 bg-rose-600/80 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow flex items-center justify-center space-x-1.5 transition">
+                <i class="fa-solid fa-right-from-bracket"></i><span>ออกจากระบบหลังบ้าน</span>
+            </a>
         </div>
     </aside>
 
@@ -261,9 +310,9 @@ ADMIN_TEMPLATE = """
             <div id="section-otp_requests" class="hidden space-y-6">
                 <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
                     <h3 class="text-lg font-bold text-slate-800 flex items-center">
-                        <i class="fa-solid fa-key text-rose-500 mr-2"></i> คำขอรหัส OTP จากสมาชิกหน้าเว็บ
+                        <i class="fa-solid fa-key text-rose-500 mr-2"></i> คำขอรหัส OTP จากสมาชิกหน้าเว็บ (ส่งเข้า Telegram แอดมิน)
                     </h3>
-                    <p class="text-xs text-slate-500">เมื่อลูกค้ากรอกเบอร์โทรขอเข้าสู่ระบบ แอดมินจะเห็นรหัส OTP ชั่วคราวที่ถูกสุ่มขึ้นมาใหม่ตรงนี้ ให้นำรหัสนี้แจ้งลูกค้า</p>
+                    <p class="text-xs text-slate-500">เมื่อลูกค้ากรอกเบอร์โทรขอเข้าสู่ระบบ ระบบจะส่ง OTP ไปยัง Telegram ของคุณ และแสดงรายการที่นี่ด้วย</p>
                     
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-xs bg-white rounded-xl border">
@@ -271,7 +320,7 @@ ADMIN_TEMPLATE = """
                                 <tr>
                                     <th class="p-3">เบอร์โทรศัพท์มือถือ</th>
                                     <th class="p-3">เวลาที่ขอ OTP</th>
-                                    <th class="p-3 text-center">รหัส OTP ชั่วคราว (สุ่มใหม่)</th>
+                                    <th class="p-3 text-center">รหัส OTP ชั่วคราว</th>
                                     <th class="p-3 text-right">จัดการ</th>
                                 </tr>
                             </thead>
@@ -366,13 +415,14 @@ ADMIN_TEMPLATE = """
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         
+                        <!-- 1. รายชื่อผู้ดูแลระบบ (ล็อกไว้เฉพาะ nice และ nueng) -->
                         <div class="p-4 bg-slate-50 border rounded-2xl space-y-3">
-                            <h4 class="text-xs font-bold text-purple-900 uppercase"><i class="fa-solid fa-users-gear mr-1"></i> 1. จัดการผู้ใช้งาน & เพิ่มแอดมิน</h4>
+                            <h4 class="text-xs font-bold text-purple-900 uppercase"><i class="fa-solid fa-users-gear mr-1"></i> 1. ผู้ดูแลระบบ (Admin Accounts)</h4>
                             <div class="overflow-x-auto">
                                 <table class="w-full text-left text-xs bg-white rounded-xl border mb-3">
                                     <thead class="bg-slate-100 text-slate-600">
                                         <tr>
-                                            <th class="p-2.5">ชื่อ-นามสกุล / Username</th>
+                                            <th class="p-2.5">ชื่อ / Username</th>
                                             <th class="p-2.5">บทบาท</th>
                                         </tr>
                                     </thead>
@@ -386,20 +436,10 @@ ADMIN_TEMPLATE = """
                                     </tbody>
                                 </table>
                             </div>
-
-                            <form action="/add-admin" method="POST" class="space-y-2 pt-2 border-t">
-                                <span class="text-xs font-bold text-slate-700 block">➕ เพิ่มบัญชีแอดมินใหม่</span>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <input type="text" name="admin_name" required placeholder="ชื่อแอดมิน" class="px-3 py-1.5 bg-white border rounded-lg text-xs">
-                                    <input type="text" name="admin_user" required placeholder="Username" class="px-3 py-1.5 bg-white border rounded-lg text-xs">
-                                </div>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <input type="password" name="admin_pass" required placeholder="Password" class="px-3 py-1.5 bg-white border rounded-lg text-xs">
-                                    <button type="submit" class="py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold shadow">บันทึกแอดมิน</button>
-                                </div>
-                            </form>
+                            <p class="text-[11px] text-slate-400">ระบบถูกกำหนดให้ใช้บัญชีแอดมินมาตรฐาน: nice (รหัส 022540) และ nueng (รหัส 909090)</p>
                         </div>
 
+                        <!-- 2. จัดการฐานข้อมูล -->
                         <div class="p-4 bg-purple-50/50 border border-purple-200 rounded-2xl space-y-3">
                             <h4 class="text-xs font-bold text-purple-900 uppercase"><i class="fa-solid fa-database mr-1"></i> 2. จัดการฐานข้อมูล & เตรียมใช้งานจริง</h4>
                             <p class="text-xs text-slate-500">สำรองข้อมูลเป็น CSV หรือล้างข้อมูลจำลองเพื่อเริ่มต้นใช้งานจริง</p>
@@ -422,6 +462,7 @@ ADMIN_TEMPLATE = """
                             </form>
                         </div>
 
+                        <!-- 3. แจ้งเตือน Telegram -->
                         <div class="p-4 bg-slate-50 border rounded-2xl space-y-3 md:col-span-2">
                             <h4 class="text-xs font-bold text-purple-900 uppercase"><i class="fa-brands fa-telegram text-sky-600 mr-1"></i> 3. ช่องทางแจ้งเตือน Telegram Bot & ความปลอดภัย</h4>
                             <form action="/update-telegram" method="POST" class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs items-end">
@@ -473,16 +514,6 @@ ADMIN_TEMPLATE = """
 
         </div>
     </main>
-
-    <div id="userDetailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-4xl w-full p-6 md:p-8 shadow-2xl max-h-[92vh] overflow-y-auto space-y-6">
-            <div class="flex items-center justify-between pb-4 border-b">
-                <span id="detail-user-id" class="px-2.5 py-1 bg-purple-100 text-purple-800 rounded-lg text-xs font-mono font-bold">#000000</span>
-                <button onclick="closeUserDetailModal()" class="px-3 py-1.5 bg-slate-100 rounded-xl text-xs font-bold">✕ ปิด</button>
-            </div>
-            <div id="approve-btn-container" class="grid grid-cols-2 gap-4 pt-2"></div>
-        </div>
-    </div>
 
     <script>
         let debtorsList = {{ debtors | tojson }};
@@ -547,7 +578,6 @@ ADMIN_TEMPLATE = """
 </html>
 """
 
-# หน้า Login สมาชิกแบบกรอกเบอร์โทร + ขอ OTP จากแอดมิน
 LOGIN_MEMBER_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="th">
@@ -587,7 +617,7 @@ LOGIN_MEMBER_TEMPLATE = """
             </div>
 
             <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1"><i class="fa-solid fa-key mr-1 text-purple-600"></i> รหัส OTP (สอดคล้องกับที่ขอจากแอดมิน)</label>
+                <label class="block text-xs font-semibold text-slate-600 mb-1"><i class="fa-solid fa-key mr-1 text-purple-600"></i> รหัส OTP (รับจาก Telegram แอดมิน)</label>
                 <input type="text" name="otp_code" required placeholder="กรอกรหัส OTP 4 หลัก" class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-mono tracking-widest text-center text-lg font-bold">
             </div>
 
@@ -714,11 +744,12 @@ APPLY_TEMPLATE = """
 </html>
 """
 
-# เก็บคำขอ OTP ที่รอแอดมินแจ้ง
 active_otp_requests = {}
 
 @app.route('/')
 def admin_dashboard():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
     return render_template_string(ADMIN_TEMPLATE, 
                                  debtors=debtors_database,
                                  users=users_database,
@@ -728,6 +759,35 @@ def admin_dashboard():
                                  bank_kbank=bank_accounts['kbank'],
                                  bank_scb=bank_accounts['scb'],
                                  bank_cash=bank_accounts['cash'])
+
+@app.route('/admin-login', methods=['GET', 'POST'])
+def admin_login():
+    if request.method == 'POST':
+        u = request.form.get('username').strip()
+        p = request.form.get('password').strip()
+        
+        # ตรวจสอบยูสเซอร์และรหัสผ่านที่กำหนด
+        matched = False
+        for user in users_database:
+            if user['username'] == u and user['password'] == p:
+                matched = True
+                break
+                
+        if matched:
+            session['admin_logged_in'] = True
+            session['admin_user'] = u
+            activity_logs.insert(0, {'time': datetime.now().strftime('%d/%m/%Y %H:%M'), 'user': u, 'action': 'เข้าสู่ระบบหลังบ้านสำเร็จ', 'ip': request.remote_addr})
+            return redirect(url_for('admin_dashboard'))
+        else:
+            return render_template_string(ADMIN_LOGIN_TEMPLATE, error="Username หรือ Password ไม่ถูกต้อง!")
+            
+    return render_template_string(ADMIN_LOGIN_TEMPLATE)
+
+@app.route('/admin-logout')
+def admin_logout():
+    session.pop('admin_logged_in', None)
+    session.pop('admin_user', None)
+    return redirect(url_for('admin_login'))
 
 @app.route('/apply')
 def apply_form():
@@ -745,25 +805,23 @@ def apply_login():
         return render_template_string(LOGIN_MEMBER_TEMPLATE, error="กรุณากรอกเบอร์โทรศัพท์มือถือ!")
 
     if action == 'request_otp':
-        # สุ่มรหัส OTP ใหม่ 4 หลัก (ไม่ซ้ำเดิม)
         new_otp = str(random.randint(1000, 9999))
         active_otp_requests[phone] = {
             'otp': new_otp,
             'time': datetime.now().strftime('%d/%m/%Y %H:%M:%S')
         }
         
-        # ส่งแจ้งเตือนเข้า Telegram ให้แอดมินทราบทันทีว่ามีเบอร์นี้ขอ OTP
-        send_telegram_alert(f"🔑 <b>มีคำขอรหัส OTP ใหม่!</b>\n📞 เบอร์โทร: <code>{phone}</code>\n🔢 รหัส OTP: <b>{new_otp}</b>\n\n(แจ้งรหัสนี้ให้ลูกค้าเพื่อเข้าสู่ระบบ)")
+        msg = f"🔑 <b>คำขอรหัส OTP เข้าสู่ระบบสมาชิก</b>\n📞 เบอร์โทร: <code>{phone}</code>\n🔢 รหัส OTP: <b>{new_otp}</b>\n\n(แจ้งรหัสนี้ให้ลูกค้าเพื่อเข้าสู่ระบบ)"
+        send_telegram_alert(msg)
         
         return render_template_string(LOGIN_MEMBER_TEMPLATE, 
                                      phone_val=phone,
-                                     success_msg=f"ส่งคำขอ OTP สำหรับเบอร์ {phone} สำเร็จ! กรุณาติดต่อขอรหัสจากแอดมิน")
+                                     success_msg=f"ส่งคำขอ OTP สำหรับเบอร์ {phone} ไปยัง Telegram ของแอดมินแล้ว!")
 
     elif action == 'verify_login':
         if phone in active_otp_requests and active_otp_requests[phone]['otp'] == otp_input:
             session['member_verified'] = True
             session['verified_phone'] = phone
-            # ลบ OTP ออกหลังใช้งานเพื่อความปลอดภัย (ใช้ครั้งเดียวทิ้ง)
             del active_otp_requests[phone]
             return redirect(url_for('apply_form'))
         else:
@@ -775,6 +833,8 @@ def apply_login():
 
 @app.route('/clear-otp')
 def clear_otp():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
     phone = request.args.get('phone')
     if phone in active_otp_requests:
         del active_otp_requests[phone]
@@ -782,41 +842,32 @@ def clear_otp():
 
 @app.route('/update-bank', methods=['POST'])
 def update_bank():
+    if not session.get('admin_logged_in'):
+        return {'success': False}
     data = request.json
     b_name = data.get('bank')
     amount = float(data.get('amount') or 0)
     if b_name in bank_accounts:
         bank_accounts[b_name] = amount
-        activity_logs.insert(0, {'time': datetime.now().strftime('%d/%m/%Y %H:%M'), 'user': 'Owner', 'action': f'อัปเดตยอดเงิน {b_name.upper()} เป็น ฿{amount:,.0f}', 'ip': '127.0.0.1'})
+        activity_logs.insert(0, {'time': datetime.now().strftime('%d/%m/%Y %H:%M'), 'user': session.get('admin_user', 'Admin'), 'action': f'อัปเดตยอดเงิน {b_name.upper()} เป็น ฿{amount:,.0f}', 'ip': '127.0.0.1'})
         return {'success': True}
     return {'success': False}
 
 @app.route('/update-telegram', methods=['POST'])
 def update_telegram():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
     system_config['telegram_token'] = request.form.get('tg_token')
     system_config['telegram_chat_id'] = request.form.get('tg_chat_id')
-    activity_logs.insert(0, {'time': datetime.now().strftime('%d/%m/%Y %H:%M'), 'user': 'Owner', 'action': 'อัปเดตตั้งค่า Telegram Bot', 'ip': '127.0.0.1'})
+    activity_logs.insert(0, {'time': datetime.now().strftime('%d/%m/%Y %H:%M'), 'user': session.get('admin_user', 'Admin'), 'action': 'อัปเดตตั้งค่า Telegram Bot', 'ip': '127.0.0.1'})
     return "<script>alert('บันทึก Telegram สำเร็จ!'); window.location.href='/';</script>"
 
 @app.route('/test-telegram', methods=['POST'])
 def test_telegram():
+    if not session.get('admin_logged_in'):
+        return {'success': False}
     success = send_telegram_alert("🔔 <b>BizFlow+ Test Alert</b>\nระบบแจ้งเตือนผ่าน Telegram ทำงานปกติแล้วครับ!")
     return {'success': success}
-
-@app.route('/add-admin', methods=['POST'])
-def add_admin():
-    name = request.form.get('admin_name')
-    username = request.form.get('admin_user')
-    users_database.append({
-        'id': len(users_database) + 1,
-        'name': name,
-        'username': username,
-        'role': 'Staff / Operator',
-        'status': 'ใช้งานอยู่',
-        'last_login': '-'
-    })
-    activity_logs.insert(0, {'time': datetime.now().strftime('%d/%m/%Y %H:%M'), 'user': 'Owner', 'action': f'เพิ่มแอดมินใหม่: {name} (@{username})', 'ip': '127.0.0.1'})
-    return "<script>alert('เพิ่มแอดมินสำเร็จ!'); window.location.href='/';</script>"
 
 @app.route('/submit-application', methods=['POST'])
 def submit_application():
@@ -852,20 +903,22 @@ def submit_application():
 
     activity_logs.insert(0, {'time': datetime.now().strftime('%d/%m/%Y %H:%M'), 'user': f'สมาชิก ({phone})', 'action': f'ลูกค้ายื่นกู้ใหม่: {name} (฿{amount:,.0f})', 'ip': client_ip})
     
-    # ล้างสถานะ Verified เพื่อความปลอดภัยหลังส่งกู้เสร็จ
     session.pop('member_verified', None)
-    
     return "<script>alert('ยื่นคำขอกู้เรียบร้อย!'); window.location.href='/apply';</script>"
 
 @app.route('/clear-data')
 def clear_data():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
     debtors_database.clear()
     activity_logs.clear()
-    activity_logs.append({'time': datetime.now().strftime('%d/%m/%Y %H:%M'), 'user': 'Owner', 'action': 'รีเซ็ตข้อมูลทั้งหมดในระบบ', 'ip': '127.0.0.1'})
+    activity_logs.append({'time': datetime.now().strftime('%d/%m/%Y %H:%M'), 'user': session.get('admin_user', 'Admin'), 'action': 'รีเซ็ตข้อมูลทั้งหมดในระบบ', 'ip': '127.0.0.1'})
     return "<script>alert('ล้างข้อมูลสำเร็จ พร้อมใช้งานจริงแล้ว!'); window.location.href='/';</script>"
 
 @app.route('/export-csv')
 def export_csv():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(['ID', 'Name', 'Phone', 'Facebook', 'Bank', 'Account', 'Principal', 'PaymentTerm', 'Status', 'Date'])
@@ -876,6 +929,8 @@ def export_csv():
 
 @app.route('/import-csv', methods=['POST'])
 def import_csv():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
     if 'csv_file' not in request.files:
         return "<script>alert('ไม่พบไฟล์ CSV'); window.location.href='/';</script>"
     file = request.files['csv_file']
