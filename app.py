@@ -476,7 +476,7 @@ ADMIN_TEMPLATE = """
         </div>
     </main>
 
-    <!-- Modal: ประวัติและจัดการลูกหนี้รายบุคคล (พร้อมคำนวณดอกเบี้ยตามจำนวนวันอัตโนมัติ) -->
+    <!-- Modal: ประวัติและจัดการลูกหนี้รายบุคคล -->
     <div id="debtorModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white rounded-3xl max-w-3xl w-full p-6 md:p-8 shadow-2xl border space-y-6 max-h-[95vh] overflow-y-auto">
             <div class="flex items-center justify-between border-b pb-4">
@@ -689,16 +689,17 @@ ADMIN_TEMPLATE = """
         function openDebtorDetail(debtorId) {
             const debtor = debtorsData.find(d => d.id === debtorId);
             if (!debtor) return;
-            document.getElementById('modal_debtor_fullname').innerText = debtor.name;
-            document.getElementById('modal_debtor_phone').innerText = 'เบอร์โทร: ' + debtor.phone + ' | รหัส: ' + debtor.id;
+            document.getElementById('modal_debtor_fullname').innerText = debtor.name || 'ไม่ระบุชื่อ';
+            document.getElementById('modal_debtor_phone').innerText = 'เบอร์โทร: ' + (debtor.phone || '-') + ' | รหัส: ' + (debtor.id || '-');
             
-            // คำนวณจำนวนวันที่ผ่านมาอัตโนมัติ (นับจากวันที่กู้ในฐานข้อมูล)
+            // ป้องกัน Error การคำนวณวัน
             let daysPassed = 1;
             if (debtor.date) {
                 try {
-                    const parts = debtor.date.split(' ')[0].split('/');
+                    const datePart = debtor.date.split(' ')[0];
+                    const parts = datePart.split('/');
                     if (parts.length === 3) {
-                        const startDate = new Date(parts[2], parts[1] - 1, parts[0]);
+                        const startDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
                         const today = new Date();
                         const diffTime = today - startDate;
                         const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
@@ -716,7 +717,7 @@ ADMIN_TEMPLATE = """
             if (typeof txs === 'string') { try { txs = JSON.parse(txs); } catch(e) { txs = []; } }
             if (txs && txs.length > 0) {
                 txs.forEach(t => {
-                    txHtml += `<tr><td class="p-2 font-mono">${t.date}</td><td class="p-2">${t.type}</td><td class="p-2 text-right font-mono font-bold text-emerald-600">฿${parseFloat(t.raw_amount || 0).toLocaleString()}</td></tr>`;
+                    txHtml += `<tr><td class="p-2 font-mono">${t.date || '-'}</td><td class="p-2">${t.type || '-'}</td><td class="p-2 text-right font-mono font-bold text-emerald-600">฿${parseFloat(t.raw_amount || 0).toLocaleString()}</td></tr>`;
                 });
             } else {
                 txHtml = `<tr><td colspan="3" class="p-4 text-center text-slate-400">ยังไม่มีประวัติธุรกรรม</td></tr>`;
@@ -725,18 +726,18 @@ ADMIN_TEMPLATE = """
             contentDiv.innerHTML = `
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="p-4 bg-purple-50 rounded-2xl border space-y-1">
-                        <div><b>ชื่อ:</b> ${debtor.name}</div>
-                        <div><b>โทร:</b> <span class="font-mono">${debtor.phone}</span></div>
+                        <div><b>ชื่อ:</b> ${debtor.name || '-'}</div>
+                        <div><b>โทร:</b> <span class="font-mono">${debtor.phone || '-'}</span></div>
                         <div><b>Facebook:</b> <a href="${debtor.facebook || '#'}" target="_blank" class="text-blue-600 underline">${debtor.facebook || 'ไม่มี'}</a></div>
                         <div><b>ธนาคาร:</b> ${debtor.bank || '-'} (<span class="font-mono">${debtor.acc || '-'}</span>)</div>
                     </div>
                     <div class="p-4 bg-slate-50 rounded-2xl border space-y-1">
-                        <div><b>เงินต้น:</b> <span class="font-mono font-bold text-rose-700">฿${parseFloat(debtor.principal).toLocaleString()}</span></div>
+                        <div><b>เงินต้น:</b> <span class="font-mono font-bold text-rose-700">฿${parseFloat(debtor.principal || 0).toLocaleString()}</span></div>
                         <div><b>ประเภทดอกเบี้ย:</b> <span class="px-2 py-0.5 bg-purple-100 text-purple-800 rounded font-bold">${debtor.interest_type || 'ดอกลอย'}</span></div>
                         <div><b>อัตราดอกเบี้ย:</b> <span class="font-mono text-purple-700 font-bold">฿${dailyRate.toLocaleString()} / วัน</span></div>
                         <div><b>ระยะเวลาที่กู้:</b> <span class="font-mono font-bold text-blue-700">${daysPassed} วัน</span></div>
                         <div class="pt-1 border-t mt-1"><b>🧮 ดอกเบี้ยสะสมอัตโนมัติ:</b> <span class="font-mono font-black text-emerald-700 text-sm">฿${totalInterest.toLocaleString()}</span></div>
-                        <div><b>สถานะ:</b> <span class="px-2 py-0.5 rounded font-bold ${debtor.status == 'รออนุมัติ' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">${debtor.status}</span></div>
+                        <div><b>สถานะ:</b> <span class="px-2 py-0.5 rounded font-bold ${debtor.status == 'รออนุมัติ' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">${debtor.status || 'รออนุมัติ'}</span></div>
                     </div>
                 </div>
                 <div class="space-y-2">
@@ -751,7 +752,7 @@ ADMIN_TEMPLATE = """
             if (debtor.status === 'รออนุมัติ') {
                 actionHtml += `<a href="/approve-debtor/${debtor.id}" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow flex items-center"><i class="fa-solid fa-check mr-1.5"></i> อนุมัติคำขอกู้เงิน</a>`;
             }
-            actionHtml += `<button onclick="openEditDebtor('${debtor.id}', ${debtor.principal}, '${debtor.interest_type || 'ดอกลอย'}', ${dailyRate})" class="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-xs shadow"><i class="fa-solid fa-pen-to-square mr-1.5"></i> แก้ไขวงเงิน/ดอกเบี้ย</button>`;
+            actionHtml += `<button onclick="openEditDebtor('${debtor.id}', ${debtor.principal || 0}, '${debtor.interest_type || 'ดอกลอย'}', ${dailyRate})" class="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-xs shadow"><i class="fa-solid fa-pen-to-square mr-1.5"></i> แก้ไขวงเงิน/ดอกเบี้ย</button>`;
             
             document.getElementById('modal_action_buttons').innerHTML = actionHtml;
             document.getElementById('debtorModal').classList.remove('hidden');
