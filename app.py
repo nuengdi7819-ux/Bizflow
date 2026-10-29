@@ -693,7 +693,6 @@ ADMIN_TEMPLATE = """
             document.getElementById('modal_debtor_fullname').innerText = debtor.name || 'ไม่ระบุชื่อ';
             document.getElementById('modal_debtor_phone').innerText = 'เบอร์โทร: ' + (debtor.phone || '-') + ' | รหัส: ' + (debtor.id || '-');
             
-            // ป้องกัน Error การคำนวณวัน
             let daysPassed = 1;
             if (debtor.date) {
                 try {
@@ -905,6 +904,40 @@ APPLY_TEMPLATE = """
 </html>
 """
 
+ADMIN_LOGIN_TEMPLATE = """
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BizFlow+ - เข้าสู่ระบบแอดมิน</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style> body { font-family: 'Kanit', sans-serif; background: linear-gradient(135deg, #18092e 0%, #0d061a 100%); min-height: 100vh; } </style>
+</head>
+<body class="flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-white rounded-3xl shadow-2xl p-8 border text-slate-800">
+        <div class="text-center mb-6">
+            <h1 class="text-xl font-black text-slate-900">เข้าสู่ระบบหลังบ้าน BizFlow+</h1>
+            <p class="text-xs text-slate-500 mt-1">กรุณากรอก Username และ Password</p>
+        </div>
+        {% if error %}<div class="mb-4 p-3 bg-rose-50 text-rose-700 text-xs rounded-xl text-center font-bold">{{ error }}</div>{% endif %}
+        <form action="/admin-login" method="POST" class="space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">ชื่อผู้ใช้งาน (Username)</label>
+                <input type="text" name="username" required class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-bold">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">รหัสผ่าน (Password)</label>
+                <input type="password" name="password" required class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-bold">
+            </div>
+            <button type="submit" class="w-full py-3 bg-purple-600 text-white rounded-xl font-bold text-xs shadow mt-2">เข้าสู่ระบบแอดมิน</button>
+        </form>
+    </div>
+</body>
+</html>
+"""
+
 @app.route('/')
 def admin_dashboard():
     if not session.get('admin_logged_in'):
@@ -953,8 +986,8 @@ def admin_dashboard():
 @app.route('/admin-login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
-        u = request.form.get('username').strip()
-        p = request.form.get('password').strip()
+        u = request.form.get('username', '').strip()
+        p = request.form.get('password', '').strip()
         if any(user['username'] == u and user['password'] == p for user in users_database):
             session['admin_logged_in'] = True
             session['admin_user'] = u
