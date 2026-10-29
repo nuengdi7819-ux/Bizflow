@@ -85,7 +85,7 @@ HTML_TEMPLATE = """
                     <span>แดชบอร์ดการเงิน</span>
                 </button>
 
-                <button onclick="switchTab('debtors')" id="nav-debtors" class="w-full flex items-center space-x-3.5 px-4 py-3.5 rounded-xl font-medium text-sm transition-all duration-200 text-purple-200/80 hover:bg-purple-900/30 hover:text-white">
+                <button onclick="switchTab('debtors')" id="nav-debtors" class="w-full flex items-center space-x-3.5 px-4 py-3.5 rounded-xl font-medium text-sm transition-all duration-200 sidebar-item-active">
                     <i class="fa-solid fa-hand-holding-dollar text-lg text-amber-400 w-6"></i>
                     <span>จัดการลูกหนี้ (ปล่อยกู้)</span>
                 </button>
@@ -95,7 +95,7 @@ HTML_TEMPLATE = """
                     <span>บันทึกรายรับ-รายจ่าย</span>
                 </button>
 
-                <button onclick="switchTab('banking')" id="nav-banking" class="w-full flex items-center space-x-3.5 px-4 py-3.5 rounded-xl font-medium text-sm transition-all duration-200 sidebar-item-active">
+                <button onclick="switchTab('banking')" id="nav-banking" class="w-full flex items-center space-x-3.5 px-4 py-3.5 rounded-xl font-medium text-sm transition-all duration-200 text-purple-200/80 hover:bg-purple-900/30 hover:text-white">
                     <i class="fa-solid fa-building-columns text-lg text-sky-400 w-6"></i>
                     <span>บัญชีธนาคาร & เงินสด</span>
                 </button>
@@ -109,7 +109,6 @@ HTML_TEMPLATE = """
 
         <!-- Bottom Widgets -->
         <div class="p-4 space-y-4">
-            <!-- Supabase Status Widget -->
             <div class="p-3.5 rounded-2xl bg-purple-950/40 border border-purple-800/40 backdrop-blur-md">
                 <div class="flex items-center justify-between">
                     <span class="text-xs font-semibold text-purple-200">Supabase Status</span>
@@ -121,7 +120,6 @@ HTML_TEMPLATE = """
                 <p class="text-[11px] text-purple-300/60 mt-1 truncate">db.pdpeqsubrbmdjxgmtjpy...</p>
             </div>
 
-            <!-- Profile Widget -->
             <div class="pt-3 border-t border-purple-900/40 flex items-center justify-between px-2">
                 <div class="flex items-center space-x-3">
                     <div class="w-9 h-9 rounded-full bg-purple-800/60 border border-purple-500/30 flex items-center justify-center text-xs font-bold text-purple-200">
@@ -144,16 +142,12 @@ HTML_TEMPLATE = """
         <!-- Top Bar -->
         <header class="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-10 px-8 py-4 flex items-center justify-between shadow-sm">
             <div>
-                <h2 id="page-title" class="text-xl font-bold text-slate-800">บัญชีธนาคาร & เงินสด</h2>
+                <h2 id="page-title" class="text-xl font-bold text-slate-800">จัดการลูกหนี้ (ปล่อยกู้)</h2>
             </div>
             <div class="flex items-center space-x-3">
-                <button onclick="switchTab('debtors')" class="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-medium text-sm shadow-md shadow-purple-500/20 transition-all flex items-center space-x-2">
+                <button onclick="openAddDebtorModal()" class="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-medium text-sm shadow-md shadow-purple-500/20 transition-all flex items-center space-x-2">
                     <i class="fa-solid fa-user-plus text-xs"></i>
                     <span>+ เพิ่มลูกหนี้</span>
-                </button>
-                <button onclick="switchTab('transactions')" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-medium text-sm shadow-md shadow-slate-900/10 transition-all flex items-center space-x-2">
-                    <i class="fa-solid fa-plus text-xs"></i>
-                    <span>+ บันทึกรายการ</span>
                 </button>
             </div>
         </header>
@@ -163,80 +157,38 @@ HTML_TEMPLATE = """
 
             <!-- Section 1: Dashboard -->
             <div id="section-dashboard" class="hidden space-y-6">
-                <!-- Summary Cards Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                     <div class="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm font-medium text-slate-500">ยอดลูกหนี้คงค้างรวม</span>
-                            <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-                                <i class="fa-solid fa-hand-holding-dollar text-lg"></i>
-                            </div>
-                        </div>
+                        <span class="text-sm font-medium text-slate-500">ยอดลูกหนี้คงค้างรวม</span>
                         <h3 class="text-2xl font-extrabold text-slate-800 mt-3">฿284,500</h3>
-                        <p class="text-xs text-amber-600 mt-2 font-medium"><i class="fa-solid fa-arrow-up text-[10px]"></i> +12% จากเดือนที่แล้ว</p>
                     </div>
-
                     <div class="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm font-medium text-slate-500">รายรับเดือนนี้</span>
-                            <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                                <i class="fa-solid fa-arrow-down-left text-lg"></i>
-                            </div>
-                        </div>
+                        <span class="text-sm font-medium text-slate-500">รายรับเดือนนี้</span>
                         <h3 class="text-2xl font-extrabold text-slate-800 mt-3">฿92,400</h3>
-                        <p class="text-xs text-emerald-600 mt-2 font-medium"><i class="fa-solid fa-arrow-up text-[10px]"></i> +8% จากเดือนที่แล้ว</p>
                     </div>
-
                     <div class="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm font-medium text-slate-500">รายจ่ายเดือนนี้</span>
-                            <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
-                                <i class="fa-solid fa-arrow-up-right text-lg"></i>
-                            </div>
-                        </div>
+                        <span class="text-sm font-medium text-slate-500">รายจ่ายเดือนนี้</span>
                         <h3 class="text-2xl font-extrabold text-slate-800 mt-3">฿18,200</h3>
-                        <p class="text-xs text-rose-500 mt-2 font-medium"><i class="fa-solid fa-arrow-down text-[10px]"></i> -3% จากเดือนที่แล้ว</p>
                     </div>
-
                     <div class="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm font-medium text-slate-500">เงินสด/ธนาคารคงเหลือ</span>
-                            <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-                                <i class="fa-solid fa-wallet text-lg"></i>
-                            </div>
-                        </div>
+                        <span class="text-sm font-medium text-slate-500">เงินสด/ธนาคารคงเหลือ</span>
                         <h3 id="dash-total-balance" class="text-2xl font-extrabold text-slate-800 mt-3">฿284,500</h3>
-                        <p class="text-xs text-purple-600 mt-2 font-medium">พร้อมใช้งาน</p>
-                    </div>
-                </div>
-
-                <!-- Charts Section -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="lg:col-span-2 p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
-                        <h4 class="font-bold text-slate-800 text-lg mb-4">สรุปรายรับ - รายจ่าย (ปี 2026)</h4>
-                        <div class="h-64">
-                            <canvas id="financeChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
-                        <h4 class="font-bold text-slate-800 text-lg mb-4">สัดส่วนบัญชีเงินฝาก</h4>
-                        <div class="h-64 flex items-center justify-center">
-                            <canvas id="accountChart"></canvas>
-                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Section 2: Debtors (ปล่อยกู้) -->
-            <div id="section-debtors" class="hidden space-y-6">
+            <!-- Section 2: Debtors (ปล่อยกู้) - Active Screen -->
+            <div id="section-debtors" class="space-y-6">
                 <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm">
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                         <div>
                             <h3 class="text-lg font-bold text-slate-800">รายชื่อลูกหนี้ทั้งหมด</h3>
-                            <p class="text-xs text-slate-500">จัดการข้อมูลลูกหนี้ ยอดกู้ และอัตราดอกเบี้ย</p>
+                            <p class="text-xs text-slate-500">จัดการข้อมูลลูกหนี้ ยอดกู้ อัตราดอกเบี้ย พร้อมปุ่มแก้ไขและลบ</p>
                         </div>
                         <div class="flex items-center space-x-3">
-                            <input type="text" placeholder="ค้นหาลูกหนี้..." class="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-purple-500">
+                            <button onclick="openAddDebtorModal()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-all">
+                                <i class="fa-solid fa-plus mr-1"></i> เพิ่มลูกหนี้ใหม่
+                            </button>
                         </div>
                     </div>
 
@@ -250,25 +202,11 @@ HTML_TEMPLATE = """
                                     <th class="p-3.5 font-semibold">ยอดคงค้าง</th>
                                     <th class="p-3.5 font-semibold">กำหนดชำระ</th>
                                     <th class="p-3.5 font-semibold">สถานะ</th>
+                                    <th class="p-3.5 font-semibold text-center">จัดการ</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-slate-100">
-                                <tr>
-                                    <td class="p-3.5 font-bold text-slate-800">คุณสมชาย ใจดี</td>
-                                    <td class="p-3.5">฿50,000</td>
-                                    <td class="p-3.5 text-purple-600 font-medium">5% (฿2,500)</td>
-                                    <td class="p-3.5 font-bold text-slate-900">฿52,500</td>
-                                    <td class="p-3.5 text-slate-600">5 พ.ย. 2026</td>
-                                    <td class="p-3.5"><span class="px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">ปกติ</span></td>
-                                </tr>
-                                <tr>
-                                    <td class="p-3.5 font-bold text-slate-800">คุณวิภา มีสุข</td>
-                                    <td class="p-3.5">฿120,000</td>
-                                    <td class="p-3.5 text-purple-600 font-medium">3% (฿3,600)</td>
-                                    <td class="p-3.5 font-bold text-slate-900">฿123,600</td>
-                                    <td class="p-3.5 text-rose-500 font-semibold">28 ต.ค. 2026</td>
-                                    <td class="p-3.5"><span class="px-2.5 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-semibold">เกินกำหนด</span></td>
-                                </tr>
+                            <tbody id="debtor-table-body" class="divide-y divide-slate-100">
+                                <!-- Data will be loaded via JS -->
                             </tbody>
                         </table>
                     </div>
@@ -279,129 +217,163 @@ HTML_TEMPLATE = """
             <div id="section-transactions" class="hidden space-y-6">
                 <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm">
                     <h3 class="text-lg font-bold text-slate-800 mb-4">ประวัติรายการรับ-จ่ายล่าสุด</h3>
-                    <p class="text-sm text-slate-500">บันทึกธุรกรรมการเงินทั้งหมดในระบบ</p>
                 </div>
             </div>
 
-            <!-- Section 4: Banking & Cash (Active Screen Shown) -->
-            <div id="section-banking" class="space-y-6">
+            <!-- Section 4: Banking & Cash -->
+            <div id="section-banking" class="hidden space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- KBANK Card -->
-                    <div class="p-6 rounded-2xl bg-emerald-600 text-white relative overflow-hidden shadow-lg shadow-emerald-600/20 group">
-                        <button onclick="openEditBankModal('kbank', 'ธนาคารกสิกรไทย (KBANK)', 'xxx-x-x1234-x', 145000)" class="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-md flex items-center justify-center text-white transition-all">
-                            <i class="fa-solid fa-pen text-xs"></i>
-                        </button>
-                        <div class="relative z-10 flex flex-col justify-between h-40">
-                            <div>
-                                <h4 id="kbank-name" class="font-bold text-lg">ธนาคารกสิกรไทย (KBANK)</h4>
-                                <p id="kbank-acc" class="text-xs text-emerald-200 mt-0.5">xxx-x-x1234-x</p>
-                            </div>
-                            <div>
-                                <span class="text-xs text-emerald-200">ยอดเงินคงเหลือ</span>
-                                <h3 id="kbank-val" class="text-3xl font-black tracking-tight mt-1">฿145,000</h3>
-                            </div>
-                        </div>
-                        <i class="fa-solid fa-bold absolute -right-4 -bottom-6 text-9xl text-emerald-500/20"></i>
-                    </div>
-
-                    <!-- SCB Card -->
-                    <div class="p-6 rounded-2xl bg-purple-700 text-white relative overflow-hidden shadow-lg shadow-purple-700/20 group">
-                        <button onclick="openEditBankModal('scb', 'ธนาคารไทยพาณิชย์ (SCB)', 'xxx-x-x5678-x', 98500)" class="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-md flex items-center justify-center text-white transition-all">
-                            <i class="fa-solid fa-pen text-xs"></i>
-                        </button>
-                        <div class="relative z-10 flex flex-col justify-between h-40">
-                            <div>
-                                <h4 id="scb-name" class="font-bold text-lg">ธนาคารไทยพาณิชย์ (SCB)</h4>
-                                <p id="scb-acc" class="text-xs text-purple-200 mt-0.5">xxx-x-x5678-x</p>
-                            </div>
-                            <div>
-                                <span class="text-xs text-purple-200">ยอดเงินคงเหลือ</span>
-                                <h3 id="scb-val" class="text-3xl font-black tracking-tight mt-1">฿98,500</h3>
-                            </div>
-                        </div>
-                        <i class="fa-solid fa-bold absolute -right-4 -bottom-6 text-9xl text-purple-500/20"></i>
-                    </div>
-
-                    <!-- Cash Card -->
-                    <div class="p-6 rounded-2xl bg-slate-800 text-white relative overflow-hidden shadow-lg shadow-slate-900/20 group">
-                        <button onclick="openEditBankModal('cash', 'เงินสดคงเหลือ (Cash)', 'กระเป๋าเงินสดหลัก', 41000)" class="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-md flex items-center justify-center text-white transition-all">
-                            <i class="fa-solid fa-pen text-xs"></i>
-                        </button>
-                        <div class="relative z-10 flex flex-col justify-between h-40">
-                            <div>
-                                <h4 id="cash-name" class="font-bold text-lg">เงินสดคงเหลือ (Cash)</h4>
-                                <p id="cash-acc" class="text-xs text-slate-400 mt-0.5">กระเป๋าเงินสดหลัก</p>
-                            </div>
-                            <div>
-                                <span class="text-xs text-slate-400">ยอดเงินคงเหลือ</span>
-                                <h3 id="cash-val" class="text-3xl font-black tracking-tight mt-1">฿41,000</h3>
-                            </div>
-                        </div>
-                        <i class="fa-solid fa-bold absolute -right-4 -bottom-6 text-9xl text-slate-700/30"></i>
+                    <div class="p-6 rounded-2xl bg-emerald-600 text-white relative shadow-lg">
+                        <h4 class="font-bold text-lg">ธนาคารกสิกรไทย (KBANK)</h4>
+                        <h3 class="text-3xl font-black mt-4">฿145,000</h3>
                     </div>
                 </div>
             </div>
 
-            <!-- Section 5: Settings / Supabase -->
+            <!-- Section 5: Settings -->
             <div id="section-settings" class="hidden space-y-6">
                 <div class="max-w-2xl mx-auto bg-white rounded-2xl border border-slate-200/80 p-8 shadow-sm">
                     <h3 class="text-xl font-bold text-slate-800 mb-6 text-center">ตั้งค่า Supabase Connection</h3>
-                    <form class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Supabase URL</label>
-                            <input type="text" value="https://pdpeqsubrbmdjxgmtjpy.supabase.co" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-purple-600">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Supabase Anon Key</label>
-                            <input type="password" value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-purple-600">
-                        </div>
-                        <button type="button" class="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold text-sm shadow-md transition-all">
-                            บันทึกการเชื่อมต่อ
-                        </button>
-                    </form>
                 </div>
             </div>
 
         </div>
     </main>
 
-    <!-- Edit Bank Modal Popup -->
-    <div id="editBankModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+    <!-- Modal เพิ่ม/แก้ไข ลูกหนี้ -->
+    <div id="debtorModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100">
             <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
-                <h3 class="text-lg font-bold text-slate-800">แก้ไขข้อมูลบัญชีเงินฝาก</h3>
-                <button onclick="closeEditBankModal()" class="text-slate-400 hover:text-slate-600">
+                <h3 id="modal-title" class="text-lg font-bold text-slate-800">เพิ่มข้อมูลลูกหนี้ใหม่</h3>
+                <button onclick="closeDebtorModal()" class="text-slate-400 hover:text-slate-600">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
-            <form id="editBankForm" class="space-y-4">
-                <input type="hidden" id="edit-bank-key">
+            <form id="debtorForm" class="space-y-4">
+                <input type="hidden" id="debtor-index" value="-1">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">ชื่อบัญชี / ธนาคาร</label>
-                    <input type="text" id="edit-bank-title" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-purple-600 font-medium">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">ชื่อ-นามสกุล ลูกหนี้</label>
+                    <input type="text" id=" debtor-name" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-purple-600">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1.5">ยอดเงินต้น (บาท)</label>
+                        <input type="number" id="debtor-principal" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-purple-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1.5">ดอกเบี้ย (เช่น 5% หรือ 2,500)</label>
+                        <input type="text" id="debtor-interest" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-purple-600">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1.5">ยอดคงค้างรวม</label>
+                        <input type="number" id="debtor-total" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-purple-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1.5">กำหนดชำระ</label>
+                        <input type="text" id="debtor-duedate" placeholder="เช่น 5 พ.ย. 2026" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-purple-600">
+                    </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">เลขที่บัญชี / คำอธิบาย</label>
-                    <input type="text" id="edit-bank-desc" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-purple-600">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">ยอดเงินคงเหลือ (บาท)</label>
-                    <input type="number" id="edit-bank-amount" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-purple-600 font-bold text-purple-700">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">สถานะ</label>
+                    <select id="debtor-status" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-purple-600">
+                        <option value="ปกติ">ปกติ</option>
+                        <option value="เกินกำหนด">เกินกำหนด</option>
+                    </select>
                 </div>
                 <div class="flex items-center space-x-3 pt-3">
-                    <button type="button" onclick="closeEditBankModal()" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-semibold text-sm transition-all">ยกเลิก</button>
-                    <button type="button" onclick="saveBankData()" class="w-1/2 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold text-sm shadow-md transition-all">บันทึกข้อมูล</button>
+                    <button type="button" onclick="closeDebtorModal()" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-semibold text-sm transition-all">ยกเลิก</button>
+                    <button type="submit" class="w-1/2 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold text-sm shadow-md transition-all">บันทึกข้อมูล</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        const bankData = {
-            'kbank': { name: 'ธนาคารกสิกรไทย (KBANK)', acc: 'xxx-x-x1234-x', val: 145000 },
-            'scb': { name: 'ธนาคารไทยพาณิชย์ (SCB)', acc: 'xxx-x-x5678-x', val: 98500 },
-            'cash': { name: 'เงินสดคงเหลือ (Cash)', acc: 'กระเป๋าเงินสดหลัก', val: 41000 }
-        };
+        // ข้อมูลตัวอย่างเริ่มต้น
+        let debtorsList = [
+            { name: 'คุณสมชาย ใจดี', principal: 50000, interest: '5% (฿2,500)', total: 52500, duedate: '5 พ.ย. 2026', status: 'ปกติ' },
+            { name: 'คุณวิภา มีสุข', principal: 120000, interest: '3% (฿3,600)', total: 123600, duedate: '28 ต.ค. 2026', status: 'เกินกำหนด' }
+        ];
+
+        function renderDebtorsTable() {
+            const tbody = document.getElementById('debtor-table-body');
+            tbody.innerHTML = '';
+            debtorsList.forEach((item, index) => {
+                const statusBadge = item.status === 'ปกติ' 
+                    ? '<span class="px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">ปกติ</span>'
+                    : '<span class="px-2.5 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-semibold">เกินกำหนด</span>';
+                
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50/50 transition-colors">
+                        <td class="p-3.5 font-bold text-slate-800">${item.name}</td>
+                        <td class="p-3.5">฿${item.principal.toLocaleString()}</td>
+                        <td class="p-3.5 text-purple-600 font-medium">${item.interest}</td>
+                        <td class="p-3.5 font-bold text-slate-900">฿${item.total.toLocaleString()}</td>
+                        <td class="p-3.5 text-slate-600">${item.duedate}</td>
+                        <td class="p-3.5">${statusBadge}</td>
+                        <td class="p-3.5 text-center space-x-2">
+                            <button onclick="openEditDebtorModal(${index})" class="px-2.5 py-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg text-xs font-semibold transition-all"><i class="fa-solid fa-pen"></i> แก้ไข</button>
+                            <button onclick="deleteDebtor(${index})" class="px-2.5 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg text-xs font-semibold transition-all"><i class="fa-solid fa-trash"></i> ลบ</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function openAddDebtorModal() {
+            document.getElementById('modal-title').innerText = 'เพิ่มข้อมูลลูกหนี้ใหม่';
+            document.getElementById('debtor-index').value = '-1';
+            document.getElementById('debtorForm').reset();
+            document.getElementById('debtorModal').classList.remove('hidden');
+        }
+
+        function openEditDebtorModal(index) {
+            const item = debtorsList[index];
+            document.getElementById('modal-title').innerText = 'แก้ไขข้อมูลลูกหนี้';
+            document.getElementById('debtor-index').value = index;
+            document.getElementById('debtor-name').value = item.name;
+            document.getElementById('debtor-principal').value = item.principal;
+            document.getElementById('debtor-interest').value = item.interest;
+            document.getElementById('debtor-total').value = item.total;
+            document.getElementById('debtor-duedate').value = item.duedate;
+            document.getElementById('debtor-status').value = item.status;
+            document.getElementById('debtorModal').classList.remove('hidden');
+        }
+
+        function closeDebtorModal() {
+            document.getElementById('debtorModal').classList.add('hidden');
+        }
+
+        document.getElementById('debtorForm').onsubmit = function(e) {
+            e.preventDefault();
+            const index = parseInt(document.getElementById('debtor-index').value);
+            const newData = {
+                name: document.getElementById('debtor-name').value,
+                principal: parseFloat(document.getElementById('debtor-principal').value) || 0,
+                interest: document.getElementById('debtor-interest').value,
+                total: parseFloat(document.getElementById('debtor-total').value) || 0,
+                duedate: document.getElementById('debtor-duedate').value,
+                status: document.getElementById('debtor-status').value
+            };
+
+            if (index === -1) {
+                debtorsList.push(newData);
+            } else {
+                debtorsList[index] = newData;
+            }
+
+            renderDebtorsTable();
+            closeDebtorModal();
+        }
+
+        function deleteDebtor(index) {
+            if (confirm('คุณต้องการลบข้อมูลลูกหนี้รายนี้ใช่หรือไม่?')) {
+                debtorsList.splice(index, 1);
+                renderDebtorsTable();
+            }
+        }
 
         function switchTab(tab) {
             ['dashboard', 'debtors', 'transactions', 'banking', 'settings'].forEach(s => {
@@ -428,64 +400,8 @@ HTML_TEMPLATE = """
             document.getElementById('page-title').innerText = titles[tab];
         }
 
-        function openEditBankModal(key, title, acc, amount) {
-            document.getElementById('edit-bank-key').value = key;
-            document.getElementById('edit-bank-title').value = bankData[key].name;
-            document.getElementById('edit-bank-desc').value = bankData[key].acc;
-            document.getElementById('edit-bank-amount').value = bankData[key].val;
-            document.getElementById('editBankModal').classList.remove('hidden');
-        }
-
-        function closeEditBankModal() {
-            document.getElementById('editBankModal').classList.add('hidden');
-        }
-
-        function saveBankData() {
-            const key = document.getElementById('edit-bank-key').value;
-            const newName = document.getElementById('edit-bank-title').value;
-            const newAcc = document.getElementById('edit-bank-desc').value;
-            const newVal = parseFloat(document.getElementById('edit-bank-amount').value) || 0;
-
-            bankData[key].name = newName;
-            bankData[key].acc = newAcc;
-            bankData[key].val = newVal;
-
-            document.getElementById(key + '-name').innerText = newName;
-            document.getElementById(key + '-acc').innerText = newAcc;
-            document.getElementById(key + '-val').innerText = '฿' + newVal.toLocaleString();
-
-            const total = bankData.kbank.val + bankData.scb.val + bankData.cash.val;
-            document.getElementById('dash-total-balance').innerText = '฿' + total.toLocaleString();
-
-            closeEditBankModal();
-        }
-
         window.onload = function() {
-            const ctx1 = document.getElementById('financeChart').getContext('2d');
-            new Chart(ctx1, {
-                type: 'bar',
-                data: {
-                    labels: ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.'],
-                    datasets: [
-                        { label: 'รายรับ', data: [65000, 78000, 90000, 81000, 86000, 92400], backgroundColor: '#10b981' },
-                        { label: 'รายจ่าย', data: [22000, 19000, 25000, 20000, 17000, 18200], backgroundColor: '#f43f5e' }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            const ctx2 = document.getElementById('accountChart').getContext('2d');
-            new Chart(ctx2, {
-                type: 'doughnut',
-                data: {
-                    labels: ['กสิกรไทย', 'ไทยพาณิชย์', 'เงินสด'],
-                    datasets: [{
-                        data: [145000, 98500, 41000],
-                        backgroundColor: ['#059669', '#7c3aed', '#334155']
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
+            renderDebtorsTable();
         }
     </script>
 </body>
