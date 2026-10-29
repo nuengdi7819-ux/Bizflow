@@ -46,11 +46,6 @@ HTML_TEMPLATE = """
             font-family: 'Kanit', sans-serif;
             background-color: #f8fafc;
         }
-        .glass-card {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.6);
-        }
         .sidebar-item-active {
             background: linear-gradient(135deg, rgba(168, 85, 247, 0.3) 0%, rgba(126, 34, 206, 0.2) 100%);
             border: 1px solid rgba(192, 132, 252, 0.4);
@@ -210,7 +205,7 @@ HTML_TEMPLATE = """
                                 <i class="fa-solid fa-wallet text-lg"></i>
                             </div>
                         </div>
-                        <h3 class="text-2xl font-extrabold text-slate-800 mt-3">฿284,500</h3>
+                        <h3 id="dash-total-balance" class="text-2xl font-extrabold text-slate-800 mt-3">฿284,500</h3>
                         <p class="text-xs text-purple-600 mt-2 font-medium">พร้อมใช้งาน</p>
                     </div>
                 </div>
@@ -292,45 +287,54 @@ HTML_TEMPLATE = """
             <div id="section-banking" class="space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <!-- KBANK Card -->
-                    <div class="p-6 rounded-2xl bg-emerald-600 text-white relative overflow-hidden shadow-lg shadow-emerald-600/20">
+                    <div class="p-6 rounded-2xl bg-emerald-600 text-white relative overflow-hidden shadow-lg shadow-emerald-600/20 group">
+                        <button onclick="openEditBankModal('kbank', 'ธนาคารกสิกรไทย (KBANK)', 'xxx-x-x1234-x', 145000)" class="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-md flex items-center justify-center text-white transition-all">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                        </button>
                         <div class="relative z-10 flex flex-col justify-between h-40">
                             <div>
-                                <h4 class="font-bold text-lg">ธนาคารกสิกรไทย (KBANK)</h4>
-                                <p class="text-xs text-emerald-200 mt-0.5">xxx-x-x1234-x</p>
+                                <h4 id="kbank-name" class="font-bold text-lg">ธนาคารกสิกรไทย (KBANK)</h4>
+                                <p id="kbank-acc" class="text-xs text-emerald-200 mt-0.5">xxx-x-x1234-x</p>
                             </div>
                             <div>
                                 <span class="text-xs text-emerald-200">ยอดเงินคงเหลือ</span>
-                                <h3 class="text-3xl font-black tracking-tight mt-1">฿145,000</h3>
+                                <h3 id="kbank-val" class="text-3xl font-black tracking-tight mt-1">฿145,000</h3>
                             </div>
                         </div>
                         <i class="fa-solid fa-bold absolute -right-4 -bottom-6 text-9xl text-emerald-500/20"></i>
                     </div>
 
                     <!-- SCB Card -->
-                    <div class="p-6 rounded-2xl bg-purple-700 text-white relative overflow-hidden shadow-lg shadow-purple-700/20">
+                    <div class="p-6 rounded-2xl bg-purple-700 text-white relative overflow-hidden shadow-lg shadow-purple-700/20 group">
+                        <button onclick="openEditBankModal('scb', 'ธนาคารไทยพาณิชย์ (SCB)', 'xxx-x-x5678-x', 98500)" class="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-md flex items-center justify-center text-white transition-all">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                        </button>
                         <div class="relative z-10 flex flex-col justify-between h-40">
                             <div>
-                                <h4 class="font-bold text-lg">ธนาคารไทยพาณิชย์ (SCB)</h4>
-                                <p class="text-xs text-purple-200 mt-0.5">xxx-x-x5678-x</p>
+                                <h4 id="scb-name" class="font-bold text-lg">ธนาคารไทยพาณิชย์ (SCB)</h4>
+                                <p id="scb-acc" class="text-xs text-purple-200 mt-0.5">xxx-x-x5678-x</p>
                             </div>
                             <div>
                                 <span class="text-xs text-purple-200">ยอดเงินคงเหลือ</span>
-                                <h3 class="text-3xl font-black tracking-tight mt-1">฿98,500</h3>
+                                <h3 id="scb-val" class="text-3xl font-black tracking-tight mt-1">฿98,500</h3>
                             </div>
                         </div>
                         <i class="fa-solid fa-bold absolute -right-4 -bottom-6 text-9xl text-purple-500/20"></i>
                     </div>
 
                     <!-- Cash Card -->
-                    <div class="p-6 rounded-2xl bg-slate-800 text-white relative overflow-hidden shadow-lg shadow-slate-900/20">
+                    <div class="p-6 rounded-2xl bg-slate-800 text-white relative overflow-hidden shadow-lg shadow-slate-900/20 group">
+                        <button onclick="openEditBankModal('cash', 'เงินสดคงเหลือ (Cash)', 'กระเป๋าเงินสดหลัก', 41000)" class="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-md flex items-center justify-center text-white transition-all">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                        </button>
                         <div class="relative z-10 flex flex-col justify-between h-40">
                             <div>
-                                <h4 class="font-bold text-lg">เงินสดคงเหลือ (Cash)</h4>
-                                <p class="text-xs text-slate-400 mt-0.5">กระเป๋าเงินสดหลัก</p>
+                                <h4 id="cash-name" class="font-bold text-lg">เงินสดคงเหลือ (Cash)</h4>
+                                <p id="cash-acc" class="text-xs text-slate-400 mt-0.5">กระเป๋าเงินสดหลัก</p>
                             </div>
                             <div>
                                 <span class="text-xs text-slate-400">ยอดเงินคงเหลือ</span>
-                                <h3 class="text-3xl font-black tracking-tight mt-1">฿41,000</h3>
+                                <h3 id="cash-val" class="text-3xl font-black tracking-tight mt-1">฿41,000</h3>
                             </div>
                         </div>
                         <i class="fa-solid fa-bold absolute -right-4 -bottom-6 text-9xl text-slate-700/30"></i>
@@ -361,9 +365,45 @@ HTML_TEMPLATE = """
         </div>
     </main>
 
+    <!-- Edit Bank Modal Popup -->
+    <div id="editBankModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+                <h3 class="text-lg font-bold text-slate-800">แก้ไขข้อมูลบัญชีเงินฝาก</h3>
+                <button onclick="closeEditBankModal()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form id="editBankForm" class="space-y-4">
+                <input type="hidden" id="edit-bank-key">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">ชื่อบัญชี / ธนาคาร</label>
+                    <input type="text" id="edit-bank-title" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-purple-600 font-medium">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">เลขที่บัญชี / คำอธิบาย</label>
+                    <input type="text" id="edit-bank-desc" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-purple-600">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">ยอดเงินคงเหลือ (บาท)</label>
+                    <input type="number" id="edit-bank-amount" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-purple-600 font-bold text-purple-700">
+                </div>
+                <div class="flex items-center space-x-3 pt-3">
+                    <button type="button" onclick="closeEditBankModal()" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-semibold text-sm transition-all">ยกเลิก</button>
+                    <button type="button" onclick="saveBankData()" class="w-1/2 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold text-sm shadow-md transition-all">บันทึกข้อมูล</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
+        const bankData = {
+            'kbank': { name: 'ธนาคารกสิกรไทย (KBANK)', acc: 'xxx-x-x1234-x', val: 145000 },
+            'scb': { name: 'ธนาคารไทยพาณิชย์ (SCB)', acc: 'xxx-x-x5678-x', val: 98500 },
+            'cash': { name: 'เงินสดคงเหลือ (Cash)', acc: 'กระเป๋าเงินสดหลัก', val: 41000 }
+        };
+
         function switchTab(tab) {
-            // Hide all sections
             ['dashboard', 'debtors', 'transactions', 'banking', 'settings'].forEach(s => {
                 document.getElementById('section-' + s).classList.add('hidden');
                 const nav = document.getElementById('nav-' + s);
@@ -372,14 +412,12 @@ HTML_TEMPLATE = """
                 }
             });
 
-            // Show current section
             document.getElementById('section-' + tab).classList.remove('hidden');
             const activeNav = document.getElementById('nav-' + tab);
             if (activeNav) {
                 activeNav.className = "w-full flex items-center space-x-3.5 px-4 py-3.5 rounded-xl font-medium text-sm transition-all duration-200 sidebar-item-active";
             }
 
-            // Update page title
             const titles = {
                 'dashboard': 'แดชบอร์ดการเงิน',
                 'debtors': 'จัดการลูกหนี้ (ปล่อยกู้)',
@@ -390,7 +428,38 @@ HTML_TEMPLATE = """
             document.getElementById('page-title').innerText = titles[tab];
         }
 
-        // Initialize Charts
+        function openEditBankModal(key, title, acc, amount) {
+            document.getElementById('edit-bank-key').value = key;
+            document.getElementById('edit-bank-title').value = bankData[key].name;
+            document.getElementById('edit-bank-desc').value = bankData[key].acc;
+            document.getElementById('edit-bank-amount').value = bankData[key].val;
+            document.getElementById('editBankModal').classList.remove('hidden');
+        }
+
+        function closeEditBankModal() {
+            document.getElementById('editBankModal').classList.add('hidden');
+        }
+
+        function saveBankData() {
+            const key = document.getElementById('edit-bank-key').value;
+            const newName = document.getElementById('edit-bank-title').value;
+            const newAcc = document.getElementById('edit-bank-desc').value;
+            const newVal = parseFloat(document.getElementById('edit-bank-amount').value) || 0;
+
+            bankData[key].name = newName;
+            bankData[key].acc = newAcc;
+            bankData[key].val = newVal;
+
+            document.getElementById(key + '-name').innerText = newName;
+            document.getElementById(key + '-acc').innerText = newAcc;
+            document.getElementById(key + '-val').innerText = '฿' + newVal.toLocaleString();
+
+            const total = bankData.kbank.val + bankData.scb.val + bankData.cash.val;
+            document.getElementById('dash-total-balance').innerText = '฿' + total.toLocaleString();
+
+            closeEditBankModal();
+        }
+
         window.onload = function() {
             const ctx1 = document.getElementById('financeChart').getContext('2d');
             new Chart(ctx1, {
