@@ -85,8 +85,8 @@ class Transaction(db.Model):
     is_locked_interest = db.Column(db.Boolean, default=False)
     locked_interest_amount = db.Column(db.Float, default=0.0)
 
-with app.app_context():
-    db.create_all()
+# 📌 หมายเหตุ: เอาคำสั่ง db.create_all() ออกจากการรันหลักบน Vercel 
+# เพื่อป้องกันการเชื่อมต่อฐานข้อมูลซ้ำซ้อนทุกครั้งที่มีการ Request หน้าเว็บ
 
 # ==========================================
 # 3. HELPER FUNCTIONS
