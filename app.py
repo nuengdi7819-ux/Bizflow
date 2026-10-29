@@ -725,30 +725,13 @@ ADMIN_TEMPLATE = """
         </div>
     </div>
 
-    <!-- Modal: แก้ไขยอดค้างเก่า -->
-    <div id="editOldArrearsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <h3 class="text-lg font-black text-slate-900 border-b pb-2">✏️ กำหนด/แก้ไขยอดค้างเก่า</h3>
-            <div class="space-y-3 text-xs">
-                <input type="hidden" id="edit_old_phone">
-                <div>
-                    <label class="block font-semibold mb-1">ยอดค้างเก่าตั้งต้น (บาท)</label>
-                    <input type="number" id="edit_old_amount_input" class="w-full px-3 py-2 bg-slate-50 border rounded-xl text-sm font-bold text-amber-700">
-                </div>
-                <div class="flex gap-2 pt-2">
-                    <button type="button" onclick="closeEditOldModal()" class="flex-1 py-2 bg-slate-200 rounded-xl font-bold">ยกเลิก</button>
-                    <button type="button" onclick="submitEditOldArrears()" class="flex-1 py-2 bg-amber-600 text-white rounded-xl font-bold shadow">บันทึกยอดค้างเก่า</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: แก้ไขวงเงินและดอกเบี้ย -->
+    <!-- Modal: แก้ไขวงเงินและดอกเบี้ย / จัดการยอดค้างเก่า -->
     <div id="editDebtorModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <h3 class="text-lg font-black text-slate-900 border-b pb-2">✏️ แก้ไขวงเงินและดอกเบี้ย</h3>
+            <h3 class="text-lg font-black text-slate-900 border-b pb-2">✏️ จัดการวงเงิน & ยอดค้างเก่า</h3>
             <form action="/update-debtor-specs" method="POST" class="space-y-3 text-xs">
                 <input type="hidden" name="debtor_id" id="edit_debtor_id">
+                <input type="hidden" name="phone" id="edit_debtor_phone">
                 <div>
                     <label class="block font-semibold mb-1">เงินต้น / วงเงินกู้ (บาท)</label>
                     <input type="number" name="principal" id="edit_principal" required class="w-full px-3 py-2 bg-slate-50 border rounded-xl text-sm font-bold">
@@ -763,6 +746,10 @@ ADMIN_TEMPLATE = """
                 <div>
                     <label class="block font-semibold mb-1">ดอกเบี้ยต่อวัน (บาท)</label>
                     <input type="number" step="any" name="interest_rate" id="edit_interest_rate" required class="w-full px-3 py-2 bg-slate-50 border rounded-xl text-sm font-bold">
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1 text-amber-800">ยอดค้างเก่าตั้งต้น (บาท)</label>
+                    <input type="number" name="old_arrears" id="edit_old_arrears_input" class="w-full px-3 py-2 bg-amber-50 border border-amber-300 rounded-xl text-sm font-bold text-amber-900">
                 </div>
                 <div class="flex gap-2 pt-2">
                     <button type="button" onclick="closeEditDebtorModal()" class="flex-1 py-2 bg-slate-200 rounded-xl font-bold">ยกเลิก</button>
@@ -925,13 +912,6 @@ ADMIN_TEMPLATE = """
         }
         function closePayOldModal() { document.getElementById('payOldArrearsModal').classList.add('hidden'); }
 
-        function openEditOldModal(phone, currentOld) {
-            document.getElementById('edit_old_phone').value = phone;
-            document.getElementById('edit_old_amount_input').value = currentOld;
-            document.getElementById('editOldArrearsModal').classList.remove('hidden');
-        }
-        function closeEditOldModal() { document.getElementById('editOldArrearsModal').classList.add('hidden'); }
-
         function submitPayOldArrears() {
             const phone = document.getElementById('pay_old_phone').value;
             const amt = parseFloat(document.getElementById('pay_old_amount').value) || 0;
@@ -942,19 +922,6 @@ ADMIN_TEMPLATE = """
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phone: phone, amount: amt, date: customDate })
-            }).then(res => res.json()).then(data => {
-                if (data.success) { location.reload(); }
-            });
-        }
-
-        function submitEditOldArrears() {
-            const phone = document.getElementById('edit_old_phone').value;
-            const amt = parseFloat(document.getElementById('edit_old_amount_input').value) || 0;
-
-            fetch('/update-old-arrears', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: phone, amount: amt })
             }).then(res => res.json()).then(data => {
                 if (data.success) { location.reload(); }
             });
@@ -1066,8 +1033,8 @@ ADMIN_TEMPLATE = """
                             </div>
                             <div class="flex flex-wrap gap-2">
                                 ${b.status == 'รออนุมัติ' ? `<a href="/approve-debtor?debtor_id=${encodeURIComponent(b.id)}" class="px-3 py-1.5 bg-emerald-600 text-white rounded-xl font-bold text-xs shadow">อนุมัติบิลนี้</a>` : ''}
-                                <button onclick="openEditDebtor('${b.id}', ${b.principal || 0}, '${b.interest_type || 'ดอกลอย'}', ${b.interest_rate || 100})" class="px-3 py-1.5 bg-amber-600 text-white rounded-xl font-bold text-xs shadow">แก้ไขวงเงิน/ดอกเบี้ย</button>
-                                <button onclick="openPayDebtModal('${b.id}', '${b.name}', ${b.principal || 0})" class="px-3 py-1.5 bg-purple-600 text-white rounded-xl font-bold text-xs shadow"><i class="fa-solid fa-money-bill-wave mr-1"></i> รับชำระหนี้</button>
+                                <button onclick="openEditDebtor('${b.id}', '${b.phone}', ${b.principal || 0}, '${b.interest_type || 'ดอกลอย'}', ${b.interest_rate || 100}, ${clientOldArrears})" class="px-3 py-1.5 bg-amber-600 text-white rounded-xl font-bold text-xs shadow">แก้ไขวงเงิน/ดอกเบี้ย/ยอดค้าง</button>
+                                <button onclick="openPayDebtModal('${b.id}', '${b.name}', ${b.principal || 0})" class="px-3 py-1.5 bg-purple-600 text-white rounded-xl font-bold text-xs shadow"><i class="fa-solid fa-money-bill-wave mr-1"></i> รับชำระหนี้บิลนี้</button>
                             </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1111,8 +1078,7 @@ ADMIN_TEMPLATE = """
                                 <span class="text-[10px] font-bold text-amber-300 block uppercase">📁 ยอดค้างเก่าคงเหลือ</span>
                                 <div class="flex items-center gap-2 mt-0.5">
                                     <span class="font-black text-amber-300 text-lg">฿${clientOldArrears.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
-                                    <button onclick="openPayOldModal('${primary.phone}', ${clientOldArrears})" class="px-2.5 py-1 bg-amber-500 text-slate-950 font-bold rounded-lg text-xs shadow hover:bg-amber-400 transition">รับชำระค้างเก่า</button>
-                                    <button onclick="openEditOldModal('${primary.phone}', ${clientOldArrears})" class="px-2 py-1 bg-white/20 hover:bg-white/30 text-white rounded-lg text-xs" title="แก้ไขยอดค้างเก่าตั้งต้น"><i class="fa-solid fa-pen"></i></button>
+                                    <button onclick="openPayOldModal('${primary.phone}', ${clientOldArrears})" class="px-3 py-1.5 bg-amber-500 text-slate-950 font-bold rounded-lg text-xs shadow hover:bg-amber-400 transition"><i class="fa-solid fa-hand-holding-dollar mr-1"></i> รับชำระค้างเก่า</button>
                                 </div>
                             </div>
                             <div class="text-right bg-white/10 px-4 py-2 rounded-2xl border border-white/10">
@@ -1155,17 +1121,17 @@ ADMIN_TEMPLATE = """
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ debtor_id: id, amount: amt, fine: fine, discount: discount, date: customDate })
             }).then(res => res.json()).then(data => {
-                if (data.success) {
-                    location.reload();
-                }
+                if (data.success) { location.reload(); }
             });
         }
 
-        function openEditDebtor(id, principal, interest_type, interest_rate) {
+        function openEditDebtor(id, phone, principal, interest_type, interest_rate, old_arrears) {
             document.getElementById('edit_debtor_id').value = id;
+            document.getElementById('edit_debtor_phone').value = phone;
             document.getElementById('edit_principal').value = principal;
             document.getElementById('edit_interest_type').value = interest_type;
             document.getElementById('edit_interest_rate').value = interest_rate;
+            document.getElementById('edit_old_arrears_input').value = old_arrears;
             document.getElementById('editDebtorModal').classList.remove('hidden');
         }
         function closeEditDebtorModal() { document.getElementById('editDebtorModal').classList.add('hidden'); }
@@ -1479,15 +1445,23 @@ def approve_debtor():
 def update_debtor_specs():
     if not session.get('admin_logged_in'): return redirect(url_for('admin_login'))
     debtor_id = request.form.get('debtor_id')
+    phone = request.form.get('phone')
     principal = float(request.form.get('principal') or 0)
     interest_type = request.form.get('interest_type')
     interest_rate = float(request.form.get('interest_rate') or 0)
+    old_arrears = float(request.form.get('old_arrears') or 0)
     try:
         supabase.table("debtors").update({
             'principal': principal,
             'interest_type': interest_type,
             'interest_rate': interest_rate
         }).eq('id', debtor_id).execute()
+
+        if phone:
+            res = supabase.table("debtors").select("id").eq('phone', phone).execute()
+            if res.data:
+                for row in res.data:
+                    supabase.table("debtors").update({'old_arrears': old_arrears}).eq('id', row['id']).execute()
     except Exception as e:
         print(f"Update Specs Error: {e}")
     return redirect(url_for('admin_dashboard'))
@@ -1594,22 +1568,6 @@ def submit_old_payment():
             return {'success': True}
     except Exception as e:
         print(f"Old Payment Error: {e}")
-    return {'success': False}
-
-@app.route('/update-old-arrears', methods=['POST'])
-def update_old_arrears():
-    if not session.get('admin_logged_in'): return {'success': False}
-    data = request.json
-    phone = data.get('phone')
-    amount = float(data.get('amount') or 0)
-    try:
-        res = supabase.table("debtors").select("id").eq('phone', phone).execute()
-        if res.data:
-            for debtor in res.data:
-                supabase.table("debtors").update({'old_arrears': amount}).eq('id', debtor['id']).execute()
-            return {'success': True}
-    except Exception as e:
-        print(f"Update Old Arrears Error: {e}")
     return {'success': False}
 
 @app.route('/submit-application', methods=['POST'])
