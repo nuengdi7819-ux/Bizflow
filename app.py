@@ -415,7 +415,6 @@ ADMIN_TEMPLATE = """
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         
-                        <!-- 1. รายชื่อผู้ดูแลระบบ (ล็อกไว้เฉพาะ nice และ nueng) -->
                         <div class="p-4 bg-slate-50 border rounded-2xl space-y-3">
                             <h4 class="text-xs font-bold text-purple-900 uppercase"><i class="fa-solid fa-users-gear mr-1"></i> 1. ผู้ดูแลระบบ (Admin Accounts)</h4>
                             <div class="overflow-x-auto">
@@ -439,7 +438,6 @@ ADMIN_TEMPLATE = """
                             <p class="text-[11px] text-slate-400">ระบบถูกกำหนดให้ใช้บัญชีแอดมินมาตรฐาน: nice (รหัส 022540) และ nueng (รหัส 909090)</p>
                         </div>
 
-                        <!-- 2. จัดการฐานข้อมูล -->
                         <div class="p-4 bg-purple-50/50 border border-purple-200 rounded-2xl space-y-3">
                             <h4 class="text-xs font-bold text-purple-900 uppercase"><i class="fa-solid fa-database mr-1"></i> 2. จัดการฐานข้อมูล & เตรียมใช้งานจริง</h4>
                             <p class="text-xs text-slate-500">สำรองข้อมูลเป็น CSV หรือล้างข้อมูลจำลองเพื่อเริ่มต้นใช้งานจริง</p>
@@ -462,7 +460,6 @@ ADMIN_TEMPLATE = """
                             </form>
                         </div>
 
-                        <!-- 3. แจ้งเตือน Telegram -->
                         <div class="p-4 bg-slate-50 border rounded-2xl space-y-3 md:col-span-2">
                             <h4 class="text-xs font-bold text-purple-900 uppercase"><i class="fa-brands fa-telegram text-sky-600 mr-1"></i> 3. ช่องทางแจ้งเตือน Telegram Bot & ความปลอดภัย</h4>
                             <form action="/update-telegram" method="POST" class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs items-end">
@@ -618,11 +615,11 @@ LOGIN_MEMBER_TEMPLATE = """
 
             <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1"><i class="fa-solid fa-key mr-1 text-purple-600"></i> รหัส OTP (รับจาก Telegram แอดมิน)</label>
-                <input type="text" name="otp_code" required placeholder="กรอกรหัส OTP 4 หลัก" class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-mono tracking-widest text-center text-lg font-bold">
+                <input type="text" name="otp_code" placeholder="กรอกรหัส OTP 4 หลัก" class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-mono tracking-widest text-center text-lg font-bold">
             </div>
 
             <div class="flex gap-2 pt-2">
-                <button type="submit" name="action" value="request_otp" class="flex-1 py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold text-xs shadow">
+                <button type="submit" name="action" value="request_otp" formnovalidate class="flex-1 py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold text-xs shadow">
                     ขอรหัส OTP ใหม่
                 </button>
                 <button type="submit" name="action" value="verify_login" class="flex-1 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold text-xs shadow">
@@ -766,7 +763,6 @@ def admin_login():
         u = request.form.get('username').strip()
         p = request.form.get('password').strip()
         
-        # ตรวจสอบยูสเซอร์และรหัสผ่านที่กำหนด
         matched = False
         for user in users_database:
             if user['username'] == u and user['password'] == p:
@@ -819,6 +815,8 @@ def apply_login():
                                      success_msg=f"ส่งคำขอ OTP สำหรับเบอร์ {phone} ไปยัง Telegram ของแอดมินแล้ว!")
 
     elif action == 'verify_login':
+        if not otp_input:
+            return render_template_string(LOGIN_MEMBER_TEMPLATE, phone_val=phone, error="กรุณากรอกรหัส OTP 4 หลัก!")
         if phone in active_otp_requests and active_otp_requests[phone]['otp'] == otp_input:
             session['member_verified'] = True
             session['verified_phone'] = phone
@@ -827,7 +825,7 @@ def apply_login():
         else:
             return render_template_string(LOGIN_MEMBER_TEMPLATE, 
                                          phone_val=phone,
-                                         error="รหัส OTP ไม่ถูกต้อง หรือยังไม่ได้กดขอรหัสจากแอดมิน!")
+                                         error="รหัส OTPไม่ถูกต้อง หรือยังไม่ได้กดขอรหัสจากแอดมิน!")
 
     return render_template_string(LOGIN_MEMBER_TEMPLATE)
 
