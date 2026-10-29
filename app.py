@@ -109,14 +109,15 @@ ADMIN_TEMPLATE = """
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Kanit', sans-serif; background-color: #f8fafc; }
+        body { font-family: 'Kanit', sans-serif; background-color: #f8fafc; overflow: hidden; }
         .sidebar-item-active { background: linear-gradient(135deg, rgba(168, 85, 247, 0.3) 0%, rgba(126, 34, 206, 0.2) 100%); border: 1px solid rgba(192, 132, 252, 0.4); color: #f3e8ff; }
         .sidebar-bg { background: linear-gradient(180deg, #18092e 0%, #0d061a 50%, #110726 100%); }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col md:flex-row">
+<body class="bg-slate-50 text-slate-800 antialiased h-screen flex flex-col md:flex-row overflow-hidden">
 
-    <div class="md:hidden bg-[#18092e] text-white p-4 flex items-center justify-between shadow-md sticky top-0 z-40">
+    <!-- Mobile Topbar -->
+    <div class="md:hidden bg-[#18092e] text-white p-4 flex items-center justify-between shadow-md shrink-0 z-50">
         <div class="flex items-center space-x-2">
             <div class="w-8 h-8 rounded-xl bg-purple-600 flex items-center justify-center font-black">B</div>
             <span class="font-bold text-lg">BizFlow <span class="text-xs bg-purple-500 px-1.5 py-0.5 rounded">PLUS</span></span>
@@ -124,7 +125,8 @@ ADMIN_TEMPLATE = """
         <button onclick="toggleSidebar()" class="text-purple-300 hover:text-white text-xl p-2"><i class="fa-solid fa-bars"></i></button>
     </div>
 
-    <aside id="sidebar" class="w-72 sidebar-bg text-slate-200 flex flex-col justify-between shrink-0 shadow-2xl h-screen fixed md:static inset-y-0 left-0 z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300 border-r border-purple-900/35 overflow-y-auto">
+    <!-- Sidebar (Sticky & Fixed Left) -->
+    <aside id="sidebar" class="w-72 sidebar-bg text-slate-200 flex flex-col justify-between shrink-0 shadow-2xl h-full fixed md:static inset-y-0 left-0 z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300 border-r border-purple-900/35 overflow-y-auto">
         <div>
             <div class="p-6 border-b border-purple-900/40 flex items-center justify-between">
                 <div class="flex items-center space-x-3.5">
@@ -178,7 +180,7 @@ ADMIN_TEMPLATE = """
                 </div>
             </nav>
         </div>
-        <div class="p-4 border-t border-purple-900/40 space-y-3">
+        <div class="p-4 border-t border-purple-900/40 space-y-3 shrink-0">
             <div class="text-xs text-purple-300/80 flex items-center justify-between">
                 <span>แอดมิน: <b class="text-white">{{ session.get('admin_user', 'Admin') }}</b></span>
                 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -189,8 +191,9 @@ ADMIN_TEMPLATE = """
         </div>
     </aside>
 
-    <main class="flex-1 overflow-y-auto min-h-screen bg-slate-50/50 w-full">
-        <header class="bg-white border-b border-slate-200 sticky top-0 z-10 px-6 md:px-8 py-4 flex items-center justify-between shadow-sm">
+    <!-- Main Content Area (Scrollable Right) -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50/50">
+        <header class="bg-white border-b border-slate-200 shrink-0 px-6 md:px-8 py-4 flex items-center justify-between shadow-sm z-10">
             <h2 id="page-title" class="text-lg md:text-xl font-bold text-slate-800">แดชบอร์ดหลัก</h2>
             <div class="flex items-center space-x-4">
                 <div class="relative cursor-pointer p-2 hover:bg-purple-50 rounded-xl transition" onclick="switchTab('debtors')" title="คลิกดูรายการคำขอกู้ใหม่">
@@ -206,7 +209,7 @@ ADMIN_TEMPLATE = """
             </div>
         </header>
 
-        <div class="p-4 md:p-8 space-y-6">
+        <div class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6">
 
             <!-- Section: แดชบอร์ดหลัก -->
             <div id="section-dashboard" class="space-y-6">
@@ -649,7 +652,7 @@ ADMIN_TEMPLATE = """
                 <div class="bg-white rounded-2xl p-6 shadow-sm">รายงานผลประกอบการประจำปี</div>
             </div>
 
-            <!-- Tab: ตั้งค่า (ตามต้นฉบับเดิมของคุณ) -->
+            <!-- Tab: ตั้งค่า -->
             <div id="section-settings" class="hidden space-y-6">
                 <div class="bg-white rounded-2xl p-6 shadow-sm space-y-4">
                     <h3 class="text-lg font-bold border-b pb-3">⚙️ ตั้งค่า</h3>
@@ -663,7 +666,7 @@ ADMIN_TEMPLATE = """
         </div>
     </main>
 
-    <!-- Modal: บันทึกการชำระหนี้รายบิล (พร้อมค่าปรับ ส่วนลด วันที่ย้อนหลัง) -->
+    <!-- Modal: บันทึกการชำระหนี้รายบิล -->
     <div id="payDebtModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <h3 class="text-lg font-black text-slate-900" id="pay_debt_title">บันทึกรับชำระหนี้</h3>
@@ -938,7 +941,6 @@ ADMIN_TEMPLATE = """
         }
         function closeBoxModal() { document.getElementById('boxModal').classList.add('hidden'); }
 
-        // เปิดหน้าประวัติลูกค้าแบบหน้ากระดานเต็ม (Full Tab)
         function openClientProfileByPhone(phone) {
             const clientBills = debtorsData.filter(d => d.phone === phone);
             if (clientBills.length === 0) return;
@@ -1430,7 +1432,6 @@ def submit_payment():
                 try: txs = json.loads(txs)
                 except: txs = []
             
-            # คำนวณดอกลอย / กำไร (ยอดชำระสุทธิ - ส่วนลด หรือแยกตามตรรกะดอกลอย)
             profit_earned = amount - discount
             txs.append({
                 'date': formatted_date, 
