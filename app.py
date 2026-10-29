@@ -31,10 +31,6 @@ users_database = [
     {'id': 2, 'name': 'Nueng (แอดมิน)', 'username': 'nueng', 'password': '909090', 'role': 'Super Admin', 'status': 'ใช้งานอยู่', 'last_login': '30/10/2026 08:30'}
 ]
 
-activity_logs = [
-    {'time': '30/10/2026 08:30', 'user': 'System', 'action': 'เริ่มต้นระบบหลังบ้าน', 'ip': '127.0.0.1'}
-]
-
 system_config = {
     'company_name': 'BizFlow+ Financial Services',
     'telegram_token': '9203750510:AAFJhUvWRf4mOSozUSkz0I0I9Jca-xImuTo',
@@ -43,7 +39,11 @@ system_config = {
 
 bank_accounts = {
     'kbank': 0,
-    'scb': 0,
+    'ktb': 0,
+    'bay': 0,
+    'kkp': 0,
+    'gsb': 0,
+    'wallet': 0,
     'cash': 0
 }
 
@@ -154,7 +154,7 @@ ADMIN_TEMPLATE = """
                     <p class="text-[11px] font-bold text-purple-400/80 uppercase px-3 mb-1">👥 2. จัดการลูกหนี้ & คำขอกู้</p>
                     <div class="space-y-1">
                         <button onclick="switchTab('debtors')" id="nav-debtors" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-medium text-xs text-purple-200/80 hover:bg-purple-900/30">
-                            <i class="fa-solid fa-users text-sm text-amber-400 w-5"></i><span>รายชื่อลูกหนี้ & หน้าประวัติ</span>
+                            <i class="fa-solid fa-users text-sm text-amber-400 w-5"></i><span>รายชื่อลูกหนี้ทั้งหมด</span>
                         </button>
                         <button onclick="switchTab('otp_requests')" id="nav-otp_requests" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-medium text-xs text-purple-200/80 hover:bg-purple-900/30">
                             <i class="fa-solid fa-key text-sm text-rose-400 w-5"></i><span>🔑 อนุมัติรหัส OTP ลูกค้า</span>
@@ -248,7 +248,6 @@ ADMIN_TEMPLATE = """
                     </div>
                 </div>
 
-                <!-- ตารางความเคลื่อนไหวล่างแดชบอร์ด -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="bg-white p-6 rounded-3xl border shadow-sm space-y-4">
                         <div class="flex items-center justify-between">
@@ -270,7 +269,7 @@ ADMIN_TEMPLATE = """
                                         </td>
                                         <td class="p-2.5 text-right font-mono font-bold text-rose-600">฿{{ d.principal | format_num }}</td>
                                         <td class="p-2.5 text-center">
-                                            <button onclick="openDebtorDetailByPhone('{{ d.phone }}')" class="px-2.5 py-1 bg-purple-100 text-purple-800 rounded-lg font-bold">ดูประวัติ</button>
+                                            <button onclick="openClientProfileByPhone('{{ d.phone }}')" class="px-2.5 py-1 bg-purple-100 text-purple-800 rounded-lg font-bold">ดูประวัติ</button>
                                         </td>
                                     </tr>
                                     {% else %}
@@ -301,7 +300,7 @@ ADMIN_TEMPLATE = """
                                         </td>
                                         <td class="p-2.5 text-right font-mono font-bold text-purple-700">฿{{ d.principal | format_num }}</td>
                                         <td class="p-2.5 text-center">
-                                            <button onclick="openDebtorDetailByPhone('{{ d.phone }}')" class="px-2.5 py-1 bg-amber-500 text-white rounded-lg font-bold">พิจารณาอนุมัติ</button>
+                                            <button onclick="openClientProfileByPhone('{{ d.phone }}')" class="px-2.5 py-1 bg-amber-500 text-white rounded-lg font-bold">พิจารณาอนุมัติ</button>
                                         </td>
                                     </tr>
                                     {% else %}
@@ -316,39 +315,87 @@ ADMIN_TEMPLATE = """
 
             <!-- Tab: บัญชีธนาคาร & พื้นที่ส่วนตัว -->
             <div id="section-banking" class="hidden space-y-6">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div class="p-6 rounded-2xl bg-emerald-600 text-white shadow-lg space-y-3">
                         <div class="flex items-center justify-between">
-                            <h4 class="font-bold text-lg">กสิกรไทย (KBANK)</h4>
+                            <h4 class="font-bold text-base">กสิกรไทย (KBANK)</h4>
                             <button onclick="toggleEditBank('kbank')" class="text-xs bg-emerald-700 px-2.5 py-1 rounded-lg">แก้ไขยอด</button>
                         </div>
-                        <div id="bank-kbank-display" class="text-3xl font-black">฿{{ bank_kbank | format_num }}</div>
+                        <div id="bank-kbank-display" class="text-2xl font-black">฿{{ bank_kbank | format_num }}</div>
                         <div id="bank-kbank-edit" class="hidden space-y-2">
-                            <input type="number" id="bank-kbank-input" value="{{ bank_kbank }}" onkeydown="if(event.key==='Enter') saveBankBalance('kbank')" class="w-full px-3 py-2 bg-emerald-700 text-white rounded-xl font-bold">
+                            <input type="number" id="bank-kbank-input" value="{{ bank_kbank }}" onkeydown="if(event.key==='Enter') saveBankBalance('kbank')" class="w-full px-3 py-2 bg-emerald-700 text-white rounded-xl font-bold text-sm">
                             <button onclick="saveBankBalance('kbank')" class="w-full py-1.5 bg-white text-emerald-800 rounded-lg text-xs font-bold">บันทึก</button>
                         </div>
                     </div>
 
-                    <div class="p-6 rounded-2xl bg-purple-700 text-white shadow-lg space-y-3">
+                    <div class="p-6 rounded-2xl bg-sky-600 text-white shadow-lg space-y-3">
                         <div class="flex items-center justify-between">
-                            <h4 class="font-bold text-lg">ไทยพาณิชย์ (SCB)</h4>
-                            <button onclick="toggleEditBank('scb')" class="text-xs bg-purple-800 px-2.5 py-1 rounded-lg">แก้ไขยอด</button>
+                            <h4 class="font-bold text-base">กรุงไทย (KTB)</h4>
+                            <button onclick="toggleEditBank('ktb')" class="text-xs bg-sky-700 px-2.5 py-1 rounded-lg">แก้ไขยอด</button>
                         </div>
-                        <div id="bank-scb-display" class="text-3xl font-black">฿{{ bank_scb | format_num }}</div>
-                        <div id="bank-scb-edit" class="hidden space-y-2">
-                            <input type="number" id="bank-scb-input" value="{{ bank_scb }}" onkeydown="if(event.key==='Enter') saveBankBalance('scb')" class="w-full px-3 py-2 bg-purple-800 text-white rounded-xl font-bold">
-                            <button onclick="saveBankBalance('scb')" class="w-full py-1.5 bg-white text-purple-900 rounded-lg text-xs font-bold">บันทึก</button>
+                        <div id="bank-ktb-display" class="text-2xl font-black">฿{{ bank_ktb | format_num }}</div>
+                        <div id="bank-ktb-edit" class="hidden space-y-2">
+                            <input type="number" id="bank-ktb-input" value="{{ bank_ktb }}" onkeydown="if(event.key==='Enter') saveBankBalance('ktb')" class="w-full px-3 py-2 bg-sky-700 text-white rounded-xl font-bold text-sm">
+                            <button onclick="saveBankBalance('ktb')" class="w-full py-1.5 bg-white text-sky-800 rounded-lg text-xs font-bold">บันทึก</button>
+                        </div>
+                    </div>
+
+                    <div class="p-6 rounded-2xl bg-amber-600 text-white shadow-lg space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-bold text-base">กรุงศรีอยุธยา (BAY)</h4>
+                            <button onclick="toggleEditBank('bay')" class="text-xs bg-amber-700 px-2.5 py-1 rounded-lg">แก้ไขยอด</button>
+                        </div>
+                        <div id="bank-bay-display" class="text-2xl font-black">฿{{ bank_bay | format_num }}</div>
+                        <div id="bank-bay-edit" class="hidden space-y-2">
+                            <input type="number" id="bank-bay-input" value="{{ bank_bay }}" onkeydown="if(event.key==='Enter') saveBankBalance('bay')" class="w-full px-3 py-2 bg-amber-700 text-white rounded-xl font-bold text-sm">
+                            <button onclick="saveBankBalance('bay')" class="w-full py-1.5 bg-white text-amber-900 rounded-lg text-xs font-bold">บันทึก</button>
+                        </div>
+                    </div>
+
+                    <div class="p-6 rounded-2xl bg-blue-900 text-white shadow-lg space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-bold text-base">เกียรตินาคินภัทร (KKP)</h4>
+                            <button onclick="toggleEditBank('kkp')" class="text-xs bg-blue-950 px-2.5 py-1 rounded-lg">แก้ไขยอด</button>
+                        </div>
+                        <div id="bank-kkp-display" class="text-2xl font-black">฿{{ bank_kkp | format_num }}</div>
+                        <div id="bank-kkp-edit" class="hidden space-y-2">
+                            <input type="number" id="bank-kkp-input" value="{{ bank_kkp }}" onkeydown="if(event.key==='Enter') saveBankBalance('kkp')" class="w-full px-3 py-2 bg-blue-950 text-white rounded-xl font-bold text-sm">
+                            <button onclick="saveBankBalance('kkp')" class="w-full py-1.5 bg-white text-blue-950 rounded-lg text-xs font-bold">บันทึก</button>
+                        </div>
+                    </div>
+
+                    <div class="p-6 rounded-2xl bg-pink-600 text-white shadow-lg space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-bold text-base">ธนาคารออมสิน (GSB)</h4>
+                            <button onclick="toggleEditBank('gsb')" class="text-xs bg-pink-700 px-2.5 py-1 rounded-lg">แก้ไขยอด</button>
+                        </div>
+                        <div id="bank-gsb-display" class="text-2xl font-black">฿{{ bank_gsb | format_num }}</div>
+                        <div id="bank-gsb-edit" class="hidden space-y-2">
+                            <input type="number" id="bank-gsb-input" value="{{ bank_gsb }}" onkeydown="if(event.key==='Enter') saveBankBalance('gsb')" class="w-full px-3 py-2 bg-pink-700 text-white rounded-xl font-bold text-sm">
+                            <button onclick="saveBankBalance('gsb')" class="w-full py-1.5 bg-white text-pink-800 rounded-lg text-xs font-bold">บันทึก</button>
+                        </div>
+                    </div>
+
+                    <div class="p-6 rounded-2xl bg-orange-600 text-white shadow-lg space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-bold text-base">TrueMoney Wallet</h4>
+                            <button onclick="toggleEditBank('wallet')" class="text-xs bg-orange-700 px-2.5 py-1 rounded-lg">แก้ไขยอด</button>
+                        </div>
+                        <div id="bank-wallet-display" class="text-2xl font-black">฿{{ bank_wallet | format_num }}</div>
+                        <div id="bank-wallet-edit" class="hidden space-y-2">
+                            <input type="number" id="bank-wallet-input" value="{{ bank_wallet }}" onkeydown="if(event.key==='Enter') saveBankBalance('wallet')" class="w-full px-3 py-2 bg-orange-700 text-white rounded-xl font-bold text-sm">
+                            <button onclick="saveBankBalance('wallet')" class="w-full py-1.5 bg-white text-orange-800 rounded-lg text-xs font-bold">บันทึก</button>
                         </div>
                     </div>
 
                     <div class="p-6 rounded-2xl bg-slate-800 text-white shadow-lg space-y-3">
                         <div class="flex items-center justify-between">
-                            <h4 class="font-bold text-lg">เงินสด (Cash)</h4>
+                            <h4 class="font-bold text-base">เงินสด (Cash)</h4>
                             <button onclick="toggleEditBank('cash')" class="text-xs bg-slate-700 px-2.5 py-1 rounded-lg">แก้ไขยอด</button>
                         </div>
-                        <div id="bank-cash-display" class="text-3xl font-black">฿{{ bank_cash | format_num }}</div>
+                        <div id="bank-cash-display" class="text-2xl font-black">฿{{ bank_cash | format_num }}</div>
                         <div id="bank-cash-edit" class="hidden space-y-2">
-                            <input type="number" id="bank-cash-input" value="{{ bank_cash }}" onkeydown="if(event.key==='Enter') saveBankBalance('cash')" class="w-full px-3 py-2 bg-slate-700 text-white rounded-xl font-bold">
+                            <input type="number" id="bank-cash-input" value="{{ bank_cash }}" onkeydown="if(event.key==='Enter') saveBankBalance('cash')" class="w-full px-3 py-2 bg-slate-700 text-white rounded-xl font-bold text-sm">
                             <button onclick="saveBankBalance('cash')" class="w-full py-1.5 bg-white text-slate-900 rounded-lg text-xs font-bold">บันทึก</button>
                         </div>
                     </div>
@@ -374,7 +421,6 @@ ADMIN_TEMPLATE = """
                         <button onclick="saveMonthlyIncome()" class="px-4 py-2 bg-purple-600 text-white rounded-xl text-xs font-bold">บันทึกรายรับใหม่</button>
                     </div>
 
-                    <!-- หลอดสรุปรายจ่าย vs รายรับคงเหลือจริง -->
                     <div class="p-6 bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-3xl space-y-4 shadow-xl">
                         <div class="flex flex-wrap items-center justify-between gap-4">
                             <div>
@@ -389,7 +435,6 @@ ADMIN_TEMPLATE = """
                             </div>
                         </div>
 
-                        <!-- Progress Bar รายจ่าย -->
                         <div class="w-full bg-slate-800 rounded-full h-4 overflow-hidden p-0.5 border border-slate-700">
                             <div id="income-spent-bar" class="bg-gradient-to-r from-emerald-400 via-amber-400 to-rose-500 h-3 rounded-full transition-all duration-500" style="width: 0%;"></div>
                         </div>
@@ -399,7 +444,6 @@ ADMIN_TEMPLATE = """
                         </div>
                     </div>
 
-                    <!-- พอร์ตสะสมทรัพย์สิน -->
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
                             <h4 class="font-bold text-sm text-slate-800">🏆 พอร์ตสะสมทรัพย์สิน & การออมแยกประเภท (พิมพ์แล้วกด Enter เพื่อบันทึก)</h4>
@@ -420,7 +464,6 @@ ADMIN_TEMPLATE = """
                         </div>
                     </div>
 
-                    <!-- ค่าใช้จ่ายจิปาถะรายวัน -->
                     <div class="p-5 bg-slate-50 border rounded-3xl space-y-3">
                         <label class="text-xs font-bold text-slate-700 uppercase block">🛍️ ค่าใช้จ่ายจิปาถะ (บันทึกรายวัน - กด Enter เพื่อเพิ่มรายการ)</label>
                         <div class="flex gap-2">
@@ -440,7 +483,6 @@ ADMIN_TEMPLATE = """
                         </div>
                     </div>
 
-                    <!-- แผนภูมิวงกลม -->
                     <div class="p-6 bg-white border rounded-3xl shadow-sm space-y-4 max-w-lg mx-auto">
                         <h4 class="font-bold text-sm text-slate-800 text-center">📊 แผนภูมิวงกลมสรุปค่าใช้จ่ายประจำ</h4>
                         <div class="relative h-64 flex justify-center items-center">
@@ -448,7 +490,6 @@ ADMIN_TEMPLATE = """
                         </div>
                     </div>
 
-                    <!-- หนี้สินครัวเรือน -->
                     <div class="space-y-3">
                         <h4 class="font-bold text-sm text-slate-800">รายการหนี้ครัวเรือน (กดชำระ/ตัดยอดรายงวดได้)</h4>
                         <div class="overflow-x-auto">
@@ -472,7 +513,6 @@ ADMIN_TEMPLATE = """
                         </div>
                     </div>
 
-                    <!-- รายการค่าใช้จ่ายประจำต่อเดือน -->
                     <div class="space-y-3 pt-4">
                         <div class="flex items-center justify-between">
                             <h4 class="font-bold text-sm text-slate-800">รายการค่าใช้จ่ายประจำต่อเดือน (พิมพ์แล้วกด Enter เพื่อบันทึกทันที)</h4>
@@ -518,7 +558,7 @@ ADMIN_TEMPLATE = """
                 </div>
             </div>
 
-            <!-- Tab: จัดการลูกหนี้ & หน้าประวัติ -->
+            <!-- Tab: จัดการลูกหนี้ & รายชื่อ -->
             <div id="section-debtors" class="hidden space-y-6">
                 <div class="bg-white rounded-2xl border border-slate-200 p-4 md:p-6 shadow-sm overflow-x-auto">
                     <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
@@ -532,7 +572,7 @@ ADMIN_TEMPLATE = """
 
                     <table class="w-full text-left text-sm min-w-[750px]">
                         <thead class="bg-slate-50 text-slate-500">
-                            <tr><th class="p-3.5">ชื่อ-เบอร์โทร</th><th class="p-3.5">จำนวนบิลกู้</th><th class="p-3.5 text-right">ยอดเงินต้นรวม</th><th class="p-3.5 text-center">สถานะ</th><th class="p-3.5 text-center">จัดการหน้าประวัติ</th></tr>
+                            <tr><th class="p-3.5">ชื่อ-เบอร์โทร</th><th class="p-3.5">จำนวนบิลกู้</th><th class="p-3.5 text-right">ยอดเงินต้นรวม</th><th class="p-3.5 text-center">สถานะ</th><th class="p-3.5 text-center">เปิดหน้าประวัติเต็ม</th></tr>
                         </thead>
                         <tbody id="debtor-table-body" class="divide-y">
                             {% set unique_phones = [] %}
@@ -544,7 +584,7 @@ ADMIN_TEMPLATE = """
                                     {% set has_pending = client_bills | selectattr('status', 'equalto', 'รออนุมัติ') | list | length > 0 %}
                             <tr class="debtor-row" data-status="{% if has_pending %}รออนุมัติ{% else %}ปกติ{% endif %}" data-search="{{ d.name }} {{ d.phone }}">
                                 <td class="p-3.5">
-                                    <div class="font-bold text-purple-900 cursor-pointer hover:underline text-base" onclick="openDebtorDetailByPhone('{{ d.phone }}')">{{ d.name }}</div>
+                                    <div class="font-bold text-purple-900 cursor-pointer hover:underline text-base" onclick="openClientProfileByPhone('{{ d.phone }}')">{{ d.name }}</div>
                                     <div class="text-xs text-slate-500 font-mono">{{ d.phone }}</div>
                                 </td>
                                 <td class="p-3.5 font-bold text-blue-700">{{ client_bills | length }} บิล</td>
@@ -555,8 +595,8 @@ ADMIN_TEMPLATE = """
                                     </span>
                                 </td>
                                 <td class="p-3.5 text-center">
-                                    <button onclick="openDebtorDetailByPhone('{{ d.phone }}')" class="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow">
-                                        <i class="fa-solid fa-address-book mr-1"></i> เปิดหน้าประวัติลูกค้า
+                                    <button onclick="openClientProfileByPhone('{{ d.phone }}')" class="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow">
+                                        <i class="fa-solid fa-address-book mr-1"></i> เปิดหน้าประวัติเต็ม
                                     </button>
                                 </td>
                             </tr>
@@ -565,6 +605,17 @@ ADMIN_TEMPLATE = """
                         </tbody>
                     </table>
                 </div>
+            </div>
+
+            <!-- Tab: หน้าประวัติลูกค้าเต็มหน้าจอ (Full Tab Profile) -->
+            <div id="section-client-profile" class="hidden space-y-6">
+                <div class="flex items-center justify-between bg-white p-4 rounded-2xl border shadow-sm">
+                    <button onclick="switchTab('debtors')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold flex items-center space-x-2">
+                        <i class="fa-solid fa-arrow-left"></i><span>กลับไปหน้ารายชื่อลูกหนี้</span>
+                    </button>
+                    <div id="profile-header-info" class="text-right text-xs font-bold text-purple-900">กำลังแสดงข้อมูลลูกค้า...</div>
+                </div>
+                <div id="client-profile-container" class="space-y-6"></div>
             </div>
 
             <!-- Tab: OTP -->
@@ -593,7 +644,12 @@ ADMIN_TEMPLATE = """
                 </div>
             </div>
 
-            <div id="section-annual_reports" class="hidden space-y-6"><div class="bg-white rounded-2xl p-6 shadow-sm">รายงานประจำปี</div></div>
+            <!-- Tab: รายงานประจำปี -->
+            <div id="section-annual_reports" class="hidden space-y-6">
+                <div class="bg-white rounded-2xl p-6 shadow-sm">รายงานผลประกอบการประจำปี</div>
+            </div>
+
+            <!-- Tab: ตั้งค่า (ตามต้นฉบับเดิมของคุณ) -->
             <div id="section-settings" class="hidden space-y-6">
                 <div class="bg-white rounded-2xl p-6 shadow-sm space-y-4">
                     <h3 class="text-lg font-bold border-b pb-3">⚙️ ตั้งค่า</h3>
@@ -607,38 +663,29 @@ ADMIN_TEMPLATE = """
         </div>
     </main>
 
-    <!-- Modal: หน้าประวัติลูกค้า (รวมทุกบิล, ชำระหนี้, และอัลบั้มสัญญา/ลายเซ็น) -->
-    <div id="debtorModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white rounded-3xl max-w-4xl w-full p-6 md:p-8 shadow-2xl border space-y-6 max-h-[95vh] overflow-y-auto">
-            <div class="flex items-center justify-between border-b pb-4">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center font-bold text-lg"><i class="fa-solid fa-user-shield"></i></div>
-                    <div>
-                        <h3 class="text-lg font-black text-purple-900" id="modal_client_name">ชื่อลูกค้า</h3>
-                        <p class="text-xs text-slate-500 font-mono" id="modal_client_phone">เบอร์โทร</p>
-                    </div>
-                </div>
-                <button onclick="closeDebtorModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-
-            <div id="debtor_modal_content" class="space-y-6 text-xs text-slate-700"></div>
-
-            <div class="border-t pt-4 flex items-center justify-between">
-                <div id="modal_action_buttons" class="flex gap-2"></div>
-                <button onclick="closeDebtorModal()" class="px-5 py-2.5 bg-slate-800 text-white rounded-xl font-bold text-xs">ปิดหน้าต่าง</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: บันทึกการชำระหนี้รายบิล -->
-    <div id="payDebtModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-60 flex items-center justify-center hidden p-4">
+    <!-- Modal: บันทึกการชำระหนี้รายบิล (พร้อมค่าปรับ ส่วนลด วันที่ย้อนหลัง) -->
+    <div id="payDebtModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <h3 class="text-lg font-black text-slate-900" id="pay_debt_title">บันทึกรับชำระหนี้</h3>
             <div class="space-y-3 text-xs">
                 <input type="hidden" id="pay_debt_id">
                 <div>
-                    <label class="block font-semibold mb-1">ยอดเงินรับชำระ (บาท)</label>
-                    <input type="number" id="pay_debt_amount" onkeydown="if(event.key==='Enter') submitPayDebt()" class="w-full px-3 py-2 bg-slate-50 border rounded-xl text-sm font-bold text-emerald-700" placeholder="0.00">
+                    <label class="block font-semibold mb-1">ยอดเงินรับชำระสุทธิ (บาท)</label>
+                    <input type="number" id="pay_debt_amount" class="w-full px-3 py-2 bg-slate-50 border rounded-xl text-sm font-bold text-emerald-700" placeholder="0.00">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-semibold mb-1">ค่าปรับ (บาท)</label>
+                        <input type="number" id="pay_debt_fine" value="0" class="w-full px-3 py-2 bg-slate-50 border rounded-xl text-sm font-bold text-rose-600">
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">ส่วนลด (บาท)</label>
+                        <input type="number" id="pay_debt_discount" value="0" class="w-full px-3 py-2 bg-slate-50 border rounded-xl text-sm font-bold text-blue-600">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-semibold mb-1">วันที่ทำรายการ (เลือกย้อนหลังได้)</label>
+                    <input type="date" id="pay_debt_date" class="w-full px-3 py-2 bg-slate-50 border rounded-xl text-sm font-bold">
                 </div>
                 <div class="flex gap-2 pt-2">
                     <button type="button" onclick="closePayDebtModal()" class="flex-1 py-2 bg-slate-200 rounded-xl font-bold">ยกเลิก</button>
@@ -649,7 +696,7 @@ ADMIN_TEMPLATE = """
     </div>
 
     <!-- Modal: แก้ไขวงเงินและดอกเบี้ย -->
-    <div id="editDebtorModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-60 flex items-center justify-center hidden p-4">
+    <div id="editDebtorModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <h3 class="text-lg font-black text-slate-900 border-b pb-2">✏️ แก้ไขวงเงินและดอกเบี้ย</h3>
             <form action="/update-debtor-specs" method="POST" class="space-y-3 text-xs">
@@ -777,14 +824,16 @@ ADMIN_TEMPLATE = """
 
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
         function switchTab(tab) {
-            ['dashboard', 'debtors', 'otp_requests', 'banking', 'annual_reports', 'settings'].forEach(s => {
+            ['dashboard', 'debtors', 'otp_requests', 'banking', 'annual_reports', 'settings', 'client-profile'].forEach(s => {
                 const sec = document.getElementById('section-' + s);
                 const nav = document.getElementById('nav-' + s);
                 if (sec) sec.classList.add('hidden');
                 if (nav) nav.className = "w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-medium text-xs text-purple-200/80 hover:bg-purple-900/30";
             });
             document.getElementById('section-' + tab).classList.remove('hidden');
-            document.getElementById('nav-' + tab).className = "w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-medium text-xs sidebar-item-active";
+            if (document.getElementById('nav-' + tab)) {
+                document.getElementById('nav-' + tab).className = "w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-medium text-xs sidebar-item-active";
+            }
             if (window.innerWidth < 768) document.getElementById('sidebar').classList.add('-translate-x-full');
         }
 
@@ -812,19 +861,12 @@ ADMIN_TEMPLATE = """
             document.getElementById('pay_debt_id').value = id;
             document.getElementById('pay_debt_title').innerText = 'ชำระหนี้: ' + name + ' (คงเหลือ ฿' + outstanding.toLocaleString() + ')';
             document.getElementById('pay_debt_amount').value = '';
+            document.getElementById('pay_debt_fine').value = '0';
+            document.getElementById('pay_debt_discount').value = '0';
+            document.getElementById('pay_debt_date').value = new Date().toISOString().split('T')[0];
             document.getElementById('payDebtModal').classList.remove('hidden');
         }
         function closePayDebtModal() { document.getElementById('payDebtModal').classList.add('hidden'); }
-        function submitPayDebt() {
-            const id = document.getElementById('pay_debt_id').value;
-            const payAmt = parseFloat(document.getElementById('pay_debt_amount').value) || 0;
-            const debt = householdDebts.find(d => d.id === id);
-            if (debt && payAmt > 0) {
-                debt.outstanding = Math.max(0, debt.outstanding - payAmt);
-                document.getElementById('debt-amount-' + id).innerText = '฿' + debt.outstanding.toLocaleString('en-US', {minimumFractionDigits: 2});
-                closePayDebtModal(); alert('บันทึกการชำระหนี้เรียบร้อย!');
-            }
-        }
 
         function toggleExpenseStatus(expId, btn) {
             const exp = householdExpenses.find(e => e.id === expId);
@@ -858,32 +900,51 @@ ADMIN_TEMPLATE = """
         }
 
         function openBoxModal(boxType) {
-            const titleMap = { 'old_arrears': '📁 รายละเอียด: ยอดค้างเก่าคงเหลือ', 'principal': '💼 รายละเอียด: เงินต้นคงค้างทั้งหมด', 'collected_today': '💵 รายละเอียด: ยอดเก็บได้วันนี้', 'profit': '💰 รายละเอียด: กำไรสะสมรวมทั้งหมด' };
+            const titleMap = { 
+                'old_arrears': '📁 รายละเอียด: ยอดค้างเก่าคงเหลือ', 
+                'principal': '💼 รายละเอียด: เงินต้นคงค้างทั้งหมด', 
+                'collected_today': '💵 รายละเอียด: ยอดเก็บได้วันนี้', 
+                'profit': '💰 รายละเอียด: กำไรสะสมรวมทั้งหมด' 
+            };
             document.getElementById('box_modal_title').innerText = titleMap[boxType];
             const contentDiv = document.getElementById('box_modal_content');
-            let html = '<div class="overflow-x-auto"><table class="w-full text-left text-xs border"><thead class="bg-slate-100"><tr><th class="p-2">ชื่อลูกหนี้</th><th class="p-2">เบอร์โทร</th><th class="p-2 text-right">ยอดเงิน</th><th class="p-2">สถานะ</th></tr></thead><tbody>';
+            let html = '<div class="overflow-x-auto"><table class="w-full text-left text-xs border"><thead class="bg-slate-100"><tr><th class="p-2">ชื่อลูกหนี้</th><th class="p-2">เบอร์โทร</th><th class="p-2 text-right">ยอดเงิน</th><th class="p-2">รายละเอียด / สถานะ</th></tr></thead><tbody>';
             let count = 0;
+            const todayStr = new Date().toLocaleDateString('th-TH');
+
             debtorsData.forEach(d => {
                 if (boxType === 'principal' && d.status === 'ปกติ') {
                     count++;
-                    html += `<tr><td class="p-2 font-bold">${d.name}</td><td class="p-2 font-mono">${d.phone}</td><td class="p-2 text-right font-mono font-bold text-rose-600">฿${parseFloat(d.principal).toLocaleString()}</td><td class="p-2">อนุมัติแล้ว</td></tr>`;
+                    html += `<tr><td class="p-2 font-bold">${d.name}</td><td class="p-2 font-mono">${d.phone}</td><td class="p-2 text-right font-mono font-bold text-rose-600">฿${parseFloat(d.principal || 0).toLocaleString()}</td><td class="p-2">เงินต้นคงค้าง</td></tr>`;
+                } else if (boxType === 'collected_today' || boxType === 'profit') {
+                    let txs = d.transactions;
+                    if (typeof txs === 'string') { try { txs = JSON.parse(txs); } catch(e) { txs = []; } }
+                    if (txs && txs.length > 0) {
+                        txs.forEach(t => {
+                            if (t.type === 'รับชำระหนี้') {
+                                count++;
+                                let amtToShow = boxType === 'profit' ? (t.profit || t.raw_amount || 0) : (t.raw_amount || 0);
+                                html += `<tr><td class="p-2 font-bold">${d.name}</td><td class="p-2 font-mono">${d.phone}</td><td class="p-2 text-right font-mono font-bold text-emerald-600">฿${parseFloat(amtToShow).toLocaleString()}</td><td class="p-2">${t.date} (${t.type})</td></tr>`;
+                            }
+                        });
+                    }
                 }
             });
-            if (count === 0) html += `<tr><td colspan="4" class="p-4 text-center text-slate-400">ยังไม่มีรายการ</td></tr>`;
+
+            if (count === 0) html += `<tr><td colspan="4" class="p-4 text-center text-slate-400">ยังไม่มีรายการข้อมูลในส่วนนี้</td></tr>`;
             html += '</tbody></table></div>';
             contentDiv.innerHTML = html;
             document.getElementById('boxModal').classList.remove('hidden');
         }
         function closeBoxModal() { document.getElementById('boxModal').classList.add('hidden'); }
 
-        // ฟังก์ชันเปิดหน้าประวัติลูกค้า (รวมทุกบิล, รับชำระ, และอัลบั้มสัญญา/ลายเซ็น)
-        function openDebtorDetailByPhone(phone) {
+        // เปิดหน้าประวัติลูกค้าแบบหน้ากระดานเต็ม (Full Tab)
+        function openClientProfileByPhone(phone) {
             const clientBills = debtorsData.filter(d => d.phone === phone);
             if (clientBills.length === 0) return;
             const primary = clientBills[0];
 
-            document.getElementById('modal_client_name').innerText = primary.name || 'ไม่ระบุชื่อ';
-            document.getElementById('modal_client_phone').innerText = 'เบอร์โทร: ' + primary.phone + ' | บิลทั้งหมดในระบบ: ' + clientBills.length + ' บิล';
+            document.getElementById('profile-header-info').innerText = primary.name + ' (' + primary.phone + ') | บิลทั้งหมด: ' + clientBills.length + ' บิล';
 
             let billsHtml = '';
             let galleryHtml = '';
@@ -902,99 +963,92 @@ ADMIN_TEMPLATE = """
                 }
 
                 billsHtml += `
-                    <div class="p-4 bg-slate-50 border rounded-2xl space-y-3">
-                        <div class="flex items-center justify-between border-b pb-2">
+                    <div class="p-5 bg-white border rounded-3xl shadow-sm space-y-4">
+                        <div class="flex flex-wrap items-center justify-between border-b pb-3 gap-2">
                             <div>
-                                <span class="font-bold text-purple-900 text-sm">บิลที่ #${index + 1} (รหัส: ${b.id})</span>
-                                <span class="ml-2 px-2 py-0.5 rounded text-[10px] font-bold ${b.status == 'รออนุมัติ' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">${b.status}</span>
+                                <span class="font-black text-purple-900 text-base">บิลที่ #${index + 1} (รหัส: ${b.id})</span>
+                                <span class="ml-2 px-2.5 py-1 rounded-full text-xs font-bold ${b.status == 'รออนุมัติ' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">${b.status}</span>
                             </div>
-                            <div class="flex gap-2">
-                                ${b.status == 'รออนุมัติ' ? `<a href="/approve-debtor?debtor_id=${encodeURIComponent(b.id)}" class="px-3 py-1 bg-emerald-600 text-white rounded-lg font-bold text-xs">อนุมัติบิลนี้</a>` : ''}
-                                <button onclick="openEditDebtor('${b.id}', ${b.principal || 0}, '${b.interest_type || 'ดอกลอย'}', ${b.interest_rate || 100})" class="px-3 py-1 bg-amber-600 text-white rounded-lg font-bold text-xs">แก้ไขวงเงิน/ดอกเบี้ย</button>
-                                <button onclick="openPayDebtModalForItem('${b.id}', '${b.name}', ${b.principal || 0})" class="px-3 py-1 bg-purple-600 text-white rounded-lg font-bold text-xs"><i class="fa-solid fa-money-bill-wave mr-1"></i> รับชำระหนี้</button>
+                            <div class="flex flex-wrap gap-2">
+                                ${b.status == 'รออนุมัติ' ? `<a href="/approve-debtor?debtor_id=${encodeURIComponent(b.id)}" class="px-3 py-1.5 bg-emerald-600 text-white rounded-xl font-bold text-xs shadow">อนุมัติบิลนี้</a>` : ''}
+                                <button onclick="openEditDebtor('${b.id}', ${b.principal || 0}, '${b.interest_type || 'ดอกลอย'}', ${b.interest_rate || 100})" class="px-3 py-1.5 bg-amber-600 text-white rounded-xl font-bold text-xs shadow">แก้ไขวงเงิน/ดอกเบี้ย</button>
+                                <button onclick="openPayDebtModal('${b.id}', '${b.name}', ${b.principal || 0})" class="px-3 py-1.5 bg-purple-600 text-white rounded-xl font-bold text-xs shadow"><i class="fa-solid fa-money-bill-wave mr-1"></i> รับชำระหนี้</button>
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-1.5 text-xs">
                                 <div><b>เงินต้นกู้:</b> <span class="font-mono font-bold text-rose-700">฿${parseFloat(b.principal || 0).toLocaleString()}</span></div>
                                 <div><b>ประเภทดอกเบี้ย:</b> ${b.interest_type || 'ดอกลอย'} (<span class="font-mono text-purple-700 font-bold">฿${b.interest_rate || 100}/วัน</span>)</div>
                                 <div><b>ธนาคารรับเงิน:</b> ${b.bank || '-'} (<span class="font-mono">${b.acc || '-'}</span>)</div>
                                 <div><b>วันที่ยื่นกู้:</b> ${b.date || '-'}</div>
                             </div>
                             <div>
-                                <b>ประวัติธุรกรรม & การชำระหนี้:</b>
-                                <div class="border rounded-xl bg-white max-h-28 overflow-y-auto mt-1">
-                                    <table class="w-full text-left text-[11px]"><thead class="bg-slate-100"><tr><th class="p-1.5">เวลา</th><th class="p-1.5">รายการ</th><th class="p-1.5 text-right">จำนวน</th></tr></thead><tbody class="divide-y">${txHtml}</tbody></table>
+                                <span class="font-bold text-xs text-slate-700 block mb-1">ประวัติธุรกรรม & การชำระหนี้:</span>
+                                <div class="border rounded-2xl bg-slate-50 max-h-36 overflow-y-auto p-1">
+                                    <table class="w-full text-left text-[11px]"><thead class="bg-slate-200 text-slate-700"><tr><th class="p-2">เวลา</th><th class="p-2">รายการ</th><th class="p-2 text-right">จำนวน</th></tr></thead><tbody class="divide-y">${txHtml}</tbody></table>
                                 </div>
                             </div>
                         </div>
                     </div>
                 `;
 
-                // รวบรวมรูปลายเซ็น / บัตรประชาชนเข้าสู่อัลบั้มสัญญา
                 if (b.signature_data) {
                     galleryHtml += `
-                        <div class="p-3 bg-white border rounded-2xl shadow-sm space-y-1 text-center">
-                            <span class="font-bold text-[11px] text-purple-900 block">ลายเซ็นสัญญา (บิล #${index + 1})</span>
-                            <img src="${b.signature_data}" class="max-h-24 mx-auto border rounded bg-slate-50 p-1">
+                        <div class="p-4 bg-white border rounded-2xl shadow-sm space-y-2 text-center">
+                            <span class="font-bold text-xs text-purple-900 block">ลายเซ็นสัญญา (บิล #${index + 1})</span>
+                            <img src="${b.signature_data}" class="max-h-32 mx-auto border rounded-xl bg-slate-50 p-1 shadow-inner">
                         </div>
                     `;
                 }
             });
 
-            const contentDiv = document.getElementById('debtor_modal_content');
-            contentDiv.innerHTML = `
-                <div class="space-y-4">
-                    <div class="p-4 bg-purple-50 rounded-2xl border flex flex-wrap items-center justify-between gap-4">
-                        <div>
-                            <div><b>ชื่อ-นามสกุล:</b> ${primary.name}</div>
-                            <div><b>เบอร์โทร:</b> <span class="font-mono font-bold">${primary.phone}</span></div>
-                            <div><b>Facebook:</b> <a href="${primary.facebook || '#'}" target="_blank" class="text-blue-600 underline">${primary.facebook || 'ไม่มี'}</a></div>
+            const container = document.getElementById('client-profile-container');
+            container.innerHTML = `
+                <div class="space-y-6">
+                    <div class="p-6 bg-gradient-to-r from-purple-900 to-indigo-950 text-white rounded-3xl shadow-lg flex flex-wrap items-center justify-between gap-4">
+                        <div class="space-y-1">
+                            <h3 class="text-xl font-black">${primary.name}</h3>
+                            <p class="text-xs text-purple-200 font-mono">เบอร์โทร: ${primary.phone}</p>
+                            <p class="text-xs text-purple-200">Facebook: <a href="${primary.facebook || '#'}" target="_blank" class="text-sky-300 underline">${primary.facebook || 'ไม่มี'}</a></p>
                         </div>
-                        <div class="text-right">
-                            <span class="text-xs text-purple-700 block font-bold">📂 อัลบั้มสัญญา & ลายเซ็นดิจิทัลรวมทุกบิล</span>
-                        </div>
-                    </div>
-
-                    <!-- อัลบั้มรูปสัญญา / ลายเซ็น -->
-                    <div class="space-y-2">
-                        <h4 class="font-bold text-xs text-slate-800 uppercase"><i class="fa-solid fa-images mr-1"></i> อัลบั้มสัญญาและลายเซ็นอิเล็กทรอนิกส์</h4>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            ${galleryHtml || '<p class="text-slate-400 text-xs col-span-full">ยังไม่มีรูปลายเซ็นในระบบ</p>'}
+                        <div class="text-right bg-white/10 px-4 py-2 rounded-2xl border border-white/10">
+                            <span class="text-[10px] font-bold text-purple-300 block uppercase">📂 ดอกลอยสะสมรวม</span>
+                            <span class="font-black text-amber-300 text-xl">฿${parseFloat(primary.accumulated_profit || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
                         </div>
                     </div>
 
-                    <!-- รายการบิลเงินกู้ทั้งหมด -->
                     <div class="space-y-3">
-                        <h4 class="font-bold text-xs text-slate-800 uppercase"><i class="fa-solid fa-file-invoice-dollar mr-1"></i> ประวัติบิลเงินกู้ทั้งหมดของลูกค้าท่านนี้</h4>
-                        <div class="space-y-3 max-h-96 overflow-y-auto pr-1">
+                        <h4 class="font-bold text-sm text-slate-800 uppercase"><i class="fa-solid fa-images mr-1"></i> อัลบั้มสัญญาและลายเซ็นอิเล็กทรอนิกส์</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            ${galleryHtml || '<p class="text-slate-400 text-xs col-span-full p-4 bg-white rounded-2xl border text-center">ยังไม่มีรูปลายเซ็นในระบบ</p>'}
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <h4 class="font-bold text-sm text-slate-800 uppercase"><i class="fa-solid fa-file-invoice-dollar mr-1"></i> ประวัติบิลเงินกู้ทั้งหมดของลูกค้าท่านนี้</h4>
+                        <div class="space-y-4">
                             ${billsHtml}
                         </div>
                     </div>
                 </div>
             `;
 
-            document.getElementById('modal_action_buttons').innerHTML = ``;
-            document.getElementById('debtorModal').classList.remove('hidden');
-        }
-
-        function closeDebtorModal() { document.getElementById('debtorModal').classList.add('hidden'); }
-
-        function openPayDebtModalForItem(id, name, principal) {
-            document.getElementById('pay_debt_id').value = id;
-            document.getElementById('pay_debt_title').innerText = 'บันทึกรับชำระหนี้: ' + name + ' (บิลรหัส ' + id + ')';
-            document.getElementById('pay_debt_amount').value = '';
-            document.getElementById('payDebtModal').classList.remove('hidden');
+            switchTab('client-profile');
         }
 
         function submitPayDebt() {
             const id = document.getElementById('pay_debt_id').value;
             const amt = parseFloat(document.getElementById('pay_debt_amount').value) || 0;
+            const fine = parseFloat(document.getElementById('pay_debt_fine').value) || 0;
+            const discount = parseFloat(document.getElementById('pay_debt_discount').value) || 0;
+            const customDate = document.getElementById('pay_debt_date').value;
+
             if (amt <= 0) { alert('กรุณากรอกจำนวนเงินรับชำระที่ถูกต้อง'); return; }
+            
             fetch('/submit-payment', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ debtor_id: id, amount: amt })
+                body: JSON.stringify({ debtor_id: id, amount: amt, fine: fine, discount: discount, date: customDate })
             }).then(res => res.json()).then(data => {
                 if (data.success) {
                     alert('บันทึกรับชำระหนี้สำเร็จ!');
@@ -1110,14 +1164,15 @@ APPLY_TEMPLATE = """
                     <label class="block text-xs font-semibold text-slate-600 mb-1">ธนาคารรับเงิน</label>
                     <select name="bank" required class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-bold">
                         <option value="ธนาคารกสิกรไทย (KBANK)">กสิกรไทย (KBANK)</option>
-                        <option value="ธนาคารไทยพาณิชย์ (SCB)">ไทยพาณิชย์ (SCB)</option>
-                        <option value="ธนาคารกรุงเทพ (BBL)">กรุงเทพ (BBL)</option>
                         <option value="ธนาคารกรุงไทย (KTB)">กรุงไทย (KTB)</option>
-                        <option value="ธนาคารทหารไทยธนชาต (TTB)">ทหารไทยธนชาต (TTB)</option>
+                        <option value="ธนาคารกรุงศรีอยุธยา (BAY)">กรุงศรีอยุธยา (BAY)</option>
+                        <option value="ธนาคารเกียรตินาคินภัทร (KKP)">เกียรตินาคินภัทร (KKP)</option>
+                        <option value="ธนาคารออมสิน (GSB)">ออมสิน (GSB)</option>
+                        <option value="TrueMoney Wallet">TrueMoney Wallet</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">เลขที่บัญชี</label>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">เลขที่บัญชี / เบอร์วอลเล็ต</label>
                     <input type="text" name="account" required placeholder="เลขบัญชี" value="{{ default_acc or '' }}" class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-mono">
                 </div>
             </div>
@@ -1208,36 +1263,33 @@ def admin_dashboard():
     
     total_principal = sum(float(d.get('principal', 0)) for d in debtors_database if d.get('status') == 'ปกติ')
     total_profit = sum(float(d.get('accumulated_profit', 0)) for d in debtors_database)
-    collected_today = sum(float(d.get('collected_today', 0)) for d in debtors_database)
     
-    today_transactions = []
-    due_today_list = []
+    collected_today = 0
     for d in debtors_database:
         txs = d.get('transactions', [])
         if isinstance(txs, str):
             try: txs = json.loads(txs)
             except: txs = []
         for tx in txs:
-            if tx.get('date', '').startswith(today_str):
-                today_transactions.append({'name': d['name'], 'type': tx['type'], 'amount': tx['raw_amount']})
-        if d.get('due_date') == today_date_iso:
-            due_today_list.append(d)
+            if tx.get('date', '').startswith(today_str) and tx.get('type') == 'รับชำระหนี้':
+                collected_today += float(tx.get('raw_amount', 0))
 
     return render_template_string(ADMIN_TEMPLATE, 
                                  debtors=debtors_database,
                                  users=users_database,
-                                 logs=activity_logs,
                                  config=system_config,
                                  otp_list=pending_otp_requests,
                                  bank_kbank=bank_accounts['kbank'],
-                                 bank_scb=bank_accounts['scb'],
+                                 bank_ktb=bank_accounts['ktb'],
+                                 bank_bay=bank_accounts['bay'],
+                                 bank_kkp=bank_accounts['kkp'],
+                                 bank_gsb=bank_accounts['gsb'],
+                                 bank_wallet=bank_accounts['wallet'],
                                  bank_cash=bank_accounts['cash'],
                                  today_date=today_str,
                                  total_principal=total_principal,
                                  total_profit=total_profit,
                                  collected_today=collected_today,
-                                 today_transactions=today_transactions,
-                                 due_today_list=due_today_list,
                                  household_debts=household_debts,
                                  household_expenses=household_expenses,
                                  personal_finance=personal_finance)
@@ -1356,6 +1408,19 @@ def submit_payment():
     data = request.json
     debtor_id = data.get('debtor_id')
     amount = float(data.get('amount') or 0)
+    fine = float(data.get('fine') or 0)
+    discount = float(data.get('discount') or 0)
+    custom_date = data.get('date')
+
+    if custom_date:
+        try:
+            date_obj = datetime.strptime(custom_date, '%Y-%m-%d')
+            formatted_date = date_obj.strftime('%d/%m/%Y') + ' ' + datetime.now().strftime('%H:%M')
+        except:
+            formatted_date = datetime.now().strftime('%d/%m/%Y %H:%M')
+    else:
+        formatted_date = datetime.now().strftime('%d/%m/%Y %H:%M')
+
     try:
         res = supabase.table("debtors").select("*").eq('id', debtor_id).execute()
         if res.data:
@@ -1364,13 +1429,22 @@ def submit_payment():
             if isinstance(txs, str):
                 try: txs = json.loads(txs)
                 except: txs = []
-            txs.append({'date': datetime.now().strftime('%d/%m/%Y %H:%M'), 'type': 'รับชำระหนี้', 'raw_amount': amount})
             
-            new_profit = float(debtor.get('accumulated_profit', 0)) + amount
+            # คำนวณดอกลอย / กำไร (ยอดชำระสุทธิ - ส่วนลด หรือแยกตามตรรกะดอกลอย)
+            profit_earned = amount - discount
+            txs.append({
+                'date': formatted_date, 
+                'type': 'รับชำระหนี้', 
+                'raw_amount': amount, 
+                'fine': fine, 
+                'discount': discount, 
+                'profit': profit_earned
+            })
+            
+            new_profit = float(debtor.get('accumulated_profit', 0)) + profit_earned
             supabase.table("debtors").update({
                 'transactions': json.dumps(txs),
-                'accumulated_profit': new_profit,
-                'collected_today': float(debtor.get('collected_today', 0)) + amount
+                'accumulated_profit': new_profit
             }).eq('id', debtor_id).execute()
             return {'success': True}
     except Exception as e:
@@ -1398,7 +1472,6 @@ def submit_application():
         'interest_type': 'ดอกลอย',
         'interest_rate': 100,
         'accumulated_profit': 0,
-        'collected_today': 0,
         'signature_data': signature_data,
         'date': datetime.now().strftime('%d/%m/%Y %H:%M'),
         'transactions': json.dumps([{'date': datetime.now().strftime('%d/%m/%Y %H:%M'), 'type': 'ยื่นขอกู้เงินออนไลน์', 'raw_amount': amount}])
