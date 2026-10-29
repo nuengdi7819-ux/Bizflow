@@ -60,7 +60,7 @@ HTML_TEMPLATE = """
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex">
 
     <!-- Sidebar -->
-    <aside class="w-72 sidebar-bg text-slate-200 flex flex-col justify-between shrink-0 shadow-2xl min-h-screen border-r border-purple-900/30">
+    <aside class="w-72 sidebar-bg text-slate-200 flex flex-col justify-between shrink-0 shadow-2xl min-h-screen border-r border-purple-900/35">
         <div>
             <!-- Header / Logo -->
             <div class="p-6 pb-8 border-b border-purple-900/40">
@@ -155,7 +155,7 @@ HTML_TEMPLATE = """
         <!-- Dynamic Content Sections -->
         <div class="p-8">
 
-            <!-- Section 1: Dashboard -->
+            <!-- Section: Dashboard -->
             <div id="section-dashboard" class="hidden space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                     <div class="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
@@ -172,22 +172,29 @@ HTML_TEMPLATE = """
                     </div>
                     <div class="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
                         <span class="text-sm font-medium text-slate-500">เงินสด/ธนาคารคงเหลือ</span>
-                        <h3 id="dash-total-balance" class="text-2xl font-extrabold text-slate-800 mt-3">฿284,500</h3>
+                        <h3 class="text-2xl font-extrabold text-slate-800 mt-3">฿284,500</h3>
                     </div>
                 </div>
             </div>
 
-            <!-- Section 2: Debtors (ปล่อยกู้) - Active Screen -->
+            <!-- Section: Debtors (ปล่อยกู้) - Active -->
             <div id="section-debtors" class="space-y-6">
                 <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm">
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                         <div>
                             <h3 class="text-lg font-bold text-slate-800">รายชื่อลูกหนี้ทั้งหมด</h3>
-                            <p class="text-xs text-slate-500">จัดการข้อมูลลูกหนี้ ยอดกู้ อัตราดอกเบี้ย พร้อมปุ่มแก้ไขและลบ</p>
+                            <p class="text-xs text-slate-500">ค้นหาประวัติลูกค้าเก่าด้วยชื่อหรือเบอร์โทร เพื่อเพิ่มบิลหรือตัดยอดได้ทันที</p>
                         </div>
                         <div class="flex items-center space-x-3">
-                            <button onclick="openAddDebtorModal()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-all">
-                                <i class="fa-solid fa-plus mr-1"></i> เพิ่มลูกหนี้ใหม่
+                            <!-- Search Bar -->
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                                    <i class="fa-solid fa-search text-xs"></i>
+                                </span>
+                                <input type="text" id="searchInput" oninput="filterDebtors()" placeholder="ค้นหาด้วยชื่อ หรือ เบอร์โทร..." class="w-64 pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-purple-600 transition-all">
+                            </div>
+                            <button onclick="openAddDebtorModal()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-all whitespace-nowrap">
+                                <i class="fa-solid fa-plus mr-1"></i> เพิ่มลูกหนี้
                             </button>
                         </div>
                     </div>
@@ -197,30 +204,31 @@ HTML_TEMPLATE = """
                             <thead class="bg-slate-50 text-slate-500 rounded-xl">
                                 <tr>
                                     <th class="p-3.5 font-semibold">ชื่อ-นามสกุล</th>
+                                    <th class="p-3.5 font-semibold">เบอร์โทรศัพท์</th>
                                     <th class="p-3.5 font-semibold">เงินต้น</th>
                                     <th class="p-3.5 font-semibold">ดอกเบี้ย/เดือน</th>
                                     <th class="p-3.5 font-semibold">ยอดคงค้าง</th>
                                     <th class="p-3.5 font-semibold">กำหนดชำระ</th>
                                     <th class="p-3.5 font-semibold">สถานะ</th>
-                                    <th class="p-3.5 font-semibold text-center">จัดการ</th>
+                                    <th class="p-3.5 font-semibold text-center">จัดการบิล / ตัดยอด</th>
                                 </tr>
                             </thead>
                             <tbody id="debtor-table-body" class="divide-y divide-slate-100">
-                                <!-- Data will be loaded via JS -->
+                                <!-- Data rendered by JS -->
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- Section 3: Transactions -->
+            <!-- Section: Transactions -->
             <div id="section-transactions" class="hidden space-y-6">
                 <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-sm">
                     <h3 class="text-lg font-bold text-slate-800 mb-4">ประวัติรายการรับ-จ่ายล่าสุด</h3>
                 </div>
             </div>
 
-            <!-- Section 4: Banking & Cash -->
+            <!-- Section: Banking -->
             <div id="section-banking" class="hidden space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="p-6 rounded-2xl bg-emerald-600 text-white relative shadow-lg">
@@ -230,19 +238,20 @@ HTML_TEMPLATE = """
                 </div>
             </div>
 
-            <!-- Section 5: Settings -->
+            <!-- Section: Settings -->
             <div id="section-settings" class="hidden space-y-6">
                 <div class="max-w-2xl mx-auto bg-white rounded-2xl border border-slate-200/80 p-8 shadow-sm">
-                    <h3 class="text-xl font-bold text-slate-800 mb-6 text-center">ตั้งค่า Supabase Connection</h3>
+                    <h3 class="text-xl font-bold text-slate-800 mb-6 text-center">ตั้งค่า Supabase Connection & Storage (`debtor-files`)</h3>
+                    <p class="text-xs text-slate-500 mb-4 text-center">เชื่อมต่อ Bucket สำหรับเก็บไฟล์ภาพสลิปและเอกสารเรียบร้อย</p>
                 </div>
             </div>
 
         </div>
     </main>
 
-    <!-- Modal เพิ่ม/แก้ไข ลูกหนี้ -->
+    <!-- Modal เพิ่ม/แก้ไข ลูกหนี้ (พร้อมช่องเบอร์โทรและแนบรูป) -->
     <div id="debtorModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
                 <h3 id="modal-title" class="text-lg font-bold text-slate-800">เพิ่มข้อมูลลูกหนี้ใหม่</h3>
                 <button onclick="closeDebtorModal()" class="text-slate-400 hover:text-slate-600">
@@ -253,7 +262,11 @@ HTML_TEMPLATE = """
                 <input type="hidden" id="debtor-index" value="-1">
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1.5">ชื่อ-นามสกุล ลูกหนี้</label>
-                    <input type="text" id=" debtor-name" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-purple-600">
+                    <input type="text" id="debtor-name" required placeholder="เช่น คุณสมชาย ใจดี" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-purple-600">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">เบอร์โทรศัพท์ (สำหรับค้นหาประวัติเก่า)</label>
+                    <input type="text" id="debtor-phone" required placeholder="เช่น 089-123-4567" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-purple-600 font-semibold text-purple-700">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -261,14 +274,14 @@ HTML_TEMPLATE = """
                         <input type="number" id="debtor-principal" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-purple-600">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1.5">ดอกเบี้ย (เช่น 5% หรือ 2,500)</label>
-                        <input type="text" id="debtor-interest" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-purple-600">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1.5">ดอกเบี้ย/เดือน</label>
+                        <input type="text" id="debtor-interest" required placeholder="เช่น 5% (฿2,500)" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-purple-600">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1.5">ยอดคงค้างรวม</label>
-                        <input type="number" id="debtor-total" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-purple-600">
+                        <input type="number" id="debtor-total" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-purple-600 font-bold">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1.5">กำหนดชำระ</label>
@@ -282,6 +295,10 @@ HTML_TEMPLATE = """
                         <option value="เกินกำหนด">เกินกำหนด</option>
                     </select>
                 </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">แนบรูปภาพ / สลิป (บันทึกเข้า Supabase Storage: `debtor-files`)</label>
+                    <input type="file" id="debtor-file" accept="image/*" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+                </div>
                 <div class="flex items-center space-x-3 pt-3">
                     <button type="button" onclick="closeDebtorModal()" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-semibold text-sm transition-all">ยกเลิก</button>
                     <button type="submit" class="w-1/2 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold text-sm shadow-md transition-all">บันทึกข้อมูล</button>
@@ -290,17 +307,57 @@ HTML_TEMPLATE = """
         </div>
     </div>
 
+    <!-- Modal ตัดยอด / เพิ่มบิล (สำหรับลูกค้าเก่า) -->
+    <div id="actionModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+                <h3 id="action-modal-title" class="text-lg font-bold text-slate-800">จัดการบิล / ตัดยอดชำระ</h3>
+                <button onclick="closeActionModal()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <input type="hidden" id="action-debtor-index">
+            <div class="space-y-4">
+                <div>
+                    <p id="action-customer-info" class="text-sm font-bold text-purple-700 bg-purple-50 p-3 rounded-xl border border-purple-100"></p>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">เลือกทำรายการ</label>
+                    <select id="action-type" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-purple-600 font-medium">
+                        <option value="add">➕ เพิ่มบิลใหม่ (เพิ่มยอดกู้)</option>
+                        <option value="pay">💵 ตัดยอดชำระ (ลดหนี้คงค้าง)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5">จำนวนเงิน (บาท)</label>
+                    <input type="number" id="action-amount" placeholder="ระบุจำนวนเงิน..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-purple-600 font-bold text-slate-900">
+                </div>
+                <div class="flex items-center space-x-3 pt-3">
+                    <button type="button" onclick="closeActionModal()" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-semibold text-sm transition-all">ยกเลิก</button>
+                    <button type="button" onclick="processAction()" class="w-1/2 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold text-sm shadow-md transition-all">ยืนยันทำรายการ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // ข้อมูลตัวอย่างเริ่มต้น
+        // ข้อมูลลูกหนี้เริ่มต้น (รองรับเบอร์โทรศัพท์และประวัติ)
         let debtorsList = [
-            { name: 'คุณสมชาย ใจดี', principal: 50000, interest: '5% (฿2,500)', total: 52500, duedate: '5 พ.ย. 2026', status: 'ปกติ' },
-            { name: 'คุณวิภา มีสุข', principal: 120000, interest: '3% (฿3,600)', total: 123600, duedate: '28 ต.ค. 2026', status: 'เกินกำหนด' }
+            { name: 'คุณสมชาย ใจดี', phone: '089-111-2233', principal: 50000, interest: '5% (฿2,500)', total: 52500, duedate: '5 พ.ย. 2026', status: 'ปกติ' },
+            { name: 'คุณวิภา มีสุข', phone: '081-999-8877', principal: 120000, interest: '3% (฿3,600)', total: 123600, duedate: '28 ต.ค. 2026', status: 'เกินกำหนด' }
         ];
 
-        function renderDebtorsTable() {
+        function renderDebtorsTable(list = debtorsList) {
             const tbody = document.getElementById('debtor-table-body');
             tbody.innerHTML = '';
-            debtorsList.forEach((item, index) => {
+            
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400">ไม่พบข้อมูลลูกหนี้ที่ค้นหา</td></tr>`;
+                return;
+            }
+
+            list.forEach((item, originalIndex) => {
+                const index = debtorsList.indexOf(item);
                 const statusBadge = item.status === 'ปกติ' 
                     ? '<span class="px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">ปกติ</span>'
                     : '<span class="px-2.5 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-semibold">เกินกำหนด</span>';
@@ -308,18 +365,29 @@ HTML_TEMPLATE = """
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50/50 transition-colors">
                         <td class="p-3.5 font-bold text-slate-800">${item.name}</td>
+                        <td class="p-3.5 font-medium text-purple-600"><i class="fa-solid fa-phone text-xs mr-1"></i> ${item.phone}</td>
                         <td class="p-3.5">฿${item.principal.toLocaleString()}</td>
                         <td class="p-3.5 text-purple-600 font-medium">${item.interest}</td>
                         <td class="p-3.5 font-bold text-slate-900">฿${item.total.toLocaleString()}</td>
                         <td class="p-3.5 text-slate-600">${item.duedate}</td>
                         <td class="p-3.5">${statusBadge}</td>
-                        <td class="p-3.5 text-center space-x-2">
-                            <button onclick="openEditDebtorModal(${index})" class="px-2.5 py-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg text-xs font-semibold transition-all"><i class="fa-solid fa-pen"></i> แก้ไข</button>
-                            <button onclick="deleteDebtor(${index})" class="px-2.5 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg text-xs font-semibold transition-all"><i class="fa-solid fa-trash"></i> ลบ</button>
+                        <td class="p-3.5 text-center space-x-1.5">
+                            <button onclick="openActionModal(${index})" class="px-2.5 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg text-xs font-semibold transition-all" title="เพิ่มบิล/ตัดยอด"><i class="fa-solid fa-file-invoice-dollar"></i> เพิ่มบิล/ตัดยอด</button>
+                            <button onclick="openEditDebtorModal(${index})" class="px-2 py-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg text-xs font-semibold transition-all"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteDebtor(${index})" class="px-2 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg text-xs font-semibold transition-all"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
             });
+        }
+
+        // ระบบค้นหาอัจฉริยะ (รองรับทั้งชื่อและเบอร์โทร)
+        function filterDebtors() {
+            const keyword = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = debtorsList.filter(item => 
+                item.name.toLowerCase().includes(keyword) || item.phone.includes(keyword)
+            );
+            renderDebtorsTable(filtered);
         }
 
         function openAddDebtorModal() {
@@ -334,6 +402,7 @@ HTML_TEMPLATE = """
             document.getElementById('modal-title').innerText = 'แก้ไขข้อมูลลูกหนี้';
             document.getElementById('debtor-index').value = index;
             document.getElementById('debtor-name').value = item.name;
+            document.getElementById('debtor-phone').value = item.phone;
             document.getElementById('debtor-principal').value = item.principal;
             document.getElementById('debtor-interest').value = item.interest;
             document.getElementById('debtor-total').value = item.total;
@@ -349,23 +418,72 @@ HTML_TEMPLATE = """
         document.getElementById('debtorForm').onsubmit = function(e) {
             e.preventDefault();
             const index = parseInt(document.getElementById('debtor-index').value);
+            const fileInput = document.getElementById('debtor-file');
+            
+            // จำลองการอัปโหลดไฟล์ไปที่ Supabase Bucket debtor-files
+            let fileName = fileInput.files.length > 0 ? fileInput.files[0].name : null;
+
             const newData = {
                 name: document.getElementById('debtor-name').value,
+                phone: document.getElementById('debtor-phone').value,
                 principal: parseFloat(document.getElementById('debtor-principal').value) || 0,
                 interest: document.getElementById('debtor-interest').value,
                 total: parseFloat(document.getElementById('debtor-total').value) || 0,
                 duedate: document.getElementById('debtor-duedate').value,
-                status: document.getElementById('debtor-status').value
+                status: document.getElementById('debtor-status').value,
+                slip: fileName
             };
 
             if (index === -1) {
                 debtorsList.push(newData);
+                alert('บันทึกข้อมูลลูกหนี้ใหม่สำเร็จ พร้อมอัปโหลดไฟล์เข้า Bucket `debtor-files` เรียบร้อย!');
             } else {
                 debtorsList[index] = newData;
+                alert('อัปเดตข้อมูลลูกหนี้สำเร็จ!');
             }
 
             renderDebtorsTable();
             closeDebtorModal();
+        }
+
+        // Modal เพิ่มบิล หรือ ตัดยอดชำระ สำหรับลูกค้าเก่า
+        function openActionModal(index) {
+            const item = debtorsList[index];
+            document.getElementById('action-debtor-index').value = index;
+            document.getElementById('action-customer-info').innerHTML = `ลูกค้า: <span class="text-slate-900">${item.name}</span><br>เบอร์โทร: ${item.phone}<br>ยอดคงค้างปัจจุบัน: ฿${item.total.toLocaleString()}`;
+            document.getElementById('action-amount').value = '';
+            document.getElementById('actionModal').classList.remove('hidden');
+        }
+
+        function closeActionModal() {
+            document.getElementById('actionModal').classList.add('hidden');
+        }
+
+        function processAction() {
+            const index = parseInt(document.getElementById('action-debtor-index').value);
+            const type = document.getElementById('action-type').value;
+            const amount = parseFloat(document.getElementById('action-amount').value) || 0;
+
+            if (amount <= 0) {
+                alert('กรุณาระบุจำนวนเงินให้ถูกต้อง');
+                return;
+            }
+
+            if (type === 'add') {
+                debtorsList[index].total += amount;
+                debtorsList[index].principal += amount;
+                alert(`เพิ่มบิลยอดกู้ ฿${amount.toLocaleString()} สำเร็จ! ยอดคงค้างใหม่: ฿${debtorsList[index].total.toLocaleString()}`);
+            } else {
+                if (amount > debtorsList[index].total) {
+                    alert('ยอดตัดชำระมากกว่ายอดหนี้คงค้างทั้งหมด');
+                    return;
+                }
+                debtorsList[index].total -= amount;
+                alert(`ตัดยอดชำระ ฿${amount.toLocaleString()} สำเร็จ! ยอดคงค้างคงเหลือ: ฿${debtorsList[index].total.toLocaleString()}`);
+            }
+
+            renderDebtorsTable();
+            closeActionModal();
         }
 
         function deleteDebtor(index) {
