@@ -51,11 +51,9 @@ personal_finance = {
     'monthly_income': 55000,
     'savings_cash': 0,
     'savings_gold': 0,
-    'savings_stocks': 0,
-    'food_expense': 0
+    'savings_stocks': 0
 }
 
-# รายการจิปาถะรายวัน (เริ่มต้นว่างเปล่าเพื่อให้กรอกข้อมูลจริง)
 daily_misc_expenses = []
 
 household_debts = [
@@ -344,7 +342,7 @@ ADMIN_TEMPLATE = """
                         </div>
                         <div id="bank-kbank-display" class="text-3xl font-black">฿{{ bank_kbank | format_num }}</div>
                         <div id="bank-kbank-edit" class="hidden space-y-2">
-                            <input type="number" id="bank-kbank-input" value="{{ bank_kbank }}" class="w-full px-3 py-2 bg-emerald-700 text-white rounded-xl font-bold">
+                            <input type="number" id="bank-kbank-input" value="{{ bank_kbank }}" onkeydown="if(event.key==='Enter') saveBankBalance('kbank')" class="w-full px-3 py-2 bg-emerald-700 text-white rounded-xl font-bold">
                             <button onclick="saveBankBalance('kbank')" class="w-full py-1.5 bg-white text-emerald-800 rounded-lg text-xs font-bold">บันทึก</button>
                         </div>
                     </div>
@@ -356,7 +354,7 @@ ADMIN_TEMPLATE = """
                         </div>
                         <div id="bank-scb-display" class="text-3xl font-black">฿{{ bank_scb | format_num }}</div>
                         <div id="bank-scb-edit" class="hidden space-y-2">
-                            <input type="number" id="bank-scb-input" value="{{ bank_scb }}" class="w-full px-3 py-2 bg-purple-800 text-white rounded-xl font-bold">
+                            <input type="number" id="bank-scb-input" value="{{ bank_scb }}" onkeydown="if(event.key==='Enter') saveBankBalance('scb')" class="w-full px-3 py-2 bg-purple-800 text-white rounded-xl font-bold">
                             <button onclick="saveBankBalance('scb')" class="w-full py-1.5 bg-white text-purple-900 rounded-lg text-xs font-bold">บันทึก</button>
                         </div>
                     </div>
@@ -368,7 +366,7 @@ ADMIN_TEMPLATE = """
                         </div>
                         <div id="bank-cash-display" class="text-3xl font-black">฿{{ bank_cash | format_num }}</div>
                         <div id="bank-cash-edit" class="hidden space-y-2">
-                            <input type="number" id="bank-cash-input" value="{{ bank_cash }}" class="w-full px-3 py-2 bg-slate-700 text-white rounded-xl font-bold">
+                            <input type="number" id="bank-cash-input" value="{{ bank_cash }}" onkeydown="if(event.key==='Enter') saveBankBalance('cash')" class="w-full px-3 py-2 bg-slate-700 text-white rounded-xl font-bold">
                             <button onclick="saveBankBalance('cash')" class="w-full py-1.5 bg-white text-slate-900 rounded-lg text-xs font-bold">บันทึก</button>
                         </div>
                     </div>
@@ -390,7 +388,7 @@ ADMIN_TEMPLATE = """
                     </div>
 
                     <div id="income-edit-box" class="hidden p-4 bg-purple-100 rounded-2xl flex items-center gap-3">
-                        <input type="number" id="income-input" value="{{ personal_finance.monthly_income }}" class="px-3 py-2 bg-white border rounded-xl text-sm font-black w-48">
+                        <input type="number" id="income-input" value="{{ personal_finance.monthly_income }}" onkeydown="if(event.key==='Enter') saveMonthlyIncome()" class="px-3 py-2 bg-white border rounded-xl text-sm font-black w-48">
                         <button onclick="saveMonthlyIncome()" class="px-4 py-2 bg-purple-600 text-white rounded-xl text-xs font-bold">บันทึกรายรับใหม่</button>
                     </div>
 
@@ -419,55 +417,46 @@ ADMIN_TEMPLATE = """
                         </div>
                     </div>
 
-                    <!-- ช่องพอร์ตสะสมทรัพย์สิน & การออมแยกประเภท (สามารถพิมพ์แก้ไขยอดได้เองทันที) -->
+                    <!-- ช่องพอร์ตสะสมทรัพย์สิน & การออมแยกประเภท (กด Enter เพื่อบันทึกทันที) -->
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
-                            <h4 class="font-bold text-sm text-slate-800">🏆 พอร์ตสะสมทรัพย์สิน & การออมแยกประเภท (แก้ไขยอดได้เอง)</h4>
+                            <h4 class="font-bold text-sm text-slate-800">🏆 พอร์ตสะสมทรัพย์สิน & การออมแยกประเภท (พิมพ์แล้วกด Enter เพื่อบันทึก)</h4>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-2">
                                 <label class="text-xs font-bold text-emerald-800 uppercase block"><i class="fa-solid fa-money-bill-wave mr-1"></i> เงินสด / เงินฝาก (บาท)</label>
-                                <input type="number" id="savings-cash-input" value="{{ personal_finance.savings_cash }}" onchange="saveSavingsPortfolio()" class="w-full px-3 py-2 bg-white border border-emerald-300 rounded-xl font-mono font-bold text-emerald-900 text-lg">
+                                <input type="number" id="savings-cash-input" value="{{ personal_finance.savings_cash }}" onchange="saveSavingsPortfolio()" onkeydown="if(event.key==='Enter') { this.blur(); alert('บันทึกยอดเงินสดเรียบร้อย!'); }" class="w-full px-3 py-2 bg-white border border-emerald-300 rounded-xl font-mono font-bold text-emerald-900 text-lg">
                             </div>
                             <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-2">
                                 <label class="text-xs font-bold text-amber-800 uppercase block"><i class="fa-solid fa-coins mr-1"></i> ทองคำสะสม (บาท)</label>
-                                <input type="number" id="savings-gold-input" value="{{ personal_finance.savings_gold }}" onchange="saveSavingsPortfolio()" class="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl font-mono font-bold text-amber-900 text-lg">
+                                <input type="number" id="savings-gold-input" value="{{ personal_finance.savings_gold }}" onchange="saveSavingsPortfolio()" onkeydown="if(event.key==='Enter') { this.blur(); alert('บันทึกยอดทองคำเรียบร้อย!'); }" class="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl font-mono font-bold text-amber-900 text-lg">
                             </div>
                             <div class="p-4 rounded-2xl bg-blue-50 border border-blue-200 space-y-2">
                                 <label class="text-xs font-bold text-blue-800 uppercase block"><i class="fa-solid fa-chart-line mr-1"></i> หุ้น / กองทุน (บาท)</label>
-                                <input type="number" id="savings-stocks-input" value="{{ personal_finance.savings_stocks }}" onchange="saveSavingsPortfolio()" class="w-full px-3 py-2 bg-white border border-blue-300 rounded-xl font-mono font-bold text-blue-900 text-lg">
+                                <input type="number" id="savings-stocks-input" value="{{ personal_finance.savings_stocks }}" onchange="saveSavingsPortfolio()" onkeydown="if(event.key==='Enter') { this.blur(); alert('บันทึกยอดหุ้น/กองทุนเรียบร้อย!'); }" class="w-full px-3 py-2 bg-white border border-blue-300 rounded-xl font-mono font-bold text-blue-900 text-lg">
                             </div>
                         </div>
                     </div>
 
-                    <!-- ส่วนกรอกค่ากิน & จิปาถะรายวัน -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 p-5 bg-slate-50 border rounded-3xl">
-                        <!-- ค่ากินประจำเดือน -->
-                        <div class="space-y-2">
-                            <label class="text-xs font-bold text-slate-700 uppercase block">🍲 ค่ากินประจำเดือน (บาท)</label>
-                            <input type="number" id="expense-food" value="{{ personal_finance.food_expense }}" onchange="updateCalculations()" placeholder="กรอกยอดค่ากินสะสม..." class="w-full px-3.5 py-2.5 bg-white border rounded-xl text-sm font-bold text-slate-800">
+                    <!-- ส่วนบันทึกค่าใช้จ่ายจิปาถะรายวัน -->
+                    <div class="p-5 bg-slate-50 border rounded-3xl space-y-3">
+                        <label class="text-xs font-bold text-slate-700 uppercase block">🛍️ ค่าใช้จ่ายจิปาถะ (บันทึกรายวัน - กด Enter เพื่อเพิ่มรายการ)</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="misc-desc-input" placeholder="รายการ (เช่น ซื้อของใช้, ค่ากาแฟ)" onkeydown="if(event.key==='Enter') document.getElementById('misc-amt-input').focus();" class="flex-1 px-3.5 py-2.5 bg-white border rounded-xl text-xs font-semibold">
+                            <input type="number" id="misc-amt-input" placeholder="จำนวนเงิน" onkeydown="if(event.key==='Enter') addDailyMisc();" class="w-32 px-3.5 py-2.5 bg-white border rounded-xl text-xs font-bold font-mono">
+                            <button onclick="addDailyMisc()" class="px-4 py-2.5 bg-purple-600 text-white rounded-xl text-xs font-bold shadow">+ เพิ่มรายการ</button>
                         </div>
 
-                        <!-- ค่าใช้จ่ายจิปาถะ กรอกเป็นรายวัน -->
-                        <div class="space-y-3">
-                            <label class="text-xs font-bold text-slate-700 uppercase block">🛍️ ค่าใช้จ่ายจิปาถะ (บันทึกรายวัน)</label>
-                            <div class="flex gap-2">
-                                <input type="text" id="misc-desc-input" placeholder="รายการ (เช่น ซื้อของใช้, ค่ากาแฟ)" class="flex-1 px-3 py-2 bg-white border rounded-xl text-xs font-semibold">
-                                <input type="number" id="misc-amt-input" placeholder="จำนวนเงิน" class="w-28 px-3 py-2 bg-white border rounded-xl text-xs font-bold font-mono">
-                                <button onclick="addDailyMisc()" class="px-3 py-2 bg-purple-600 text-white rounded-xl text-xs font-bold shadow">+ เพิ่ม</button>
-                            </div>
-
-                            <!-- ตารางจิปาถะรายวัน -->
-                            <div class="max-h-36 overflow-y-auto border rounded-xl bg-white">
-                                <table class="w-full text-left text-xs">
-                                    <thead class="bg-slate-100 text-slate-600 sticky top-0">
-                                        <tr><th class="p-2">วันที่/เวลา</th><th class="p-2">รายการ</th><th class="p-2 text-right">จำนวน</th><th class="p-2 text-center">ลบ</th></tr>
-                                    </thead>
-                                    <tbody id="misc-table-body" class="divide-y">
-                                        <tr><td colspan="4" class="p-3 text-center text-slate-400">ยังไม่มีรายการจิปาถะวันนี้</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
+                        <!-- ตารางจิปาถะรายวัน -->
+                        <div class="max-h-40 overflow-y-auto border rounded-xl bg-white">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-100 text-slate-600 sticky top-0">
+                                    <tr><th class="p-2.5">วันที่/เวลา</th><th class="p-2.5">รายการ</th><th class="p-2.5 text-right">จำนวน</th><th class="p-2.5 text-center">ลบ</th></tr>
+                                </thead>
+                                <tbody id="misc-table-body" class="divide-y">
+                                    <tr><td colspan="4" class="p-3 text-center text-slate-400">ยังไม่มีรายการจิปาถะวันนี้</td></tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
 
@@ -503,10 +492,10 @@ ADMIN_TEMPLATE = """
                         </div>
                     </div>
 
-                    <!-- รายการค่าใช้จ่ายประจำต่อเดือน (งวดคงเหลือแก้ไขได้เอง) -->
+                    <!-- รายการค่าใช้จ่ายประจำต่อเดือน (กด Enter เพื่อบันทึก) -->
                     <div class="space-y-3 pt-4">
                         <div class="flex items-center justify-between">
-                            <h4 class="font-bold text-sm text-slate-800">รายการค่าใช้จ่ายประจำต่อเดือน (งวดคงเหลือพิมพ์แก้ไขได้เอง)</h4>
+                            <h4 class="font-bold text-sm text-slate-800">รายการค่าใช้จ่ายประจำต่อเดือน (พิมพ์แล้วกด Enter เพื่อบันทึกทันที)</h4>
                             <button onclick="resetMonthlyExpenses()" class="px-3 py-1.5 bg-slate-200 text-slate-700 rounded-xl text-xs font-bold">รีเซ็ตสถานะจ่ายทุกเดือน</button>
                         </div>
                         <div class="overflow-x-auto">
@@ -520,7 +509,7 @@ ADMIN_TEMPLATE = """
                                         <td class="p-3 font-bold text-slate-800">{{ exp.name }}</td>
                                         <td class="p-3 text-right">
                                             {% if exp.is_variable %}
-                                                <input type="number" id="exp-amt-{{ exp.id }}" value="{{ exp.amount }}" onchange="updateCalculations()" class="w-28 px-2 py-1 bg-purple-50 border border-purple-300 rounded-lg font-mono font-bold text-purple-900 text-right">
+                                                <input type="number" id="exp-amt-{{ exp.id }}" value="{{ exp.amount }}" onchange="updateCalculations()" onkeydown="if(event.key==='Enter') { this.blur(); updateCalculations(); alert('บันทึกยอด {{ exp.name }} เรียบร้อย!'); }" class="w-28 px-2 py-1 bg-purple-50 border border-purple-300 rounded-lg font-mono font-bold text-purple-900 text-right">
                                             {% else %}
                                                 <span class="font-mono font-bold text-blue-600" id="exp-amt-display-{{ exp.id }}">฿{{ exp.amount | format_num }}</span>
                                                 <input type="hidden" id="exp-amt-{{ exp.id }}" value="{{ exp.amount }}">
@@ -530,7 +519,7 @@ ADMIN_TEMPLATE = """
                                             {% if exp.has_installments %}
                                                 <div class="flex items-center gap-1">
                                                     <span>เหลือ</span>
-                                                    <input type="number" id="exp-inst-input-{{ exp.id }}" value="{{ exp.installments }}" onchange="updateInstallmentValue('{{ exp.id }}')" class="w-16 px-2 py-0.5 bg-slate-50 border rounded font-mono font-bold text-slate-800 text-center">
+                                                    <input type="number" id="exp-inst-input-{{ exp.id }}" value="{{ exp.installments }}" onchange="updateInstallmentValue('{{ exp.id }}')" onkeydown="if(event.key==='Enter') { this.blur(); updateInstallmentValue('{{ exp.id }}'); alert('บันทึกงวดคงเหลือเรียบร้อย!'); }" class="w-16 px-2 py-0.5 bg-slate-50 border rounded font-mono font-bold text-slate-800 text-center">
                                                     <span>งวด</span>
                                                 </div>
                                             {% else %}
@@ -692,7 +681,7 @@ ADMIN_TEMPLATE = """
                 <input type="hidden" id="pay_debt_id">
                 <div>
                     <label class="block font-semibold mb-1">ยอดชำระตัดต้น (บาท)</label>
-                    <input type="number" id="pay_debt_amount" class="w-full px-3 py-2 bg-slate-50 border rounded-xl text-sm font-bold text-rose-700">
+                    <input type="number" id="pay_debt_amount" onkeydown="if(event.key==='Enter') submitPayDebt()" class="w-full px-3 py-2 bg-slate-50 border rounded-xl text-sm font-bold text-rose-700">
                 </div>
                 <div class="flex gap-2 pt-2">
                     <button type="button" onclick="closePayDebtModal()" class="flex-1 py-2 bg-slate-200 rounded-xl font-bold">ยกเลิก</button>
@@ -735,8 +724,10 @@ ADMIN_TEMPLATE = """
         }
 
         function addDailyMisc() {
-            const desc = document.getElementById('misc-desc-input').value.strip ? document.getElementById('misc-desc-input').value.strip() : document.getElementById('misc-desc-input').value;
-            const amt = parseFloat(document.getElementById('misc-amt-input').value) || 0;
+            const descInput = document.getElementById('misc-desc-input');
+            const amtInput = document.getElementById('misc-amt-input');
+            const desc = descInput.value.trim();
+            const amt = parseFloat(amtInput.value) || 0;
             if (!desc || amt <= 0) {
                 alert('กรุณากรอกรายการและจำนวนเงินที่ถูกต้อง');
                 return;
@@ -744,8 +735,9 @@ ADMIN_TEMPLATE = """
             const timeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
             dailyMiscExpenses.push({ id: Date.now(), time: timeStr, desc: desc, amt: amt });
             
-            document.getElementById('misc-desc-input').value = '';
-            document.getElementById('misc-amt-input').value = '';
+            descInput.value = '';
+            amtInput.value = '';
+            descInput.focus();
             
             renderMiscTable();
             updateCalculations();
@@ -786,12 +778,9 @@ ADMIN_TEMPLATE = """
                 }
             });
 
-            const food = parseFloat(document.getElementById('expense-food').value) || 0;
-            personalFinance.food_expense = food;
-
             const miscTotal = dailyMiscExpenses.reduce((sum, item) => sum + item.amt, 0);
 
-            const totalSpent = paidExpensesSum + food + miscTotal;
+            const totalSpent = paidExpensesSum + miscTotal;
             const income = personalFinance.monthly_income || 1;
             const remaining = income - totalSpent;
 
@@ -812,19 +801,19 @@ ADMIN_TEMPLATE = """
             document.getElementById('spent-percent-text').innerText = 'ใช้ไป ' + spentPercent.toFixed(1) + '% ของรายรับ';
             document.getElementById('remaining-percent-text').innerText = 'คงเหลือ ' + ((remaining / income) * 100).toFixed(1) + '%';
 
-            updatePieChart(paidExpensesSum, food, miscTotal);
+            updatePieChart(paidExpensesSum, miscTotal);
         }
 
-        function updatePieChart(paidExpenses, food, misc) {
+        function updatePieChart(paidExpenses, misc) {
             const ctx = document.getElementById('expensePieChart').getContext('2d');
             if (expenseChart) expenseChart.destroy();
             expenseChart = new Chart(ctx, {
                 type: 'pie',
                 data: {
-                    labels: ['ค่างวด/หนี้/ค่าห้อง/ค่าเน็ต', 'ค่ากินประจำวัน', 'ค่าใช้จ่ายจิปาถะ'],
+                    labels: ['ค่างวด/หนี้/ค่าห้อง/ค่าเน็ต', 'ค่าใช้จ่ายจิปาถะ'],
                     datasets: [{
-                        data: [paidExpenses, food, misc],
-                        backgroundColor: ['#8b5cf6', '#10b981', '#f59e0b']
+                        data: [paidExpenses, misc],
+                        backgroundColor: ['#8b5cf6', '#f59e0b']
                     }]
                 },
                 options: {
