@@ -1,33 +1,38 @@
-from flask import Flask, render_template_string, request, Response
+from flask import Flask, render_template_string, request, Response, redirect, url_for, session
 import os
 import csv
 import io
+import urllib.request
+import urllib.parse
+import json
 from datetime import datetime
 
 app = Flask(__name__)
+app.secret_key = 'bizflow_secure_secret_key'
 
-# ฐานข้อมูลลูกหนี้ (เริ่มต้นเป็นค่าว่าง พร้อมรองรับข้อมูลจริง)
+# ฐานข้อมูลลูกหนี้
 debtors_database = []
 
-# ฐานข้อมูลผู้ใช้งานระบบ (User Management & Roles)
+# ข้อมูล Username และ Password สำหรับเข้าสู่หน้าบ้านสมาชิก
+MEMBER_CREDENTIALS = {
+    'username': 'user',
+    'password': '123'
+}
+
+# ฐานข้อมูลผู้ใช้งานระบบหลังบ้าน (แอดมิน)
 users_database = [
-    {'id': 1, 'name': 'Owner (คุณสมชาย)', 'username': 'owner', 'role': 'Owner / Super Admin', 'status': 'ใช้งานอยู่', 'last_login': '30/10/2026 08:30'},
-    {'id': 2, 'name': 'Staff (น้องแอดมิน)', 'username': 'staff01', 'role': 'Staff / Operator', 'status': 'ใช้งานอยู่', 'last_login': '29/10/2026 18:15'}
+    {'id': 1, 'name': 'Owner (คุณสมชาย)', 'username': 'owner', 'role': 'Owner / Super Admin', 'status': 'ใช้งานอยู่', 'last_login': '30/10/2026 08:30'}
 ]
 
-# ประวัติการใช้งานระบบ (Activity Logs / Audit Trail)
 activity_logs = [
-    {'time': '30/10/2026 08:30', 'user': 'Owner', 'action': 'เข้าสู่ระบบหลังบ้าน', 'ip': '127.0.0.1'},
-    {'time': '29/10/2026 21:15', 'user': 'Staff / Operator', 'action': 'บันทึกคำขอกู้ใหม่จากหน้าบ้าน (/apply)', 'ip': '223.24.215.40'}
+    {'time': '30/10/2026 08:30', 'user': 'Owner', 'action': 'เข้าสู่ระบบหลังบ้าน', 'ip': '127.0.0.1'}
 ]
 
-# การตั้งค่าระบบทั่วไป (General Configuration)
+# ตั้งค่าระบบ (ใส่ Telegram Token และ Chat ID ของคุณให้เรียบร้อย)
 system_config = {
     'company_name': 'BizFlow+ Financial Services',
-    'default_interest_rate': 5.0,  # เปอร์เซ็นต์/เดือน
-    'late_fee': 100,             # ค่าปรับล่าช้า (บาท/วัน)
-    'line_token': 'A1b2C3d4E5f6G7h8...',
-    'telegram_token': ''
+    'telegram_token': '9203750510:AAFJhUvWRf4mOSozUSkz0I0I9Jca-xImuTo',
+    'telegram_chat_id': '1880260879'
 }
 
 bank_accounts = {
@@ -36,13 +41,36 @@ bank_accounts = {
     'cash': 0
 }
 
+@app.template_filter('format_num')
+def format_num_filter(value):
+    try:
+        return f"{float(value):,.0f}"
+    except:
+        return "0"
+
+# ฟังก์ชันส่งข้อความแจ้งเตือนเข้า Telegram
+def send_telegram_alert(message):
+    token = system_config.get('telegram_token')
+    chat_id = system_config.get('telegram_chat_id')
+    if not token or not chat_id:
+        return False
+    try:
+        url = f"https://api.telegram.org/bot{token}/sendMessage"
+        data = urllib.parse.urlencode({'chat_id': chat_id, 'text': message, 'parse_mode': 'HTML'}).encode('utf-8')
+        req = urllib.request.Request(url, data=data)
+        with urllib.request.urlopen(req, timeout=5) as response:
+            return True
+    except Exception as e:
+        print(f"Telegram Error: {e}")
+        return False
+
 ADMIN_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BizFlow+ - ระบบจัดการลูกหนี้ & บัญชีการเงินขั้นสูง</title>
+    <title>BizFlow+ - ระบบจัดการลูกหนี้ & บัญชีการเงิน</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -59,7 +87,6 @@ ADMIN_TEMPLATE = """
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col md:flex-row">
 
-    <!-- Mobile Top Bar -->
     <div class="md:hidden bg-[#18092e] text-white p-4 flex items-center justify-between shadow-md sticky top-0 z-40">
         <div class="flex items-center space-x-2">
             <div class="w-8 h-8 rounded-xl bg-purple-600 flex items-center justify-center font-black">B</div>
@@ -68,7 +95,6 @@ ADMIN_TEMPLATE = """
         <button onclick="toggleSidebar()" class="text-purple-300 hover:text-white text-xl p-2"><i class="fa-solid fa-bars"></i></button>
     </div>
 
-    <!-- Sidebar Menu -->
     <aside id="sidebar" class="w-72 sidebar-bg text-slate-200 flex flex-col justify-between shrink-0 shadow-2xl h-screen fixed md:static inset-y-0 left-0 z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300 border-r border-purple-900/35 overflow-y-auto">
         <div>
             <div class="p-6 pb-6 border-b border-purple-900/40 flex items-center justify-between">
@@ -102,7 +128,7 @@ ADMIN_TEMPLATE = """
                             <i class="fa-solid fa-users text-sm text-amber-400 w-5"></i><span>รายชื่อลูกหนี้ & คำขอกู้</span>
                         </button>
                         <a href="/apply" target="_blank" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-medium text-xs text-emerald-300 hover:bg-emerald-950/40 border border-emerald-500/30 mt-1">
-                            <i class="fa-solid fa-globe text-sm text-emerald-400 w-5"></i><span>🔗 หน้าบ้านยื่นกู้ (/apply)</span>
+                            <i class="fa-solid fa-globe text-sm text-emerald-400 w-5"></i><span>🔗 หน้าบ้านสมาชิก (/apply)</span>
                         </a>
                     </div>
                 </div>
@@ -144,7 +170,6 @@ ADMIN_TEMPLATE = """
         </div>
     </aside>
 
-    <!-- Main Content -->
     <main class="flex-1 overflow-y-auto min-h-screen bg-slate-50/50 w-full">
         <header class="bg-white border-b border-slate-200 sticky top-0 z-10 px-6 md:px-8 py-4 flex items-center justify-between shadow-sm">
             <h2 id="page-title" class="text-lg md:text-xl font-bold text-slate-800">แดชบอร์ดหลัก</h2>
@@ -154,14 +179,13 @@ ADMIN_TEMPLATE = """
                     <span id="bell-badge" class="absolute -top-1 -right-1 bg-rose-600 text-white font-bold text-[10px] w-4 h-4 rounded-full flex items-center justify-center hidden">0</span>
                 </div>
                 <a href="/apply" target="_blank" class="px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-medium text-xs md:text-sm shadow-md flex items-center space-x-1.5">
-                    <i class="fa-solid fa-external-link-alt"></i><span>เปิดหน้าบ้าน (ขอกู้)</span>
+                    <i class="fa-solid fa-external-link-alt"></i><span>เปิดหน้าบ้านสมาชิก</span>
                 </a>
             </div>
         </header>
 
         <div class="p-4 md:p-8">
 
-            <!-- 1. Section: Dashboard -->
             <div id="section-dashboard" class="space-y-6">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                     <div class="p-5 rounded-2xl bg-amber-500 text-white shadow-lg">
@@ -206,7 +230,6 @@ ADMIN_TEMPLATE = """
                 </div>
             </div>
 
-            <!-- 2. Section: Debtors -->
             <div id="section-debtors" class="hidden space-y-6">
                 <div class="bg-white rounded-2xl border border-slate-200 p-4 md:p-6 shadow-sm overflow-x-auto">
                     <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
@@ -234,46 +257,60 @@ ADMIN_TEMPLATE = """
                 </div>
             </div>
 
-            <!-- 3. Section: Banking -->
             <div id="section-banking" class="hidden space-y-6">
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
                     <div class="p-6 rounded-2xl bg-emerald-600 text-white shadow-lg space-y-3">
-                        <h4 class="font-bold text-lg">ธนาคารกสิกรไทย (KBANK)</h4>
-                        <input type="number" id="bank-kbank-input" value="{{ bank_kbank }}" class="w-full px-3 py-2 bg-emerald-700 border border-emerald-500 rounded-xl text-xl font-black text-white">
-                        <button onclick="updateBankBalance('kbank')" class="w-full py-1.5 bg-white text-emerald-800 rounded-lg text-xs font-bold shadow">บันทึกยอดเงิน</button>
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-bold text-lg">ธนาคารกสิกรไทย (KBANK)</h4>
+                            <button onclick="toggleEditBank('kbank')" class="text-emerald-200 hover:text-white text-xs bg-emerald-700/60 px-2.5 py-1 rounded-lg"><i class="fa-solid fa-pen mr-1"></i>แก้ไขยอด</button>
+                        </div>
+                        <div id="bank-kbank-display" class="text-3xl font-black tracking-tight py-2">฿{{ bank_kbank | format_num }}</div>
+                        <div id="bank-kbank-edit" class="hidden space-y-2">
+                            <input type="number" id="bank-kbank-input" value="{{ bank_kbank }}" class="w-full px-3 py-2 bg-emerald-700 border border-emerald-500 rounded-xl text-xl font-black text-white">
+                            <button onclick="saveBankBalance('kbank')" class="w-full py-1.5 bg-white text-emerald-800 rounded-lg text-xs font-bold shadow">บันทึกยอดเงิน</button>
+                        </div>
                     </div>
+
                     <div class="p-6 rounded-2xl bg-purple-700 text-white shadow-lg space-y-3">
-                        <h4 class="font-bold text-lg">ธนาคารไทยพาณิชย์ (SCB)</h4>
-                        <input type="number" id="bank-scb-input" value="{{ bank_scb }}" class="w-full px-3 py-2 bg-purple-800 border border-purple-600 rounded-xl text-xl font-black text-white">
-                        <button onclick="updateBankBalance('scb')" class="w-full py-1.5 bg-white text-purple-900 rounded-lg text-xs font-bold shadow">บันทึกยอดเงิน</button>
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-bold text-lg">ธนาคารไทยพาณิชย์ (SCB)</h4>
+                            <button onclick="toggleEditBank('scb')" class="text-purple-200 hover:text-white text-xs bg-purple-800/60 px-2.5 py-1 rounded-lg"><i class="fa-solid fa-pen mr-1"></i>แก้ไขยอด</button>
+                        </div>
+                        <div id="bank-scb-display" class="text-3xl font-black tracking-tight py-2">฿{{ bank_scb | format_num }}</div>
+                        <div id="bank-scb-edit" class="hidden space-y-2">
+                            <input type="number" id="bank-scb-input" value="{{ bank_scb }}" class="w-full px-3 py-2 bg-purple-800 border border-purple-600 rounded-xl text-xl font-black text-white">
+                            <button onclick="saveBankBalance('scb')" class="w-full py-1.5 bg-white text-purple-900 rounded-lg text-xs font-bold shadow">บันทึกยอดเงิน</button>
+                        </div>
                     </div>
+
                     <div class="p-6 rounded-2xl bg-slate-800 text-white shadow-lg space-y-3">
-                        <h4 class="font-bold text-lg">เงินสด (Cash)</h4>
-                        <input type="number" id="bank-cash-input" value="{{ bank_cash }}" class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-xl text-xl font-black text-white">
-                        <button onclick="updateBankBalance('cash')" class="w-full py-1.5 bg-white text-slate-900 rounded-lg text-xs font-bold shadow">บันทึกยอดเงิน</button>
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-bold text-lg">เงินสด (Cash)</h4>
+                            <button onclick="toggleEditBank('cash')" class="text-slate-300 hover:text-white text-xs bg-slate-700 px-2.5 py-1 rounded-lg"><i class="fa-solid fa-pen mr-1"></i>แก้ไขยอด</button>
+                        </div>
+                        <div id="bank-cash-display" class="text-3xl font-black tracking-tight py-2">฿{{ bank_cash | format_num }}</div>
+                        <div id="bank-cash-edit" class="hidden space-y-2">
+                            <input type="number" id="bank-cash-input" value="{{ bank_cash }}" class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-xl text-xl font-black text-white">
+                            <button onclick="saveBankBalance('cash')" class="w-full py-1.5 bg-white text-slate-900 rounded-lg text-xs font-bold shadow">บันทึกยอดเงิน</button>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 4. Section: Transactions -->
             <div id="section-transactions" class="hidden space-y-6">
                 <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
                     <h3 class="text-lg font-bold text-slate-800 mb-2">บันทึกการชำระหนี้ / สลิปโอนเงิน</h3>
-                    <p class="text-xs text-slate-500">บันทึกค่างวดและรับชำระดอกเบี้ยจากลูกค้า</p>
                 </div>
             </div>
 
-            <!-- 5. Section: Contracts -->
             <div id="section-contracts" class="hidden space-y-6">
                 <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
                     <h3 class="text-lg font-bold text-slate-800 flex items-center">
                         <i class="fa-solid fa-file-contract text-indigo-600 mr-2"></i> จัดการสัญญาเงินกู้ดิจิทัล
                     </h3>
-                    <p class="text-xs text-slate-500">ยังไม่มีรายการสัญญาในระบบ</p>
                 </div>
             </div>
 
-            <!-- 6. Section: Annual Reports -->
             <div id="section-annual_reports" class="hidden space-y-6">
                 <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
                     <h3 class="text-lg font-bold text-slate-800 flex items-center">
@@ -282,70 +319,56 @@ ADMIN_TEMPLATE = """
                 </div>
             </div>
 
-            <!-- 7. Section: Settings (อัปเกรดตามคำแนะนำ: Roles, Audit Logs, General Config, Security, Database Management) -->
             <div id="section-settings" class="hidden space-y-6">
                 <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
-                    <h3 class="text-lg font-bold text-slate-800 border-b pb-3">⚙️ ตั้งค่าระบบหลังบ้านขั้นสูง (Advanced System Settings)</h3>
+                    <h3 class="text-lg font-bold text-slate-800 border-b pb-3">⚙️ ตั้งค่าระบบหลังบ้านขั้นสูง</h3>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         
-                        <!-- 1. การจัดการผู้ใช้งาน (User Roles & Permissions) -->
                         <div class="p-4 bg-slate-50 border rounded-2xl space-y-3">
-                            <h4 class="text-xs font-bold text-purple-900 uppercase"><i class="fa-solid fa-users-gear mr-1"></i> 1. การจัดการสิทธิ์ผู้ใช้งาน (Roles & Permissions)</h4>
+                            <h4 class="text-xs font-bold text-purple-900 uppercase"><i class="fa-solid fa-users-gear mr-1"></i> 1. จัดการผู้ใช้งาน & เพิ่มแอดมิน</h4>
                             <div class="overflow-x-auto">
-                                <table class="w-full text-left text-xs bg-white rounded-xl border">
+                                <table class="w-full text-left text-xs bg-white rounded-xl border mb-3">
                                     <thead class="bg-slate-100 text-slate-600">
                                         <tr>
-                                            <th class="p-2.5">ผู้ใช้งาน</th>
-                                            <th class="p-2.5">บทบาท (Role)</th>
-                                            <th class="p-2.5">สถานะ</th>
+                                            <th class="p-2.5">ชื่อ-นามสกุล / Username</th>
+                                            <th class="p-2.5">บทบาท</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {% for u in users %}
                                         <tr class="border-t">
-                                            <td class="p-2.5 font-bold">{{ u.name }}</td>
+                                            <td class="p-2.5 font-bold">{{ u.name }} <br><span class="text-purple-600 font-mono text-[10px]">(@{{ u.username }})</span></td>
                                             <td class="p-2.5 text-purple-700 font-semibold">{{ u.role }}</td>
-                                            <td class="p-2.5 text-emerald-600 font-bold">{{ u.status }}</td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>
                                 </table>
                             </div>
-                        </div>
 
-                        <!-- 2. ตั้งค่าระบบทั่วไป & ดอกเบี้ยมาตรฐาน -->
-                        <div class="p-4 bg-slate-50 border rounded-2xl space-y-3">
-                            <h4 class="text-xs font-bold text-purple-900 uppercase"><i class="fa-solid fa-sliders mr-1"></i> 2. ตั้งค่าเงื่อนไขสัญญา & ดอกเบี้ยเริ่มต้น</h4>
-                            <div class="space-y-2 text-xs">
-                                <label class="block font-semibold text-slate-700">ชื่อองค์กร / กิจการบนสัญญา</label>
-                                <input type="text" value="{{ config.company_name }}" class="w-full px-3 py-2 bg-white border rounded-xl">
-                                
+                            <form action="/add-admin" method="POST" class="space-y-2 pt-2 border-t">
+                                <span class="text-xs font-bold text-slate-700 block">➕ เพิ่มบัญชีแอดมินใหม่</span>
                                 <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <label class="block font-semibold text-slate-700">ดอกเบี้ยมาตรฐาน (%)</label>
-                                        <input type="number" value="{{ config.default_interest_rate }}" class="w-full px-3 py-2 bg-white border rounded-xl">
-                                    </div>
-                                    <div>
-                                        <label class="block font-semibold text-slate-700">ค่าปรับล่าช้า (บาท/วัน)</label>
-                                        <input type="number" value="{{ config.late_fee }}" class="w-full px-3 py-2 bg-white border rounded-xl">
-                                    </div>
+                                    <input type="text" name="admin_name" required placeholder="ชื่อแอดมิน" class="px-3 py-1.5 bg-white border rounded-lg text-xs">
+                                    <input type="text" name="admin_user" required placeholder="Username" class="px-3 py-1.5 bg-white border rounded-lg text-xs">
                                 </div>
-                                <button onclick="alert('บันทึกการตั้งค่าเรียบร้อย!')" class="w-full py-2 bg-purple-600 text-white rounded-xl font-bold shadow hover:bg-purple-700 mt-2">บันทึกค่าเริ่มต้น</button>
-                            </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <input type="password" name="admin_pass" required placeholder="Password" class="px-3 py-1.5 bg-white border rounded-lg text-xs">
+                                    <button type="submit" class="py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold shadow">บันทึกแอดมิน</button>
+                                </div>
+                            </form>
                         </div>
 
-                        <!-- 3. สำรองข้อมูล & จัดการฐานข้อมูล (Backup / Clear Test Data) -->
                         <div class="p-4 bg-purple-50/50 border border-purple-200 rounded-2xl space-y-3">
-                            <h4 class="text-xs font-bold text-purple-900 uppercase"><i class="fa-solid fa-database mr-1"></i> 3. จัดการฐานข้อมูล & ความพร้อมใช้งาน</h4>
-                            <p class="text-xs text-slate-500">สำรองข้อมูลเป็น CSV หรือล้างข้อมูลทดสอบเพื่อเตรียมระบบใช้งานจริง (Production)</p>
+                            <h4 class="text-xs font-bold text-purple-900 uppercase"><i class="fa-solid fa-database mr-1"></i> 2. จัดการฐานข้อมูล & เตรียมใช้งานจริง</h4>
+                            <p class="text-xs text-slate-500">สำรองข้อมูลเป็น CSV หรือล้างข้อมูลจำลองเพื่อเริ่มต้นใช้งานจริง</p>
                             
                             <div class="flex gap-2 pt-1">
                                 <a href="/export-csv" class="flex-1 py-2.5 bg-purple-600 text-white rounded-xl text-xs font-bold shadow hover:bg-purple-700 text-center flex items-center justify-center space-x-1">
                                     <i class="fa-solid fa-download"></i><span>Export CSV</span>
                                 </a>
                                 <button onclick="if(confirm('ต้องการรีเซ็ตข้อมูลทั้งหมดจริงหรือไม่?')) { window.location.href='/clear-data'; }" class="py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow">
-                                    <i class="fa-solid fa-trash-can mr-1"></i> รีเซ็ตข้อมูล (Clear Data)
+                                    <i class="fa-solid fa-trash-can mr-1"></i> รีเซ็ตข้อมูล
                                 </button>
                             </div>
 
@@ -358,26 +381,28 @@ ADMIN_TEMPLATE = """
                             </form>
                         </div>
 
-                        <!-- 4. ช่องทางแจ้งเตือน (LINE Notify / Webhook) & Security -->
-                        <div class="p-4 bg-slate-50 border rounded-2xl space-y-3">
-                            <h4 class="text-xs font-bold text-purple-900 uppercase"><i class="fa-solid fa-bell mr-1"></i> 4. ช่องทางแจ้งเตือน & ความปลอดภัย</h4>
-                            <div class="space-y-2 text-xs">
-                                <label class="block font-semibold text-slate-700">LINE Notify Token</label>
-                                <input type="text" value="{{ config.line_token }}" class="w-full px-3 py-2 bg-white border rounded-xl font-mono">
-                                
-                                <label class="block font-semibold text-slate-700">เปลี่ยนรหัสผ่านผู้ดูแลระบบ (Change Password)</label>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <input type="password" placeholder="รหัสผ่านใหม่" class="px-3 py-2 bg-white border rounded-xl">
-                                    <button onclick="alert('เปลี่ยนรหัสผ่านสำเร็จ!')" class="py-2 bg-slate-800 text-white rounded-xl font-bold shadow">อัปเดตรหัส</button>
+                        <div class="p-4 bg-slate-50 border rounded-2xl space-y-3 md:col-span-2">
+                            <h4 class="text-xs font-bold text-purple-900 uppercase"><i class="fa-brands fa-telegram text-sky-600 mr-1"></i> 3. ช่องทางแจ้งเตือน Telegram Bot & ความปลอดภัย</h4>
+                            <form action="/update-telegram" method="POST" class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs items-end">
+                                <div>
+                                    <label class="block font-semibold text-slate-700 mb-1">Telegram Bot Token</label>
+                                    <input type="text" name="tg_token" value="{{ config.telegram_token }}" class="w-full px-3 py-2 bg-white border rounded-xl font-mono">
                                 </div>
-                            </div>
+                                <div>
+                                    <label class="block font-semibold text-slate-700 mb-1">Telegram Chat ID</label>
+                                    <input type="text" name="tg_chat_id" value="{{ config.telegram_chat_id }}" placeholder="เช่น 1880260879" class="w-full px-3 py-2 bg-white border rounded-xl font-mono">
+                                </div>
+                                <div class="flex gap-2">
+                                    <button type="submit" class="flex-1 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold shadow">บันทึกค่า</button>
+                                    <button type="button" onclick="testTelegram()" class="py-2 px-3 bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-bold shadow"><i class="fa-solid fa-paper-plane"></i> ทดสอบ</button>
+                                </div>
+                            </form>
                         </div>
 
                     </div>
 
-                    <!-- 5. ประวัติการใช้งานระบบ (Activity Logs / Audit Trail) -->
                     <div class="p-4 bg-slate-50 border rounded-2xl space-y-3">
-                        <h4 class="text-xs font-bold text-slate-700 uppercase"><i class="fa-solid fa-shield-halved text-emerald-600 mr-1"></i> 5. ประวัติการใช้งานระบบ (Activity Logs / Audit Trail)</h4>
+                        <h4 class="text-xs font-bold text-slate-700 uppercase"><i class="fa-solid fa-shield-halved text-emerald-600 mr-1"></i> 4. ประวัติการใช้งานระบบ (Activity Logs)</h4>
                         <div class="bg-white rounded-xl border overflow-x-auto max-h-48">
                             <table class="w-full text-left text-xs">
                                 <thead class="bg-slate-100 text-slate-600">
@@ -408,167 +433,21 @@ ADMIN_TEMPLATE = """
         </div>
     </main>
 
-    <!-- Modal 1: ดูรายละเอียดแฟ้มการเงิน -->
-    <div id="folderDetailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl max-h-[85vh] overflow-y-auto">
-            <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
-                <h3 id="folder-modal-title" class="text-lg font-bold text-slate-800">รายละเอียดรายการ</h3>
-                <button onclick="closeFolderModal()" class="px-3 py-1 bg-slate-100 text-slate-600 rounded-xl text-xs font-bold">✕ ปิด</button>
-            </div>
-            <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl mb-4 flex justify-between items-center">
-                <span class="text-xs font-bold text-slate-500">ยอดรวมทั้งหมดในแฟ้มนี้:</span>
-                <span id="folder-modal-total" class="text-xl font-black text-purple-900">0.00 บ.</span>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs">
-                    <thead class="bg-slate-100 text-slate-600">
-                        <tr>
-                            <th class="p-2.5">วันที่/เวลา</th>
-                            <th class="p-2.5">ชื่อ-เบอร์โทร</th>
-                            <th class="p-2.5">รายละเอียดรายการ</th>
-                            <th class="p-2.5 text-right">จำนวนเงิน</th>
-                        </tr>
-                    </thead>
-                    <tbody id="folder-modal-table-body" class="divide-y divide-slate-100"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal 2: Customer Ledger & Credit Profile -->
     <div id="userDetailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl max-w-4xl w-full p-6 md:p-8 shadow-2xl max-h-[92vh] overflow-y-auto space-y-6">
-            
-            <div class="flex items-center justify-between pb-4 border-b border-slate-100">
-                <div class="flex items-center space-x-3">
-                    <button onclick="closeUserDetailModal()" class="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-200">← ย้อนกลับ</button>
-                    <span id="detail-user-id" class="px-2.5 py-1 bg-purple-100 text-purple-800 rounded-lg text-xs font-mono font-bold">#000000</span>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <a id="detail-fb-link" href="#" target="_blank" class="px-3 py-1.5 bg-blue-600 text-white rounded-xl text-xs font-bold flex items-center space-x-1">
-                        <i class="fa-brands fa-facebook"></i><span>โปรไฟล์ Facebook</span>
-                    </a>
-                    <span id="detail-status-badge" class="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-bold">รอดำเนินการอนุมัติ</span>
-                </div>
+            <div class="flex items-center justify-between pb-4 border-b">
+                <span id="detail-user-id" class="px-2.5 py-1 bg-purple-100 text-purple-800 rounded-lg text-xs font-mono font-bold">#000000</span>
+                <button onclick="closeUserDetailModal()" class="px-3 py-1.5 bg-slate-100 rounded-xl text-xs font-bold">✕ ปิด</button>
             </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 rounded-2xl bg-purple-50/70 border border-purple-100 text-xs">
-                <div>
-                    <span class="text-slate-400 block">ชื่อ - นามสกุล</span>
-                    <strong id="detail-name" class="text-sm text-slate-900">-</strong>
-                </div>
-                <div>
-                    <span class="text-slate-400 block">เบอร์โทรศัพท์</span>
-                    <strong id="detail-phone" class="text-sm text-purple-900 font-mono">-</strong>
-                </div>
-                <div>
-                    <span class="text-slate-400 block">ธนาคาร & เลขบัญชี</span>
-                    <strong id="detail-bank-acc" class="text-sm text-slate-900 font-mono">-</strong>
-                </div>
-                <div>
-                    <span class="text-slate-400 block">รูปแบบชำระ & IP</span>
-                    <strong id="detail-term-ip" class="text-sm text-slate-900">-</strong>
-                </div>
-            </div>
-
-            <div>
-                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">📊 สรุปภาพรวมสถานะเครดิตปัจจุบัน (Credit & Portfolio Summary)</h4>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div class="p-4 rounded-2xl bg-gradient-to-tr from-purple-700 to-indigo-600 text-white shadow-md">
-                        <span class="text-[11px] font-bold text-purple-200 uppercase">วงเงินสินเชื่อรวม (Total Limit)</span>
-                        <h3 id="kpi-limit" class="text-2xl font-black mt-1">฿0</h3>
-                    </div>
-                    <div class="p-4 rounded-2xl bg-gradient-to-tr from-rose-700 to-pink-600 text-white shadow-md">
-                        <span class="text-[11px] font-bold text-rose-200 uppercase">ยอดหนี้คงเหลือ (Outstanding Balance)</span>
-                        <h3 id="kpi-outstanding" class="text-2xl font-black mt-1">฿0</h3>
-                    </div>
-                    <div class="p-4 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white shadow-md">
-                        <span class="text-[11px] font-bold text-emerald-100 uppercase">วงเงินคงเหลือ (Available Credit)</span>
-                        <h3 id="kpi-available" class="text-2xl font-black mt-1">฿0</h3>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div class="lg:col-span-2 space-y-3">
-                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">📜 ประวัติการทำธุรกรรมย้อนหลัง (Transaction History)</h4>
-                    <div class="bg-slate-50 border border-slate-200 rounded-2xl overflow-x-auto">
-                        <table class="w-full text-left text-xs">
-                            <thead class="bg-slate-100 text-slate-600">
-                                <tr>
-                                    <th class="p-3">เลขที่บิล / สัญญา</th>
-                                    <th class="p-3">วันที่ทำรายการ</th>
-                                    <th class="p-3">ประเภทรายการ</th>
-                                    <th class="p-3 text-right">จำนวนเงิน</th>
-                                    <th class="p-3 text-center">สถานะ</th>
-                                </tr>
-                            </thead>
-                            <tbody id="ledger-tx-tbody" class="divide-y divide-slate-100"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="space-y-4">
-                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
-                        <h4 class="text-xs font-bold text-slate-700 uppercase"><i class="fa-solid fa-chart-line text-purple-600 mr-1"></i> ไหลม์ไลน์พฤติกรรมการจ่าย</h4>
-                        <div id="payment-timeline-box" class="space-y-1.5 pt-1 text-xs text-slate-400 text-center py-4">ยังไม่มีประวัติการชำระ</div>
-                    </div>
-
-                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
-                        <h4 class="text-xs font-bold text-slate-700 uppercase"><i class="fa-solid fa-id-card text-indigo-600 mr-1"></i> ยืนยันตัวตน (บัตร & ลายเซ็น)</h4>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div class="text-center">
-                                <img id="detail-id-card-img" src="" class="w-full h-20 object-cover rounded-lg border cursor-pointer hover:opacity-90" onclick="window.open(this.src)">
-                                <span class="text-[10px] text-slate-400">บัตรประชาชน</span>
-                            </div>
-                            <div class="text-center">
-                                <img id="detail-signature-img" src="" class="w-full h-20 object-contain bg-white rounded-lg border cursor-pointer hover:opacity-90" onclick="window.open(this.src)">
-                                <span class="text-[10px] text-slate-400">ลายเซ็น</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="p-4 bg-purple-50/50 border border-purple-200 rounded-2xl space-y-3">
-                <h4 class="text-xs font-bold text-purple-900 uppercase"><i class="fa-solid fa-receipt text-purple-600 mr-1"></i> ประวัติการชำระเงินล่าสุด</h4>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs items-center">
-                    <div>
-                        <span class="text-slate-400 block">วันที่-เวลาล่าสุด</span>
-                        <strong id="last-pay-date" class="text-slate-800 text-sm">-</strong>
-                    </div>
-                    <div>
-                        <span class="text-slate-400 block">จำนวนเงินชำระ & ช่องทาง</span>
-                        <strong id="last-pay-amount" class="text-emerald-700 text-sm font-bold">-</strong>
-                    </div>
-                    <div class="flex items-center space-x-3 justify-end">
-                        <span class="text-purple-700 font-bold text-xs cursor-pointer underline" onclick="window.open(document.getElementById('last-pay-slip-img').src)">ดูสลิป</span>
-                        <img id="last-pay-slip-img" src="https://via.placeholder.com/400" class="w-12 h-12 object-cover rounded-lg border cursor-pointer shadow" onclick="window.open(this.src)">
-                    </div>
-                </div>
-            </div>
-
-            <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
-                <h4 class="text-xs font-bold text-slate-700 uppercase"><i class="fa-solid fa-note-sticky text-amber-500 mr-1"></i> โน้ตภายใน (Internal Notes)</h4>
-                <textarea id="detail-internal-notes" rows="2" class="w-full p-3 bg-white border rounded-xl text-xs text-slate-700 focus:outline-purple-500" placeholder="บันทึกข้อความ..."></textarea>
-                <div class="flex justify-end">
-                    <button onclick="saveInternalNote()" class="px-4 py-1.5 bg-slate-800 text-white rounded-xl text-xs font-bold shadow hover:bg-slate-900">บันทึกโน้ต</button>
-                </div>
-            </div>
-
             <div id="approve-btn-container" class="grid grid-cols-2 gap-4 pt-2"></div>
-
         </div>
     </div>
 
     <script>
         let debtorsList = {{ debtors | tojson }};
         let currentFilterStatus = 'ทั้งหมด';
-        let currentEditIndex = -1;
 
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('-translate-x-full');
-        }
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
 
         function switchTab(tab) {
             ['dashboard', 'debtors', 'banking', 'transactions', 'contracts', 'annual_reports', 'settings'].forEach(s => {
@@ -577,197 +456,95 @@ ADMIN_TEMPLATE = """
                 if (sec) sec.classList.add('hidden');
                 if (nav) nav.className = "w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-medium text-xs text-purple-200/80 hover:bg-purple-900/30";
             });
+            document.getElementById('section-' + tab).classList.remove('hidden');
+            document.getElementById('nav-' + tab).className = "w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-medium text-xs sidebar-item-active";
+            if (window.innerWidth < 768) document.getElementById('sidebar').classList.add('-translate-x-full');
+        }
 
-            const activeSec = document.getElementById('section-' + tab);
-            const activeNav = document.getElementById('nav-' + tab);
-            if (activeSec) activeSec.classList.remove('hidden');
-            if (activeNav) activeNav.className = "w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-medium text-xs sidebar-item-active";
-
-            const titles = {
-                'dashboard': 'แดชบอร์ดหลัก',
-                'debtors': 'รายชื่อลูกหนี้ & คำขอกู้',
-                'banking': 'บัญชีธนาคาร & เงินสด',
-                'transactions': 'บันทึกการชำระหนี้ / สลิป',
-                'contracts': 'จัดการสัญญาเงินกู้ดิจิทัล',
-                'annual_reports': 'รายงานสรุปผลประกอบการประจำปี',
-                'settings': 'ตั้งค่าระบบหลังบ้าน'
-            };
-            document.getElementById('page-title').innerText = titles[tab];
-
-            if (window.innerWidth < 768) {
-                document.getElementById('sidebar').classList.add('-translate-x-full');
+        function toggleEditBank(bankName) {
+            const display = document.getElementById('bank-' + bankName + '-display');
+            const editBox = document.getElementById('bank-' + bankName + '-edit');
+            if (editBox.classList.contains('hidden')) {
+                editBox.classList.remove('hidden');
+                display.classList.add('hidden');
+            } else {
+                editBox.classList.add('hidden');
+                display.classList.remove('hidden');
             }
         }
 
-        function updateBankBalance(bankName) {
+        function saveBankBalance(bankName) {
             const val = document.getElementById('bank-' + bankName + '-input').value;
-            alert('อัปเดตยอดเงินเป็น ฿' + Number(val).toLocaleString() + ' เรียบร้อย!');
+            fetch('/update-bank', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bank: bankName, amount: val })
+            }).then(res => res.json()).then(data => {
+                if(data.success) { alert('บันทึกยอดเงินสำเร็จ!'); location.reload(); }
+            });
         }
 
-        function openFolderDetail(folderType) {
-            const modal = document.getElementById('folderDetailModal');
-            const title = document.getElementById('folder-modal-title');
-            const total = document.getElementById('folder-modal-total');
-            const tbody = document.getElementById('folder-modal-table-body');
-            title.innerText = "รายละเอียดแฟ้มข้อมูล";
-            total.innerText = "0.00 บ.";
-            tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-slate-400">ยังไม่มีรายการในแฟ้มนี้</td></tr>`;
-            modal.classList.remove('hidden');
-        }
-
-        function closeFolderModal() {
-            document.getElementById('folderDetailModal').classList.add('hidden');
+        function testTelegram() {
+            fetch('/test-telegram', { method: 'POST' }).then(res => res.json()).then(data => {
+                if(data.success) { alert('ส่งข้อความทดสอบเข้า Telegram สำเร็จ!'); }
+                else { alert('ส่งไม่สำเร็จ กรุณาตรวจสอบ Token และ Chat ID'); }
+            });
         }
 
         function renderDebtorsTable() {
             const tbody = document.getElementById('debtor-table-body');
             tbody.innerHTML = '';
-
-            const keyword = (document.getElementById('searchInput') ? document.getElementById('searchInput').value : '').toLowerCase();
-            const filtered = debtorsList.filter(item => {
-                const matchKeyword = item.name.toLowerCase().includes(keyword) || item.phone.includes(keyword);
-                const matchStatus = (currentFilterStatus === 'ทั้งหมด') || (item.status === currentFilterStatus);
-                return matchKeyword && matchStatus;
-            });
-
-            if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">ยังไม่มีข้อมูลลูกหนี้ในระบบ (รอการยื่นกู้ผ่านหน้าบ้าน)</td></tr>`;
+            if (debtorsList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">ยังไม่มีข้อมูลลูกหนี้ในระบบ (รอการยื่นกู้ผ่านหน้าบ้านสมาชิก)</td></tr>`;
                 return;
             }
-
-            filtered.forEach((item, index) => {
-                let statusBadge = item.status === 'รออนุมัติ' 
-                    ? `<span class="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-bold">รออนุมัติ</span>`
-                    : `<span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold">ปกติ</span>`;
-
-                tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50">
-                        <td class="p-3.5">
-                            <button onclick="openUserDetail(${index})" class="text-left font-bold text-indigo-600 hover:underline block">
-                                <span class="text-sm">${item.name}</span><br>
-                                <span class="font-mono text-xs text-purple-700"><i class="fa-solid fa-phone mr-1"></i>${item.phone}</span>
-                            </button>
-                            <a href="${item.facebook}" target="_blank" class="text-[10px] text-blue-600 hover:underline mt-0.5 inline-block"><i class="fa-brands fa-facebook"></i> โปรไฟล์ FB</a>
-                        </td>
-                        <td class="p-3.5 text-xs text-slate-600 font-medium">${item.date}</td>
-                        <td class="p-3.5 font-bold text-slate-900">฿${Number(item.principal).toLocaleString()}</td>
-                        <td class="p-3.5"><span class="px-2.5 py-1 bg-purple-50 text-purple-700 rounded-lg font-bold text-xs">${item.payment_term || 'รายวัน'}</span></td>
-                        <td class="p-3.5">${statusBadge}</td>
-                        <td class="p-3.5 text-center">
-                            <button onclick="openUserDetail(${index})" class="px-3 py-1.5 bg-purple-600 text-white rounded-xl text-xs font-bold shadow-sm hover:bg-purple-700">
-                                <i class="fa-solid fa-folder-open mr-1"></i> เปิดดู Ledger
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
         }
 
-        function openUserDetail(index) {
-            currentEditIndex = index;
-            const item = debtorsList[index];
-            
-            document.getElementById('detail-user-id').innerText = item.id;
-            document.getElementById('detail-name').innerText = item.name;
-            document.getElementById('detail-phone').innerText = item.phone;
-            document.getElementById('detail-bank-acc').innerText = `${item.bank} (${item.acc})`;
-            document.getElementById('detail-term-ip').innerText = `${item.payment_term} • IP: ${item.ip}`;
-            document.getElementById('detail-fb-link').href = item.facebook || '#';
-            
-            const badge = document.getElementById('detail-status-badge');
-            badge.innerText = item.status === 'รออนุมัติ' ? 'รอดำเนินการอนุมัติ' : 'ปกติ (ใช้งานอยู่)';
-            badge.className = item.status === 'รออนุมัติ' 
-                ? 'px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-bold' 
-                : 'px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold';
-
-            document.getElementById('kpi-limit').innerText = '฿' + (item.credit_limit || 0).toLocaleString();
-            document.getElementById('kpi-outstanding').innerText = '฿' + (item.outstanding_balance || item.principal).toLocaleString();
-            document.getElementById('kpi-available').innerText = '฿' + (item.available_credit || 0).toLocaleString();
-
-            const txTbody = document.getElementById('ledger-tx-tbody');
-            txTbody.innerHTML = '';
-            const txs = item.transactions || [];
-            txs.forEach(tx => {
-                let stColor = tx.status === 'สำเร็จ' ? 'text-emerald-600 bg-emerald-50' : 'text-amber-600 bg-amber-50';
-                txTbody.innerHTML += `
-                    <tr class="hover:bg-slate-50">
-                        <td class="p-2.5 font-mono font-bold text-slate-700">${tx.tx_id}</td>
-                        <td class="p-2.5 text-slate-500">${tx.date}</td>
-                        <td class="p-2.5 font-semibold text-slate-800">${tx.type}</td>
-                        <td class="p-2.5 text-right font-bold text-slate-900">${tx.amount}</td>
-                        <td class="p-2.5 text-center"><span class="px-2 py-0.5 rounded-lg text-[10px] font-bold ${stColor}">${tx.status}</span></td>
-                    </tr>
-                `;
-            });
-
-            document.getElementById('detail-id-card-img').src = item.idCardPhoto || 'https://via.placeholder.com/400';
-            document.getElementById('detail-signature-img').src = item.signature || 'https://via.placeholder.com/400';
-            document.getElementById('detail-internal-notes').value = item.internal_notes || '';
-
-            const btnContainer = document.getElementById('approve-btn-container');
-            if (item.status === 'รออนุมัติ') {
-                btnContainer.innerHTML = `
-                    <button onclick="approveLoan(${index})" class="py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow">✅ อนุมัติวงเงินสินเชื่อ</button>
-                    <button onclick="rejectLoan(${index})" class="py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow">❌ ปฏิเสธคำขอ</button>
-                `;
-            } else {
-                btnContainer.innerHTML = `
-                    <button onclick="closeUserDetailModal()" class="col-span-2 py-3 bg-slate-800 text-white font-bold text-xs rounded-xl shadow">ปิดหน้าต่าง</button>
-                `;
-            }
-
-            document.getElementById('userDetailModal').classList.remove('hidden');
-        }
-
-        function saveInternalNote() {
-            const note = document.getElementById('detail-internal-notes').value;
-            debtorsList[currentEditIndex].internal_notes = note;
-            alert('บันทึกโน้ตภายในเรียบร้อย!');
-        }
-
-        function approveLoan(index) {
-            debtorsList[index].status = 'ปกติ';
-            alert('อนุมัติวงเงินเรียบร้อย!');
-            closeUserDetailModal();
-            renderDebtorsTable();
-        }
-
-        function rejectLoan(index) {
-            debtorsList[index].status = 'ยกเลิก';
-            alert('ปฏิเสธคำขอเรียบร้อย!');
-            closeUserDetailModal();
-            renderDebtorsTable();
-        }
-
-        function closeUserDetailModal() { document.getElementById('userDetailModal').classList.add('hidden'); }
-        function setFilterStatus(status) { currentFilterStatus = status; renderDebtorsTable(); }
-
-        window.onload = function() {
-            renderDebtorsTable();
-            const ctx1 = document.getElementById('financeChart').getContext('2d');
-            new Chart(ctx1, {
-                type: 'bar',
-                data: {
-                    labels: ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'ต.ค.'],
-                    datasets: [
-                        { label: 'รายรับ', data: [0, 0, 0, 0, 0, 0], backgroundColor: '#10b981' },
-                        { label: 'รายจ่าย', data: [0, 0, 0, 0, 0, 0], backgroundColor: '#f43f5e' }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            const ctx2 = document.getElementById('accountChart').getContext('2d');
-            new Chart(ctx2, {
-                type: 'doughnut',
-                data: {
-                    labels: ['กสิกรไทย', 'ไทยพาณิชย์', 'เงินสด'],
-                    datasets: [{ data: [0, 0, 0], backgroundColor: ['#059669', '#7c3aed', '#334155'] }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-        }
+        window.onload = function() { renderDebtorsTable(); }
     </script>
+</body>
+</html>
+"""
+
+LOGIN_MEMBER_TEMPLATE = """
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BizFlow+ - เข้าสู่ระบบสมาชิก</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style> body { font-family: 'Kanit', sans-serif; background: linear-gradient(135deg, #18092e 0%, #0d061a 100%); min-height: 100vh; } </style>
+</head>
+<body class="flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-white rounded-3xl shadow-2xl p-8 border border-purple-100 text-slate-800">
+        <div class="text-center mb-6">
+            <div class="w-12 h-12 rounded-2xl bg-purple-600 text-white flex items-center justify-center font-black text-2xl mx-auto mb-3 shadow-lg">B</div>
+            <h1 class="text-xl font-black text-slate-900">เข้าสู่ระบบสมาชิก BizFlow+</h1>
+            <p class="text-xs text-slate-500 mt-1">กรอก Username และ Password เพื่อเข้าสู่หน้าแบบฟอร์มยื่นกู้</p>
+        </div>
+
+        {% if error %}
+        <div class="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl text-center font-bold">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form action="/apply-login" method="POST" class="space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Username</label>
+                <input type="text" name="username" required placeholder="ชื่อผู้ใช้งาน" class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Password</label>
+                <input type="password" name="password" required placeholder="รหัสผ่าน" class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm">
+            </div>
+            <button type="submit" class="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold shadow-lg mt-2">
+                เข้าสู่ระบบ
+            </button>
+        </form>
+    </div>
 </body>
 </html>
 """
@@ -788,7 +565,7 @@ APPLY_TEMPLATE = """
     <div class="max-w-xl w-full bg-white rounded-3xl shadow-2xl p-6 md:p-8 border border-purple-100">
         <div class="text-center mb-6">
             <h1 class="text-xl md:text-2xl font-black text-slate-900">แบบฟอร์มยื่นกู้ & ทำสัญญาออนไลน์</h1>
-            <p class="text-xs text-slate-500 mt-1">เลือกรูปแบบการชำระ กรอกข้อมูล และเซ็นสัญญาเพื่อส่งขอกู้</p>
+            <p class="text-xs text-slate-500 mt-1">กรอกข้อมูลและเซ็นสัญญาเพื่อส่งขอกู้</p>
         </div>
 
         <form action="/submit-application" method="POST" enctype="multipart/form-data" class="space-y-4" onsubmit="prepareSignature()">
@@ -805,15 +582,15 @@ APPLY_TEMPLATE = """
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1"><i class="fa-brands fa-facebook text-blue-600 mr-1"></i> ลิงก์ Facebook</label>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">ลิงก์ Facebook</label>
                     <input type="url" name="facebook" required placeholder="https://www.facebook.com/your.profile" class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm text-blue-700">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">รูปแบบการชำระหนี้</label>
                     <select name="payment_term" class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-bold text-purple-900">
-                        <option value="รายวัน">รายวัน (ทวงทุกวัน)</option>
-                        <option value="รายวันเว้นอาทิตย์">รายวันเว้นอาทิตย์ (หยุดวันอาทิตย์)</option>
-                        <option value="ราย 15 วัน">ราย 15 วัน (ชำระทุกกึ่งเดือน)</option>
+                        <option value="รายวัน">รายวัน</option>
+                        <option value="รายวันเว้นอาทิตย์">รายวันเว้นอาทิตย์</option>
+                        <option value="ราย 15 วัน">ราย 15 วัน</option>
                     </select>
                 </div>
             </div>
@@ -858,34 +635,24 @@ APPLY_TEMPLATE = """
         const canvas = document.getElementById('sig-canvas');
         const ctx = canvas.getContext('2d');
         let painting = false;
-
         function startPosition(e) { painting = true; draw(e); }
         function finishedPosition() { painting = false; ctx.beginPath(); }
         function draw(e) {
             if (!painting) return;
-            ctx.lineWidth = 3;
-            ctx.lineCap = 'round';
-            ctx.strokeStyle = '#0f172a';
+            ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.strokeStyle = '#0f172a';
             const rect = canvas.getBoundingClientRect();
             const x = (e.clientX || e.touches[0].clientX) - rect.left;
             const y = (e.clientY || e.touches[0].clientY) - rect.top;
-            ctx.lineTo(x, y);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(x, y);
+            ctx.lineTo(x, y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x, y);
         }
-
         canvas.addEventListener('mousedown', startPosition);
         canvas.addEventListener('mouseup', finishedPosition);
         canvas.addEventListener('mousemove', draw);
         canvas.addEventListener('touchstart', startPosition);
         canvas.addEventListener('touchend', finishedPosition);
         canvas.addEventListener('touchmove', draw);
-
         function clearSignature() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
-        function prepareSignature() {
-            document.getElementById('signature_data').value = canvas.toDataURL('image/png');
-        }
+        function prepareSignature() { document.getElementById('signature_data').value = canvas.toDataURL('image/png'); }
     </script>
 </body>
 </html>
@@ -904,24 +671,72 @@ def admin_dashboard():
 
 @app.route('/apply')
 def apply_form():
+    if not session.get('member_logged_in'):
+        return render_template_string(LOGIN_MEMBER_TEMPLATE)
     return render_template_string(APPLY_TEMPLATE)
+
+@app.route('/apply-login', methods=['POST'])
+def apply_login():
+    u = request.form.get('username')
+    p = request.form.get('password')
+    if u == MEMBER_CREDENTIALS['username'] and p == MEMBER_CREDENTIALS['password']:
+        session['member_logged_in'] = True
+        return redirect(url_for('apply_form'))
+    return render_template_string(LOGIN_MEMBER_TEMPLATE, error="Username หรือ Password ไม่ถูกต้อง!")
+
+@app.route('/update-bank', methods=['POST'])
+def update_bank():
+    data = request.json
+    b_name = data.get('bank')
+    amount = float(data.get('amount') or 0)
+    if b_name in bank_accounts:
+        bank_accounts[b_name] = amount
+        activity_logs.insert(0, {'time': datetime.now().strftime('%d/%m/%Y %H:%M'), 'user': 'Owner', 'action': f'อัปเดตยอดเงิน {b_name.upper()} เป็น ฿{amount:,.0f}', 'ip': '127.0.0.1'})
+        return {'success': True}
+    return {'success': False}
+
+@app.route('/update-telegram', methods=['POST'])
+def update_telegram():
+    system_config['telegram_token'] = request.form.get('tg_token')
+    system_config['telegram_chat_id'] = request.form.get('tg_chat_id')
+    activity_logs.insert(0, {'time': datetime.now().strftime('%d/%m/%Y %H:%M'), 'user': 'Owner', 'action': 'อัปเดตตั้งค่า Telegram Bot', 'ip': '127.0.0.1'})
+    return "<script>alert('บันทึก Telegram สำเร็จ!'); window.location.href='/';</script>"
+
+@app.route('/test-telegram', methods=['POST'])
+def test_telegram():
+    success = send_telegram_alert("🔔 <b>BizFlow+ Test Alert</b>\nระบบแจ้งเตือนผ่าน Telegram ทำงานปกติแล้วครับ!")
+    return {'success': success}
+
+@app.route('/add-admin', methods=['POST'])
+def add_admin():
+    name = request.form.get('admin_name')
+    username = request.form.get('admin_user')
+    users_database.append({
+        'id': len(users_database) + 1,
+        'name': name,
+        'username': username,
+        'role': 'Staff / Operator',
+        'status': 'ใช้งานอยู่',
+        'last_login': '-'
+    })
+    activity_logs.insert(0, {'time': datetime.now().strftime('%d/%m/%Y %H:%M'), 'user': 'Owner', 'action': f'เพิ่มแอดมินใหม่: {name} (@{username})', 'ip': '127.0.0.1'})
+    return "<script>alert('เพิ่มแอดมินสำเร็จ!'); window.location.href='/';</script>"
 
 @app.route('/submit-application', methods=['POST'])
 def submit_application():
     client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
     amount = float(request.form.get('amount') or 0)
     name = request.form.get('name')
+    phone = request.form.get('phone')
     
     new_entry = {
         'id': f"#{len(debtors_database)+541540}",
-        'username': request.form.get('phone'),
         'name': name,
-        'phone': request.form.get('phone'),
+        'phone': phone,
         'facebook': request.form.get('facebook'),
         'acc': request.form.get('account'),
         'bank': request.form.get('bank'),
         'principal': amount,
-        'interest_type': 'ดอกคงที่',
         'payment_term': request.form.get('payment_term', 'รายวัน'),
         'date': datetime.now().strftime('%d/%m/%Y %H:%M'),
         'ip': client_ip,
@@ -931,29 +746,24 @@ def submit_application():
         'credit_limit': amount * 1.2,
         'outstanding_balance': amount,
         'available_credit': amount * 0.2,
-        'transactions': [
-            {'tx_id': f"TXN-2026-00{len(debtors_database)+1}", 'date': datetime.now().strftime('%d/%m/%Y %H:%M'), 'type': 'เบิกเงินกู้ใหม่', 'amount': f"+฿{amount:,.0f}", 'status': 'รอตรวจสอบ'}
-        ],
-        'internal_notes': 'ยื่นกู้ผ่านหน้าเว็บออนไลน์'
+        'transactions': [{'tx_id': f"TXN-2026-00{len(debtors_database)+1}", 'date': datetime.now().strftime('%d/%m/%Y %H:%M'), 'type': 'เบิกเงินกู้ใหม่', 'amount': f"+฿{amount:,.0f}", 'status': 'รอตรวจสอบ'}],
+        'internal_notes': 'ยื่นกู้ผ่านหน้าเว็บสมาชิก'
     }
     debtors_database.insert(0, new_entry)
     
-    # บันทึก Activity Log อัตโนมัติ
-    activity_logs.insert(0, {
-        'time': datetime.now().strftime('%d/%m/%Y %H:%M'),
-        'user': 'ระบบหน้าบ้าน (Client)',
-        'action': f'ลูกค้ายื่นกู้ใหม่: {name} (฿{amount:,.0f})',
-        'ip': client_ip
-    })
+    # ส่งแจ้งเตือนเข้า Telegram อัตโนมัติเมื่อมีคนยื่นกู้
+    msg = f"🚨 <b>มีคำขอกู้เงินใหม่เข้ามา!</b>\n👤 ชื่อ: {name}\n📞 โทร: {phone}\n💰 ยอดกู้: ฿{amount:,.0f}\n📅 รูปแบบ: {new_entry['payment_term']}"
+    send_telegram_alert(msg)
 
+    activity_logs.insert(0, {'time': datetime.now().strftime('%d/%m/%Y %H:%M'), 'user': 'สมาชิก (Member)', 'action': f'ลูกค้ายื่นกู้ใหม่: {name} (฿{amount:,.0f})', 'ip': client_ip})
     return "<script>alert('ยื่นคำขอกู้เรียบร้อย!'); window.location.href='/apply';</script>"
 
 @app.route('/clear-data')
 def clear_data():
     debtors_database.clear()
     activity_logs.clear()
-    activity_logs.append({'time': datetime.now().strftime('%d/%m/%Y %H:%M'), 'user': 'Owner', 'action': 'รีเซ็ตข้อมูลทั้งหมดในระบบ (Clear Data)', 'ip': '127.0.0.1'})
-    return "<script>alert('ล้างข้อมูลจำลองทั้งหมดสำเร็จ พร้อมใช้งานจริงแล้ว!'); window.location.href='/';</script>"
+    activity_logs.append({'time': datetime.now().strftime('%d/%m/%Y %H:%M'), 'user': 'Owner', 'action': 'รีเซ็ตข้อมูลทั้งหมดในระบบ', 'ip': '127.0.0.1'})
+    return "<script>alert('ล้างข้อมูลสำเร็จ พร้อมใช้งานจริงแล้ว!'); window.location.href='/';</script>"
 
 @app.route('/export-csv')
 def export_csv():
@@ -970,35 +780,21 @@ def import_csv():
     if 'csv_file' not in request.files:
         return "<script>alert('ไม่พบไฟล์ CSV'); window.location.href='/';</script>"
     file = request.files['csv_file']
-    if file.filename == '':
-        return "<script>alert('ยังไม่ได้เลือกไฟล์'); window.location.href='/';</script>"
     try:
         stream = io.TextIOWrapper(file.stream, encoding="utf-8")
         reader = csv.reader(stream)
         next(reader)
         for row in reader:
             if len(row) >= 10:
-                new_d = {
-                    'id': row[0],
-                    'name': row[1],
-                    'phone': row[2],
-                    'facebook': row[3],
-                    'bank': row[4],
-                    'acc': row[5],
-                    'principal': float(row[6] or 0),
-                    'payment_term': row[7],
-                    'status': row[8],
-                    'date': row[9],
-                    'ip': '127.0.0.1',
-                    'idCardPhoto': 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400',
+                debtors_database.append({
+                    'id': row[0], 'name': row[1], 'phone': row[2], 'facebook': row[3],
+                    'bank': row[4], 'acc': row[5], 'principal': float(row[6] or 0),
+                    'payment_term': row[7], 'status': row[8], 'date': row[9],
+                    'ip': '127.0.0.1', 'idCardPhoto': 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400',
                     'signature': 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=400',
-                    'credit_limit': float(row[6] or 0) * 1.2,
-                    'outstanding_balance': float(row[6] or 0),
-                    'available_credit': 0,
-                    'transactions': [],
-                    'internal_notes': 'นำเข้าจาก CSV'
-                }
-                debtors_database.append(new_d)
+                    'credit_limit': float(row[6] or 0) * 1.2, 'outstanding_balance': float(row[6] or 0),
+                    'available_credit': 0, 'transactions': [], 'internal_notes': 'นำเข้าจาก CSV'
+                })
         return "<script>alert('นำเข้าข้อมูลสำเร็จ!'); window.location.href='/';</script>"
     except Exception as e:
         return f"<script>alert('เกิดข้อผิดพลาด: {str(e)}'); window.location.href='/';</script>"
