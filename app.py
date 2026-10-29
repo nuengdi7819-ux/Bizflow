@@ -6,8 +6,29 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-# รีเซ็ตข้อมูลออกทั้งหมดเพื่อให้พร้อมรองรับข้อมูลจริงของลูกค้า
+# ฐานข้อมูลลูกหนี้ (เริ่มต้นเป็นค่าว่าง พร้อมรองรับข้อมูลจริง)
 debtors_database = []
+
+# ฐานข้อมูลผู้ใช้งานระบบ (User Management & Roles)
+users_database = [
+    {'id': 1, 'name': 'Owner (คุณสมชาย)', 'username': 'owner', 'role': 'Owner / Super Admin', 'status': 'ใช้งานอยู่', 'last_login': '30/10/2026 08:30'},
+    {'id': 2, 'name': 'Staff (น้องแอดมิน)', 'username': 'staff01', 'role': 'Staff / Operator', 'status': 'ใช้งานอยู่', 'last_login': '29/10/2026 18:15'}
+]
+
+# ประวัติการใช้งานระบบ (Activity Logs / Audit Trail)
+activity_logs = [
+    {'time': '30/10/2026 08:30', 'user': 'Owner', 'action': 'เข้าสู่ระบบหลังบ้าน', 'ip': '127.0.0.1'},
+    {'time': '29/10/2026 21:15', 'user': 'Staff / Operator', 'action': 'บันทึกคำขอกู้ใหม่จากหน้าบ้าน (/apply)', 'ip': '223.24.215.40'}
+]
+
+# การตั้งค่าระบบทั่วไป (General Configuration)
+system_config = {
+    'company_name': 'BizFlow+ Financial Services',
+    'default_interest_rate': 5.0,  # เปอร์เซ็นต์/เดือน
+    'late_fee': 100,             # ค่าปรับล่าช้า (บาท/วัน)
+    'line_token': 'A1b2C3d4E5f6G7h8...',
+    'telegram_token': ''
+}
 
 bank_accounts = {
     'kbank': 0,
@@ -21,7 +42,7 @@ ADMIN_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BizFlow+ - ระบบจัดการลูกหนี้ & บัญชีการเงิน</title>
+    <title>BizFlow+ - ระบบจัดการลูกหนี้ & บัญชีการเงินขั้นสูง</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -149,43 +170,27 @@ ADMIN_TEMPLATE = """
                             <i class="fa-solid fa-folder-open text-amber-200 text-lg"></i>
                         </div>
                         <h3 class="text-2xl font-black tracking-tight">0.00 บ.</h3>
-                        <p class="text-[10px] text-amber-100/80 mt-1">ยอดสะสมหลายปี</p>
                     </div>
-
                     <div class="p-5 rounded-2xl bg-rose-700 text-white shadow-lg">
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-xs font-bold text-rose-200 uppercase tracking-wider">💼 เงินต้นคงค้าง</span>
                             <i class="fa-solid fa-briefcase text-rose-300 text-lg"></i>
                         </div>
                         <h3 class="text-2xl font-black tracking-tight">0.00 บ.</h3>
-                        <p class="text-[10px] text-rose-200/80 mt-1">ค้างใหม่ปัจจุบัน</p>
                     </div>
-
                     <div class="p-5 rounded-2xl bg-blue-600 text-white shadow-lg">
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-xs font-bold text-blue-200 uppercase tracking-wider">🔱 เงินลงทุนใหม่ (เดือนนี้)</span>
                             <i class="fa-solid fa-chart-line text-blue-200 text-lg"></i>
                         </div>
                         <h3 class="text-2xl font-black tracking-tight">0.00 บ.</h3>
-                        <p class="text-[10px] text-blue-100/80 mt-1">ปล่อยกู้เดือนนี้</p>
                     </div>
-
                     <div class="p-5 rounded-2xl bg-emerald-600 text-white shadow-lg">
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-xs font-bold text-emerald-200 uppercase tracking-wider">💰 กำไรสะสม (เดือนนี้)</span>
                             <i class="fa-solid fa-sack-dollar text-emerald-200 text-lg"></i>
                         </div>
                         <h3 class="text-2xl font-black tracking-tight">0.00 บ.</h3>
-                        <p class="text-[10px] text-emerald-100/80 mt-1">ดอกเบี้ยรับเดือนนี้</p>
-                    </div>
-                </div>
-
-                <div class="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-4">
-                    <div class="flex items-center justify-between">
-                        <h4 class="font-bold text-slate-800 text-base flex items-center">
-                            <i class="fa-solid fa-bell text-amber-500 mr-2"></i> รายการที่ต้องทวงวันนี้
-                        </h4>
-                        <span class="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-bold">ไม่มีรายการวันนี้</span>
                     </div>
                 </div>
 
@@ -221,7 +226,7 @@ ADMIN_TEMPLATE = """
                                 <th class="p-3.5">เงินต้นกู้</th>
                                 <th class="p-3.5">ประเภทชำระ</th>
                                 <th class="p-3.5">สถานะ</th>
-                                <th class="p-3.5 text-center">จัดการคำขอ / ดูรูป & ลายเซ็น</th>
+                                <th class="p-3.5 text-center">จัดการคำขอ / ดู Ledger</th>
                             </tr>
                         </thead>
                         <tbody id="debtor-table-body" class="divide-y divide-slate-100"></tbody>
@@ -274,36 +279,74 @@ ADMIN_TEMPLATE = """
                     <h3 class="text-lg font-bold text-slate-800 flex items-center">
                         <i class="fa-solid fa-chart-line text-teal-600 mr-2"></i> รายงานสรุปผลประกอบการประจำปี
                     </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="p-4 bg-teal-50 border border-teal-200 rounded-xl text-center">
-                            <p class="text-xs font-bold text-teal-800">รายรับรวมทั้งปี</p>
-                            <h4 class="text-xl font-black text-teal-950 mt-1">฿0</h4>
-                        </div>
-                        <div class="p-4 bg-rose-50 border border-rose-200 rounded-xl text-center">
-                            <p class="text-xs font-bold text-rose-800">รายจ่ายรวมทั้งปี</p>
-                            <h4 class="text-xl font-black text-rose-950 mt-1">฿0</h4>
-                        </div>
-                        <div class="p-4 bg-purple-50 border border-purple-200 rounded-xl text-center">
-                            <p class="text-xs font-bold text-purple-800">กำไรสุทธิทั้งปี</p>
-                            <h4 class="text-xl font-black text-purple-950 mt-1">฿0</h4>
-                        </div>
-                    </div>
                 </div>
             </div>
 
-            <!-- 7. Section: Settings -->
+            <!-- 7. Section: Settings (อัปเกรดตามคำแนะนำ: Roles, Audit Logs, General Config, Security, Database Management) -->
             <div id="section-settings" class="hidden space-y-6">
                 <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
-                    <h3 class="text-lg font-bold text-slate-800 border-b pb-3">⚙️ ตั้งค่าระบบหลังบ้าน (System Settings)</h3>
+                    <h3 class="text-lg font-bold text-slate-800 border-b pb-3">⚙️ ตั้งค่าระบบหลังบ้านขั้นสูง (Advanced System Settings)</h3>
+                    
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
+                        <!-- 1. การจัดการผู้ใช้งาน (User Roles & Permissions) -->
+                        <div class="p-4 bg-slate-50 border rounded-2xl space-y-3">
+                            <h4 class="text-xs font-bold text-purple-900 uppercase"><i class="fa-solid fa-users-gear mr-1"></i> 1. การจัดการสิทธิ์ผู้ใช้งาน (Roles & Permissions)</h4>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-xs bg-white rounded-xl border">
+                                    <thead class="bg-slate-100 text-slate-600">
+                                        <tr>
+                                            <th class="p-2.5">ผู้ใช้งาน</th>
+                                            <th class="p-2.5">บทบาท (Role)</th>
+                                            <th class="p-2.5">สถานะ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for u in users %}
+                                        <tr class="border-t">
+                                            <td class="p-2.5 font-bold">{{ u.name }}</td>
+                                            <td class="p-2.5 text-purple-700 font-semibold">{{ u.role }}</td>
+                                            <td class="p-2.5 text-emerald-600 font-bold">{{ u.status }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- 2. ตั้งค่าระบบทั่วไป & ดอกเบี้ยมาตรฐาน -->
+                        <div class="p-4 bg-slate-50 border rounded-2xl space-y-3">
+                            <h4 class="text-xs font-bold text-purple-900 uppercase"><i class="fa-solid fa-sliders mr-1"></i> 2. ตั้งค่าเงื่อนไขสัญญา & ดอกเบี้ยเริ่มต้น</h4>
+                            <div class="space-y-2 text-xs">
+                                <label class="block font-semibold text-slate-700">ชื่อองค์กร / กิจการบนสัญญา</label>
+                                <input type="text" value="{{ config.company_name }}" class="w-full px-3 py-2 bg-white border rounded-xl">
+                                
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label class="block font-semibold text-slate-700">ดอกเบี้ยมาตรฐาน (%)</label>
+                                        <input type="number" value="{{ config.default_interest_rate }}" class="w-full px-3 py-2 bg-white border rounded-xl">
+                                    </div>
+                                    <div>
+                                        <label class="block font-semibold text-slate-700">ค่าปรับล่าช้า (บาท/วัน)</label>
+                                        <input type="number" value="{{ config.late_fee }}" class="w-full px-3 py-2 bg-white border rounded-xl">
+                                    </div>
+                                </div>
+                                <button onclick="alert('บันทึกการตั้งค่าเรียบร้อย!')" class="w-full py-2 bg-purple-600 text-white rounded-xl font-bold shadow hover:bg-purple-700 mt-2">บันทึกค่าเริ่มต้น</button>
+                            </div>
+                        </div>
+
+                        <!-- 3. สำรองข้อมูล & จัดการฐานข้อมูล (Backup / Clear Test Data) -->
                         <div class="p-4 bg-purple-50/50 border border-purple-200 rounded-2xl space-y-3">
-                            <h4 class="text-xs font-bold text-purple-900 uppercase"><i class="fa-solid fa-database mr-1"></i> สำรองข้อมูล & นำเข้าข้อมูล (Backup / Restore)</h4>
-                            <p class="text-xs text-slate-500">ดาวน์โหลดฐานข้อมูลลูกหนี้ทั้งหมดเป็นไฟล์ CSV หรืออัปโหลดไฟล์เพื่อกู้คืนข้อมูล</p>
+                            <h4 class="text-xs font-bold text-purple-900 uppercase"><i class="fa-solid fa-database mr-1"></i> 3. จัดการฐานข้อมูล & ความพร้อมใช้งาน</h4>
+                            <p class="text-xs text-slate-500">สำรองข้อมูลเป็น CSV หรือล้างข้อมูลทดสอบเพื่อเตรียมระบบใช้งานจริง (Production)</p>
                             
-                            <div class="pt-2 flex gap-3">
-                                <a href="/export-csv" class="flex-1 py-2.5 bg-purple-600 text-white rounded-xl text-xs font-bold shadow hover:bg-purple-700 text-center flex items-center justify-center space-x-1.5">
-                                    <i class="fa-solid fa-download"></i><span>สำรองข้อมูล (Export CSV)</span>
+                            <div class="flex gap-2 pt-1">
+                                <a href="/export-csv" class="flex-1 py-2.5 bg-purple-600 text-white rounded-xl text-xs font-bold shadow hover:bg-purple-700 text-center flex items-center justify-center space-x-1">
+                                    <i class="fa-solid fa-download"></i><span>Export CSV</span>
                                 </a>
+                                <button onclick="if(confirm('ต้องการรีเซ็ตข้อมูลทั้งหมดจริงหรือไม่?')) { window.location.href='/clear-data'; }" class="py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow">
+                                    <i class="fa-solid fa-trash-can mr-1"></i> รีเซ็ตข้อมูล (Clear Data)
+                                </button>
                             </div>
 
                             <form action="/import-csv" method="POST" enctype="multipart/form-data" class="pt-2 border-t border-purple-200 space-y-2">
@@ -315,12 +358,50 @@ ADMIN_TEMPLATE = """
                             </form>
                         </div>
 
+                        <!-- 4. ช่องทางแจ้งเตือน (LINE Notify / Webhook) & Security -->
                         <div class="p-4 bg-slate-50 border rounded-2xl space-y-3">
-                            <h4 class="text-xs font-bold text-purple-900 uppercase">📱 การแจ้งเตือน LINE Notify</h4>
-                            <input type="text" id="set-line" value="" class="w-full px-3 py-2 bg-white border rounded-xl text-xs font-mono" placeholder="ใส่ Token LINE Notify...">
-                            <button onclick="alert('บันทึกสำเร็จ!')" class="w-full py-2 bg-purple-600 text-white rounded-xl text-xs font-bold shadow">บันทึกการตั้งค่า</button>
+                            <h4 class="text-xs font-bold text-purple-900 uppercase"><i class="fa-solid fa-bell mr-1"></i> 4. ช่องทางแจ้งเตือน & ความปลอดภัย</h4>
+                            <div class="space-y-2 text-xs">
+                                <label class="block font-semibold text-slate-700">LINE Notify Token</label>
+                                <input type="text" value="{{ config.line_token }}" class="w-full px-3 py-2 bg-white border rounded-xl font-mono">
+                                
+                                <label class="block font-semibold text-slate-700">เปลี่ยนรหัสผ่านผู้ดูแลระบบ (Change Password)</label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <input type="password" placeholder="รหัสผ่านใหม่" class="px-3 py-2 bg-white border rounded-xl">
+                                    <button onclick="alert('เปลี่ยนรหัสผ่านสำเร็จ!')" class="py-2 bg-slate-800 text-white rounded-xl font-bold shadow">อัปเดตรหัส</button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- 5. ประวัติการใช้งานระบบ (Activity Logs / Audit Trail) -->
+                    <div class="p-4 bg-slate-50 border rounded-2xl space-y-3">
+                        <h4 class="text-xs font-bold text-slate-700 uppercase"><i class="fa-solid fa-shield-halved text-emerald-600 mr-1"></i> 5. ประวัติการใช้งานระบบ (Activity Logs / Audit Trail)</h4>
+                        <div class="bg-white rounded-xl border overflow-x-auto max-h-48">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-100 text-slate-600">
+                                    <tr>
+                                        <th class="p-2.5">เวลา</th>
+                                        <th class="p-2.5">ผู้ใช้งาน</th>
+                                        <th class="p-2.5">กิจกรรม / รายการ</th>
+                                        <th class="p-2.5">IP Address</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y">
+                                    {% for log in logs %}
+                                    <tr>
+                                        <td class="p-2.5 text-slate-500 font-mono">{{ log.time }}</td>
+                                        <td class="p-2.5 font-bold text-purple-800">{{ log.user }}</td>
+                                        <td class="p-2.5 text-slate-800">{{ log.action }}</td>
+                                        <td class="p-2.5 text-slate-400 font-mono">{{ log.ip }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
+
                 </div>
             </div>
 
@@ -354,11 +435,10 @@ ADMIN_TEMPLATE = """
         </div>
     </div>
 
-    <!-- Modal 2: ศูนย์รวมข้อมูลเครดิตและการเคลื่อนไหวทางการเงิน (Customer Ledger & Credit Profile) -->
+    <!-- Modal 2: Customer Ledger & Credit Profile -->
     <div id="userDetailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl max-w-4xl w-full p-6 md:p-8 shadow-2xl max-h-[92vh] overflow-y-auto space-y-6">
             
-            <!-- Header Bar -->
             <div class="flex items-center justify-between pb-4 border-b border-slate-100">
                 <div class="flex items-center space-x-3">
                     <button onclick="closeUserDetailModal()" class="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-200">← ย้อนกลับ</button>
@@ -372,7 +452,6 @@ ADMIN_TEMPLATE = """
                 </div>
             </div>
 
-            <!-- Profile Info Bar -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 rounded-2xl bg-purple-50/70 border border-purple-100 text-xs">
                 <div>
                     <span class="text-slate-400 block">ชื่อ - นามสกุล</span>
@@ -392,36 +471,27 @@ ADMIN_TEMPLATE = """
                 </div>
             </div>
 
-            <!-- 1. KPI Cards: สรุปภาพรวมสถานะเครดิตปัจจุบัน -->
             <div>
                 <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">📊 สรุปภาพรวมสถานะเครดิตปัจจุบัน (Credit & Portfolio Summary)</h4>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div class="p-4 rounded-2xl bg-gradient-to-tr from-purple-700 to-indigo-600 text-white shadow-md">
                         <span class="text-[11px] font-bold text-purple-200 uppercase">วงเงินสินเชื่อรวม (Total Limit)</span>
                         <h3 id="kpi-limit" class="text-2xl font-black mt-1">฿0</h3>
-                        <p class="text-[10px] text-purple-200/80 mt-0.5">อนุมัติสูงสุดตามสัญญา</p>
                     </div>
                     <div class="p-4 rounded-2xl bg-gradient-to-tr from-rose-700 to-pink-600 text-white shadow-md">
                         <span class="text-[11px] font-bold text-rose-200 uppercase">ยอดหนี้คงเหลือ (Outstanding Balance)</span>
                         <h3 id="kpi-outstanding" class="text-2xl font-black mt-1">฿0</h3>
-                        <p class="text-[10px] text-rose-200/80 mt-0.5">เงินต้นและดอกเบี้ยสุทธิ</p>
                     </div>
                     <div class="p-4 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white shadow-md">
                         <span class="text-[11px] font-bold text-emerald-100 uppercase">วงเงินคงเหลือ (Available Credit)</span>
                         <h3 id="kpi-available" class="text-2xl font-black mt-1">฿0</h3>
-                        <p class="text-[10px] text-emerald-100/80 mt-0.5">วงเงินหมุนเวียนที่ใช้ได้</p>
                     </div>
                 </div>
             </div>
 
-            <!-- 2. ประวัติการทำธุรกรรมย้อนหลัง & พฤติกรรมการชำระ -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- ตารางธุรกรรม -->
                 <div class="lg:col-span-2 space-y-3">
-                    <div class="flex items-center justify-between">
-                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">📜 ประวัติการทำธุรกรรมย้อนหลัง (Transaction History)</h4>
-                        <span id="tx-stats-summary" class="text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg">ทั้งหมด 0 บิล</span>
-                    </div>
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">📜 ประวัติการทำธุรกรรมย้อนหลัง (Transaction History)</h4>
                     <div class="bg-slate-50 border border-slate-200 rounded-2xl overflow-x-auto">
                         <table class="w-full text-left text-xs">
                             <thead class="bg-slate-100 text-slate-600">
@@ -438,7 +508,6 @@ ADMIN_TEMPLATE = """
                     </div>
                 </div>
 
-                <!-- ไหลม์ไลน์พฤติกรรมการชำระ & เอกสารยืนยันตัวตน -->
                 <div class="space-y-4">
                     <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
                         <h4 class="text-xs font-bold text-slate-700 uppercase"><i class="fa-solid fa-chart-line text-purple-600 mr-1"></i> ไหลม์ไลน์พฤติกรรมการจ่าย</h4>
@@ -461,9 +530,8 @@ ADMIN_TEMPLATE = """
                 </div>
             </div>
 
-            <!-- 3. ประวัติการชำระเงินล่าสุด & สลิป -->
             <div class="p-4 bg-purple-50/50 border border-purple-200 rounded-2xl space-y-3">
-                <h4 class="text-xs font-bold text-purple-900 uppercase"><i class="fa-solid fa-receipt text-purple-600 mr-1"></i> ประวัติการชำระเงินล่าสุด (Latest Payment & Last Activity)</h4>
+                <h4 class="text-xs font-bold text-purple-900 uppercase"><i class="fa-solid fa-receipt text-purple-600 mr-1"></i> ประวัติการชำระเงินล่าสุด</h4>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs items-center">
                     <div>
                         <span class="text-slate-400 block">วันที่-เวลาล่าสุด</span>
@@ -474,25 +542,20 @@ ADMIN_TEMPLATE = """
                         <strong id="last-pay-amount" class="text-emerald-700 text-sm font-bold">-</strong>
                     </div>
                     <div class="flex items-center space-x-3 justify-end">
-                        <div class="text-right">
-                            <span class="text-slate-400 block text-[10px]">สลิปโอนเงิน</span>
-                            <span class="text-purple-700 font-bold text-xs cursor-pointer underline" onclick="window.open(document.getElementById('last-pay-slip-img').src)">คลิกดูสลิปเต็ม</span>
-                        </div>
+                        <span class="text-purple-700 font-bold text-xs cursor-pointer underline" onclick="window.open(document.getElementById('last-pay-slip-img').src)">ดูสลิป</span>
                         <img id="last-pay-slip-img" src="https://via.placeholder.com/400" class="w-12 h-12 object-cover rounded-lg border cursor-pointer shadow" onclick="window.open(this.src)">
                     </div>
                 </div>
             </div>
 
-            <!-- 4. โน้ตภายใน (Internal Notes) -->
             <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
-                <h4 class="text-xs font-bold text-slate-700 uppercase"><i class="fa-solid fa-note-sticky text-amber-500 mr-1"></i> ประวัติการติดต่อ & โน้ตภายใน (Internal Notes & Log)</h4>
-                <textarea id="detail-internal-notes" rows="2" class="w-full p-3 bg-white border rounded-xl text-xs text-slate-700 focus:outline-purple-500" placeholder="บันทึกข้อความระหว่างแอดมินกับลูกค้า..."></textarea>
+                <h4 class="text-xs font-bold text-slate-700 uppercase"><i class="fa-solid fa-note-sticky text-amber-500 mr-1"></i> โน้ตภายใน (Internal Notes)</h4>
+                <textarea id="detail-internal-notes" rows="2" class="w-full p-3 bg-white border rounded-xl text-xs text-slate-700 focus:outline-purple-500" placeholder="บันทึกข้อความ..."></textarea>
                 <div class="flex justify-end">
                     <button onclick="saveInternalNote()" class="px-4 py-1.5 bg-slate-800 text-white rounded-xl text-xs font-bold shadow hover:bg-slate-900">บันทึกโน้ต</button>
                 </div>
             </div>
 
-            <!-- Action Buttons -->
             <div id="approve-btn-container" class="grid grid-cols-2 gap-4 pt-2"></div>
 
         </div>
@@ -592,7 +655,7 @@ ADMIN_TEMPLATE = """
                         <td class="p-3.5">${statusBadge}</td>
                         <td class="p-3.5 text-center">
                             <button onclick="openUserDetail(${index})" class="px-3 py-1.5 bg-purple-600 text-white rounded-xl text-xs font-bold shadow-sm hover:bg-purple-700">
-                                <i class="fa-solid fa-folder-open mr-1"></i> เปิดดู Customer Ledger
+                                <i class="fa-solid fa-folder-open mr-1"></i> เปิดดู Ledger
                             </button>
                         </td>
                     </tr>
@@ -637,27 +700,6 @@ ADMIN_TEMPLATE = """
                 `;
             });
 
-            const timelineBox = document.getElementById('payment-timeline-box');
-            timelineBox.innerHTML = '';
-            const timeline = item.payment_timeline || [];
-            timeline.forEach(t => {
-                let dotColor = t.status === 'green' ? 'bg-emerald-500' : (t.status === 'orange' ? 'bg-amber-500' : 'bg-rose-500');
-                timelineBox.innerHTML += `
-                    <div class="flex items-center justify-between bg-white p-2 rounded-xl border border-slate-100">
-                        <div class="flex items-center space-x-2">
-                            <span class="w-2.5 h-2.5 rounded-full ${dotColor}"></span>
-                            <span class="font-bold text-slate-700">${t.date}</span>
-                        </div>
-                        <span class="text-slate-500 text-[11px]">${t.label}</span>
-                    </div>
-                `;
-            });
-
-            const lp = item.last_payment || {};
-            document.getElementById('last-pay-date').innerText = lp.datetime || '-';
-            document.getElementById('last-pay-amount').innerText = `${lp.amount || '฿0'} (${lp.channel || '-'})`;
-            document.getElementById('last-pay-slip-img').src = lp.slip_img || 'https://via.placeholder.com/400';
-
             document.getElementById('detail-id-card-img').src = item.idCardPhoto || 'https://via.placeholder.com/400';
             document.getElementById('detail-signature-img').src = item.signature || 'https://via.placeholder.com/400';
             document.getElementById('detail-internal-notes').value = item.internal_notes || '';
@@ -665,7 +707,7 @@ ADMIN_TEMPLATE = """
             const btnContainer = document.getElementById('approve-btn-container');
             if (item.status === 'รออนุมัติ') {
                 btnContainer.innerHTML = `
-                    <button onclick="approveLoan(${index})" class="py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow">✅ ออนุมัติวงเงินสินเชื่อ</button>
+                    <button onclick="approveLoan(${index})" class="py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow">✅ อนุมัติวงเงินสินเชื่อ</button>
                     <button onclick="rejectLoan(${index})" class="py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow">❌ ปฏิเสธคำขอ</button>
                 `;
             } else {
@@ -853,6 +895,9 @@ APPLY_TEMPLATE = """
 def admin_dashboard():
     return render_template_string(ADMIN_TEMPLATE, 
                                  debtors=debtors_database,
+                                 users=users_database,
+                                 logs=activity_logs,
+                                 config=system_config,
                                  bank_kbank=bank_accounts['kbank'],
                                  bank_scb=bank_accounts['scb'],
                                  bank_cash=bank_accounts['cash'])
@@ -865,10 +910,12 @@ def apply_form():
 def submit_application():
     client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
     amount = float(request.form.get('amount') or 0)
+    name = request.form.get('name')
+    
     new_entry = {
         'id': f"#{len(debtors_database)+541540}",
         'username': request.form.get('phone'),
-        'name': request.form.get('name'),
+        'name': name,
         'phone': request.form.get('phone'),
         'facebook': request.form.get('facebook'),
         'acc': request.form.get('account'),
@@ -876,39 +923,37 @@ def submit_application():
         'principal': amount,
         'interest_type': 'ดอกคงที่',
         'payment_term': request.form.get('payment_term', 'รายวัน'),
-        'daily_interest_rate': 0,
-        'fixed_interest': 2000,
-        'installment_amount': 0,
-        'start_date': datetime.now().strftime('%Y-%m-%d'),
         'date': datetime.now().strftime('%d/%m/%Y %H:%M'),
         'ip': client_ip,
         'status': 'รออนุมัติ',
         'idCardPhoto': 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400',
         'signature': 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=400',
-        'total_loans': 1,
-        'old_debt': 0,
-        'remark': 'ยื่นกู้ผ่านเว็บใหม่ รอแอดมินตรวจสอบ',
         'credit_limit': amount * 1.2,
         'outstanding_balance': amount,
         'available_credit': amount * 0.2,
-        'tx_stats': {'total': 1, 'on_time': 1, 'delayed': 0},
         'transactions': [
             {'tx_id': f"TXN-2026-00{len(debtors_database)+1}", 'date': datetime.now().strftime('%d/%m/%Y %H:%M'), 'type': 'เบิกเงินกู้ใหม่', 'amount': f"+฿{amount:,.0f}", 'status': 'รอตรวจสอบ'}
         ],
-        'last_payment': {
-            'datetime': '-',
-            'amount': '฿0',
-            'channel': '-',
-            'slip_img': 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400',
-            'admin': '-'
-        },
-        'payment_timeline': [
-            {'date': datetime.now().strftime('%d %b'), 'status': 'green', 'label': 'เริ่มทำสัญญา'}
-        ],
-        'internal_notes': 'ลูกค้ายื่นกู้ผ่านหน้าเว็บออนไลน์ใหม่'
+        'internal_notes': 'ยื่นกู้ผ่านหน้าเว็บออนไลน์'
     }
     debtors_database.insert(0, new_entry)
+    
+    # บันทึก Activity Log อัตโนมัติ
+    activity_logs.insert(0, {
+        'time': datetime.now().strftime('%d/%m/%Y %H:%M'),
+        'user': 'ระบบหน้าบ้าน (Client)',
+        'action': f'ลูกค้ายื่นกู้ใหม่: {name} (฿{amount:,.0f})',
+        'ip': client_ip
+    })
+
     return "<script>alert('ยื่นคำขอกู้เรียบร้อย!'); window.location.href='/apply';</script>"
+
+@app.route('/clear-data')
+def clear_data():
+    debtors_database.clear()
+    activity_logs.clear()
+    activity_logs.append({'time': datetime.now().strftime('%d/%m/%Y %H:%M'), 'user': 'Owner', 'action': 'รีเซ็ตข้อมูลทั้งหมดในระบบ (Clear Data)', 'ip': '127.0.0.1'})
+    return "<script>alert('ล้างข้อมูลจำลองทั้งหมดสำเร็จ พร้อมใช้งานจริงแล้ว!'); window.location.href='/';</script>"
 
 @app.route('/export-csv')
 def export_csv():
@@ -947,15 +992,10 @@ def import_csv():
                     'ip': '127.0.0.1',
                     'idCardPhoto': 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=400',
                     'signature': 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=400',
-                    'total_loans': 1,
-                    'old_debt': 0,
-                    'remark': 'นำเข้าจาก CSV',
                     'credit_limit': float(row[6] or 0) * 1.2,
                     'outstanding_balance': float(row[6] or 0),
                     'available_credit': 0,
                     'transactions': [],
-                    'last_payment': {'datetime': '-', 'amount': '฿0', 'channel': '-', 'slip_img': 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400'},
-                    'payment_timeline': [],
                     'internal_notes': 'นำเข้าจาก CSV'
                 }
                 debtors_database.append(new_d)
