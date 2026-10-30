@@ -80,7 +80,7 @@
                     </button>
                     <button onclick="openModal('otpManageModal')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/60 transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
-                        อนุมัติรหัส OTP ลูกค้า <span id="otpBadge" class="ml-auto bg-amber-500/20 text-amber-500 dark:text-amber-400 text-xs px-2 py-0.5 rounded-full">0</span>
+                        อนุมัติรหัส OTP ลูกค้า <span id="otpBadge" class="ml-auto bg-amber-500/20 text-amber-500 dark:text-amber-400 text-xs px-2 py-0.5 rounded-full">1</span>
                     </button>
                     <button onclick="switchView('clientApply')" id="nav-client" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800/60 transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
@@ -466,7 +466,7 @@
     <!-- MODALS SECTION                             -->
     <!-- ========================================== -->
 
-    <!-- SETTINGS MODAL (เพิ่มระบบเลือกธีม Dark/Light) -->
+    <!-- SETTINGS MODAL (ตั้งค่าระบบ & ธีม) -->
     <div id="settingsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
         <div class="bg-white dark:bg-[#181b2a] border border-gray-200 dark:border-gray-800 rounded-3xl w-full max-w-md p-6 space-y-5 shadow-2xl text-gray-900 dark:text-gray-100 transition-colors duration-200">
             <div class="flex justify-between items-center border-b border-gray-200 dark:border-gray-800 pb-3">
@@ -500,11 +500,11 @@
                     <label class="block font-medium text-gray-700 dark:text-gray-300">🤖 ตั้งค่า Telegram Bot Notification</label>
                     <div>
                         <span class="text-gray-500 dark:text-gray-400 block mb-1">Telegram Bot Token</span>
-                        <input type="text" id="tgToken" placeholder="123456789:ABCdef..." class="w-full bg-gray-50 dark:bg-[#0c0e17] border border-gray-300 dark:border-gray-800 rounded-xl p-3 text-gray-900 dark:text-white focus:outline-none focus:border-purple-500">
+                        <input type="text" id="tgToken" value="9203750510:AAFJhUvWRF4mOSozUSkz0I0I9jca-ximuTo" class="w-full bg-gray-50 dark:bg-[#0c0e17] border border-gray-300 dark:border-gray-800 rounded-xl p-3 text-gray-900 dark:text-white focus:outline-none focus:border-purple-500">
                     </div>
                     <div>
                         <span class="text-gray-500 dark:text-gray-400 block mb-1">Telegram Chat ID</span>
-                        <input type="text" id="tgChatId" placeholder="-100123456789" class="w-full bg-gray-50 dark:bg-[#0c0e17] border border-gray-300 dark:border-gray-800 rounded-xl p-3 text-gray-900 dark:text-white focus:outline-none focus:border-purple-500">
+                        <input type="text" id="tgChatId" value="1880260879" class="w-full bg-gray-50 dark:bg-[#0c0e17] border border-gray-300 dark:border-gray-800 rounded-xl p-3 text-gray-900 dark:text-white focus:outline-none focus:border-purple-500">
                     </div>
                 </div>
             </div>
@@ -516,8 +516,77 @@
         </div>
     </div>
 
+    <!-- OTP MANAGEMENT MODAL (อนุมัติรหัส OTP ลูกค้า) -->
+    <div id="otpManageModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div class="bg-white dark:bg-[#181b2a] border border-gray-200 dark:border-gray-800 rounded-3xl w-full max-w-lg p-6 space-y-5 shadow-2xl text-gray-900 dark:text-gray-100 transition-colors duration-200">
+            <div class="flex justify-between items-center border-b border-gray-200 dark:border-gray-800 pb-3">
+                <h3 class="font-bold text-gray-900 dark:text-white text-base flex items-center gap-2">
+                    <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
+                    คำขอรหัส OTP จากลูกค้าที่รอการอนุมัติ
+                </h3>
+                <button onclick="closeModal('otpManageModal')" class="text-gray-400 hover:text-gray-700 dark:hover:text-white">✕</button>
+            </div>
+
+            <div class="space-y-3 max-h-72 overflow-y-auto custom-scrollbar pr-1" id="otpRequestList">
+                <div class="bg-gray-50 dark:bg-gray-900/80 border border-gray-200 dark:border-gray-800 p-4 rounded-xl flex items-center justify-between gap-3">
+                    <div>
+                        <h4 class="font-bold text-gray-900 dark:text-white text-sm">เบอร์โทร: <span class="text-purple-600 dark:text-purple-400">081-234-5678</span></h4>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">เวลาที่ขอ: 18:45 น. • สถานะ: รอแอดมินออกรหัส</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="approveAndSendOtp('0812345678')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl text-xs font-medium shadow transition flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            สร้าง & ส่ง OTP (6 หลัก)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-amber-50 dark:bg-amber-950/20 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs px-4 py-3 rounded-xl">
+                💡 <strong>วิธีใช้งาน:</strong> เมื่อลูกค้ากดขอเบอร์โทรในระบบ หน้าบ้าน ระบบจะเด้งแจ้งเตือนเข้า Telegram ของแอดมิน ให้แอดมินกดปุ่มอนุมัติระบบจะสุ่มรหัส OTP 6 หลักส่งกลับไปให้ลูกค้ากรอกเพื่อเข้าสู่หน้าสัญญากู้ครับ
+            </div>
+
+            <div class="flex justify-end pt-2 border-t border-gray-200 dark:border-gray-800">
+                <button onclick="closeModal('otpManageModal')" class="bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-xl text-xs font-medium transition">ปิดหน้าต่าง</button>
+            </div>
+        </div>
+    </div>
+
     <!-- JAVASCRIPT LOGIC -->
     <script>
+        // --- Telegram Notification Function ---
+        async function sendTelegramNotification(textMessage) {
+            const token = document.getElementById('tgToken').value.trim() || "9203750510:AAFJhUvWRF4mOSozUSkz0I0I9jca-ximuTo";
+            const chatId = document.getElementById('tgChatId').value.trim() || "1880260879";
+
+            if (!token || !chatId) {
+                console.warn("ยังไม่ได้ตั้งค่า Telegram Token หรือ Chat ID");
+                return;
+            }
+
+            const url = `https://api.telegram.org/bot${token}/sendMessage`;
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        text: textMessage,
+                        parse_mode: 'Markdown'
+                    })
+                });
+                const data = await response.json();
+                if (data.ok) {
+                    console.log("ส่งแจ้งเตือน Telegram สำเร็จ!");
+                } else {
+                    console.error("Telegram Error:", data.description);
+                }
+            } catch (error) {
+                console.error("Network Error:", error);
+            }
+        }
+
         // --- Theme Management ---
         function setTheme(mode) {
             const htmlEl = document.documentElement;
@@ -540,7 +609,11 @@
         window.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('bizflow_theme') || 'dark';
             setTheme(savedTheme);
-            if(window.location.hash === '#apply') switchView('clientApply');
+
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('view') === 'client' || window.location.hash === '#apply') {
+                switchView('clientApply');
+            }
         });
 
         // --- View & Modal Controller ---
@@ -550,12 +623,10 @@
             if (viewName === 'clientApply') {
                 dashboard.classList.add('hidden');
                 clientApply.classList.remove('hidden');
-                window.location.hash = 'apply';
                 setTimeout(initSignaturePad, 50);
             } else {
                 clientApply.classList.add('hidden');
                 dashboard.classList.remove('hidden');
-                window.location.hash = '';
             }
         }
 
@@ -569,13 +640,31 @@
         }
 
         function copyApplyLink() {
-            navigator.clipboard.writeText(window.location.origin + window.location.pathname + '#apply');
-            alert('คัดลอกลิงก์ยื่นกู้เรียบร้อยแล้ว!');
+            const applyUrl = window.location.origin + window.location.pathname + '?view=client';
+            navigator.clipboard.writeText(applyUrl).then(() => {
+                alert('คัดลอกลิงก์หน้าบ้าน (/apply) เรียบร้อยแล้ว! ลูกคือกดเปิดจะเข้าหน้ายื่นกู้ทันที');
+            });
         }
 
         function saveTelegramSettings() {
             alert('บันทึกการตั้งค่าเรียบร้อย!');
             closeModal('settingsModal');
+        }
+
+        // --- OTP Approve Logic ---
+        function approveAndSendOtp(phone) {
+            const generatedOtp = Math.floor(100000 + Math.random() * 900000);
+            const badge = document.getElementById('otpBadge');
+            if(badge) {
+                let currentCount = parseInt(badge.innerText) || 1;
+                badge.innerText = Math.max(0, currentCount - 1);
+            }
+            
+            // ส่งแจ้งเตือน OTP ทาง Telegram
+            sendTelegramNotification(`🔐 *รหัส OTP ยืนยันตัวตนของคุณ*\n\nเบอร์โทร: ${phone}\nรหัส OTP: *${generatedOtp}*`);
+
+            alert(`✅ สร้างและส่งรหัส OTP สำเร็จ!\n\nเบอร์โทรศัพท์: ${phone}\nรหัส OTP 6 หลักคือ: [ ${generatedOtp} ]\n(ระบบได้ส่งแจ้งเตือนเข้า Telegram เรียบร้อยแล้ว)`);
+            closeModal('otpManageModal');
         }
 
         // --- Signature Pad Logic ---
@@ -611,6 +700,16 @@
         function submitClientApplication(e) {
             e.preventDefault();
             if(!hasSigned) { alert('กรุณาลงลายเซ็นก่อนส่งคำขอ'); return; }
+
+            const name = document.getElementById('apply-name').value;
+            const fb = document.getElementById('apply-fb').value;
+            const amount = document.getElementById('apply-amount').value;
+            const cycle = document.getElementById('apply-cycle').value;
+
+            // ยิงแจ้งเตือนเข้า Telegram ส่วนตัวทันที
+            const msg = `🚨 *มีคำขอกู้เงินใหม่เข้ามา!*\n\n👤 ชื่อ: ${name}\n🔗 เฟซบุ๊ก: ${fb}\n💰 ยอดขอกู้: ฿${amount}\n📅 รูปแบบผ่อน: ${cycle}\n✍️ สถานะ: แนบลายเซ็นและรอแอดมินตรวจสอบ`;
+            sendTelegramNotification(msg);
+
             alert('ส่งคำขอกู้และแจ้งเตือนผ่าน Telegram สำเร็จ!');
             switchView('dashboard');
         }
