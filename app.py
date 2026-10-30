@@ -19,11 +19,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 def get_debtors_from_db():
     try:
         response = supabase.table("debtors").select("*").execute()
-        data = response.data if response.data else []
-        for d in data:
-            if 'old_arrears' not in d:
-                d['old_arrears'] = 0
-        return data
+        return response.data if response.data else []
     except Exception as e:
         print(f"Supabase Fetch Error: {e}")
         return []
@@ -113,15 +109,14 @@ ADMIN_TEMPLATE = """
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Kanit', sans-serif; background-color: #f8fafc; overflow: hidden; }
+        body { font-family: 'Kanit', sans-serif; background-color: #f8fafc; }
         .sidebar-item-active { background: linear-gradient(135deg, rgba(168, 85, 247, 0.3) 0%, rgba(126, 34, 206, 0.2) 100%); border: 1px solid rgba(192, 132, 252, 0.4); color: #f3e8ff; }
         .sidebar-bg { background: linear-gradient(180deg, #18092e 0%, #0d061a 50%, #110726 100%); }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased h-screen flex flex-col md:flex-row overflow-hidden">
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col md:flex-row">
 
-    <!-- Mobile Topbar -->
-    <div class="md:hidden bg-[#18092e] text-white p-4 flex items-center justify-between shadow-md shrink-0 z-50">
+    <div class="md:hidden bg-[#18092e] text-white p-4 flex items-center justify-between shadow-md sticky top-0 z-40">
         <div class="flex items-center space-x-2">
             <div class="w-8 h-8 rounded-xl bg-purple-600 flex items-center justify-center font-black">B</div>
             <span class="font-bold text-lg">BizFlow <span class="text-xs bg-purple-500 px-1.5 py-0.5 rounded">PLUS</span></span>
@@ -129,8 +124,7 @@ ADMIN_TEMPLATE = """
         <button onclick="toggleSidebar()" class="text-purple-300 hover:text-white text-xl p-2"><i class="fa-solid fa-bars"></i></button>
     </div>
 
-    <!-- Sidebar (Sticky & Fixed Left) -->
-    <aside id="sidebar" class="w-72 sidebar-bg text-slate-200 flex flex-col justify-between shrink-0 shadow-2xl h-full fixed md:static inset-y-0 left-0 z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300 border-r border-purple-900/35 overflow-y-auto">
+    <aside id="sidebar" class="w-72 sidebar-bg text-slate-200 flex flex-col justify-between shrink-0 shadow-2xl h-screen fixed md:static inset-y-0 left-0 z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300 border-r border-purple-900/35 overflow-y-auto">
         <div>
             <div class="p-6 border-b border-purple-900/40 flex items-center justify-between">
                 <div class="flex items-center space-x-3.5">
@@ -184,7 +178,7 @@ ADMIN_TEMPLATE = """
                 </div>
             </nav>
         </div>
-        <div class="p-4 border-t border-purple-900/40 space-y-3 shrink-0">
+        <div class="p-4 border-t border-purple-900/40 space-y-3">
             <div class="text-xs text-purple-300/80 flex items-center justify-between">
                 <span>แอดมิน: <b class="text-white">{{ session.get('admin_user', 'Admin') }}</b></span>
                 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -195,9 +189,8 @@ ADMIN_TEMPLATE = """
         </div>
     </aside>
 
-    <!-- Main Content Area (Scrollable Right) -->
-    <main class="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50/50">
-        <header class="bg-white border-b border-slate-200 shrink-0 px-6 md:px-8 py-4 flex items-center justify-between shadow-sm z-10">
+    <main class="flex-1 overflow-y-auto min-h-screen bg-slate-50/50 w-full">
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-10 px-6 md:px-8 py-4 flex items-center justify-between shadow-sm">
             <h2 id="page-title" class="text-lg md:text-xl font-bold text-slate-800">แดชบอร์ดหลัก</h2>
             <div class="flex items-center space-x-4">
                 <div class="relative cursor-pointer p-2 hover:bg-purple-50 rounded-xl transition" onclick="switchTab('debtors')" title="คลิกดูรายการคำขอกู้ใหม่">
@@ -213,7 +206,7 @@ ADMIN_TEMPLATE = """
             </div>
         </header>
 
-        <div class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6">
+        <div class="p-4 md:p-8 space-y-6">
 
             <!-- Section: แดชบอร์ดหลัก -->
             <div id="section-dashboard" class="space-y-6">
@@ -223,8 +216,7 @@ ADMIN_TEMPLATE = """
                             <span class="text-xs font-bold text-amber-100 uppercase">📁 ยอดค้างเก่าคงเหลือ</span>
                             <i class="fa-solid fa-folder-open text-amber-200 text-lg"></i>
                         </div>
-                        {% set total_old_arrears = debtors | sum(attribute='old_arrears') %}
-                        <h3 class="text-2xl font-black">฿{{ total_old_arrears | format_num }}</h3>
+                        <h3 class="text-2xl font-black">฿0.00</h3>
                         <p class="text-[10px] text-amber-100 mt-1 underline">คลิกดูประวัติ</p>
                     </div>
 
@@ -459,15 +451,15 @@ ADMIN_TEMPLATE = """
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-2">
                                 <label class="text-xs font-bold text-emerald-800 uppercase block"><i class="fa-solid fa-money-bill-wave mr-1"></i> เงินสด / เงินฝาก (บาท)</label>
-                                <input type="number" id="savings-cash-input" value="{{ personal_finance.savings_cash }}" onchange="saveSavingsPortfolio()" onkeydown="if(event.key==='Enter') { this.blur(); }" class="w-full px-3 py-2 bg-white border border-emerald-300 rounded-xl font-mono font-bold text-emerald-900 text-lg">
+                                <input type="number" id="savings-cash-input" value="{{ personal_finance.savings_cash }}" onchange="saveSavingsPortfolio()" onkeydown="if(event.key==='Enter') { this.blur(); alert('บันทึกยอดเงินสดเรียบร้อย!'); }" class="w-full px-3 py-2 bg-white border border-emerald-300 rounded-xl font-mono font-bold text-emerald-900 text-lg">
                             </div>
                             <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-2">
                                 <label class="text-xs font-bold text-amber-800 uppercase block"><i class="fa-solid fa-coins mr-1"></i> ทองคำสะสม (บาท)</label>
-                                <input type="number" id="savings-gold-input" value="{{ personal_finance.savings_gold }}" onchange="saveSavingsPortfolio()" onkeydown="if(event.key==='Enter') { this.blur(); }" class="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl font-mono font-bold text-amber-900 text-lg">
+                                <input type="number" id="savings-gold-input" value="{{ personal_finance.savings_gold }}" onchange="saveSavingsPortfolio()" onkeydown="if(event.key==='Enter') { this.blur(); alert('บันทึกยอดทองคำเรียบร้อย!'); }" class="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl font-mono font-bold text-amber-900 text-lg">
                             </div>
                             <div class="p-4 rounded-2xl bg-blue-50 border border-blue-200 space-y-2">
                                 <label class="text-xs font-bold text-blue-800 uppercase block"><i class="fa-solid fa-chart-line mr-1"></i> หุ้น / กองทุน (บาท)</label>
-                                <input type="number" id="savings-stocks-input" value="{{ personal_finance.savings_stocks }}" onchange="saveSavingsPortfolio()" onkeydown="if(event.key==='Enter') { this.blur(); }" class="w-full px-3 py-2 bg-white border border-blue-300 rounded-xl font-mono font-bold text-blue-900 text-lg">
+                                <input type="number" id="savings-stocks-input" value="{{ personal_finance.savings_stocks }}" onchange="saveSavingsPortfolio()" onkeydown="if(event.key==='Enter') { this.blur(); alert('บันทึกยอดหุ้น/กองทุนเรียบร้อย!'); }" class="w-full px-3 py-2 bg-white border border-blue-300 rounded-xl font-mono font-bold text-blue-900 text-lg">
                             </div>
                         </div>
                     </div>
@@ -537,7 +529,7 @@ ADMIN_TEMPLATE = """
                                         <td class="p-3 font-bold text-slate-800">{{ exp.name }}</td>
                                         <td class="p-3 text-right">
                                             {% if exp.is_variable %}
-                                                <input type="number" id="exp-amt-{{ exp.id }}" value="{{ exp.amount }}" onchange="updateCalculations()" onkeydown="if(event.key==='Enter') { this.blur(); updateCalculations(); }" class="w-28 px-2 py-1 bg-purple-50 border border-purple-300 rounded-lg font-mono font-bold text-purple-900 text-right">
+                                                <input type="number" id="exp-amt-{{ exp.id }}" value="{{ exp.amount }}" onchange="updateCalculations()" onkeydown="if(event.key==='Enter') { this.blur(); updateCalculations(); alert('บันทึกยอด {{ exp.name }} เรียบร้อย!'); }" class="w-28 px-2 py-1 bg-purple-50 border border-purple-300 rounded-lg font-mono font-bold text-purple-900 text-right">
                                             {% else %}
                                                 <span class="font-mono font-bold text-blue-600" id="exp-amt-display-{{ exp.id }}">฿{{ exp.amount | format_num }}</span>
                                                 <input type="hidden" id="exp-amt-{{ exp.id }}" value="{{ exp.amount }}">
@@ -547,7 +539,7 @@ ADMIN_TEMPLATE = """
                                             {% if exp.has_installments %}
                                                 <div class="flex items-center gap-1">
                                                     <span>เหลือ</span>
-                                                    <input type="number" id="exp-inst-input-{{ exp.id }}" value="{{ exp.installments }}" onchange="updateInstallmentValue('{{ exp.id }}')" onkeydown="if(event.key==='Enter') { this.blur(); updateInstallmentValue('{{ exp.id }}'); }" class="w-16 px-2 py-0.5 bg-slate-50 border rounded font-mono font-bold text-slate-800 text-center">
+                                                    <input type="number" id="exp-inst-input-{{ exp.id }}" value="{{ exp.installments }}" onchange="updateInstallmentValue('{{ exp.id }}')" onkeydown="if(event.key==='Enter') { this.blur(); updateInstallmentValue('{{ exp.id }}'); alert('บันทึกงวดคงเหลือเรียบร้อย!'); }" class="w-16 px-2 py-0.5 bg-slate-50 border rounded font-mono font-bold text-slate-800 text-center">
                                                     <span>งวด</span>
                                                 </div>
                                             {% else %}
@@ -657,7 +649,7 @@ ADMIN_TEMPLATE = """
                 <div class="bg-white rounded-2xl p-6 shadow-sm">รายงานผลประกอบการประจำปี</div>
             </div>
 
-            <!-- Tab: ตั้งค่า -->
+            <!-- Tab: ตั้งค่า (ตามต้นฉบับเดิมของคุณ) -->
             <div id="section-settings" class="hidden space-y-6">
                 <div class="bg-white rounded-2xl p-6 shadow-sm space-y-4">
                     <h3 class="text-lg font-bold border-b pb-3">⚙️ ตั้งค่า</h3>
@@ -671,7 +663,7 @@ ADMIN_TEMPLATE = """
         </div>
     </main>
 
-    <!-- Modal: บันทึกการชำระหนี้รายบิล -->
+    <!-- Modal: บันทึกการชำระหนี้รายบิล (พร้อมค่าปรับ ส่วนลด วันที่ย้อนหลัง) -->
     <div id="payDebtModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <h3 class="text-lg font-black text-slate-900" id="pay_debt_title">บันทึกรับชำระหนี้</h3>
@@ -698,46 +690,6 @@ ADMIN_TEMPLATE = """
                 <div class="flex gap-2 pt-2">
                     <button type="button" onclick="closePayDebtModal()" class="flex-1 py-2 bg-slate-200 rounded-xl font-bold">ยกเลิก</button>
                     <button type="button" onclick="submitPayDebt()" class="flex-1 py-2 bg-emerald-600 text-white rounded-xl font-bold shadow">บันทึกรับเงิน</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: บันทึกรับชำระยอดค้างเก่า -->
-    <div id="payOldArrearsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <h3 class="text-lg font-black text-amber-800" id="pay_old_title">บันทึกรับชำระยอดค้างเก่า</h3>
-            <div class="space-y-3 text-xs">
-                <input type="hidden" id="pay_old_phone">
-                <div>
-                    <label class="block font-semibold mb-1">ยอดเงินรับชำระค้างเก่า (บาท)</label>
-                    <input type="number" id="pay_old_amount" class="w-full px-3 py-2 bg-amber-50 border border-amber-300 rounded-xl text-sm font-bold text-amber-900" placeholder="0.00">
-                </div>
-                <div>
-                    <label class="block font-semibold mb-1">วันที่ทำรายการ</label>
-                    <input type="date" id="pay_old_date" class="w-full px-3 py-2 bg-slate-50 border rounded-xl text-sm font-bold">
-                </div>
-                <div class="flex gap-2 pt-2">
-                    <button type="button" onclick="closePayOldModal()" class="flex-1 py-2 bg-slate-200 rounded-xl font-bold">ยกเลิก</button>
-                    <button type="button" onclick="submitPayOldArrears()" class="flex-1 py-2 bg-amber-600 text-white rounded-xl font-bold shadow">บันทึกตัดยอดค้างเก่า</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: แก้ไขยอดค้างเก่า -->
-    <div id="editOldArrearsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <h3 class="text-lg font-black text-slate-900 border-b pb-2">✏️ กำหนด/แก้ไขยอดค้างเก่า</h3>
-            <div class="space-y-3 text-xs">
-                <input type="hidden" id="edit_old_phone">
-                <div>
-                    <label class="block font-semibold mb-1">ยอดค้างเก่าตั้งต้น (บาท)</label>
-                    <input type="number" id="edit_old_amount_input" class="w-full px-3 py-2 bg-slate-50 border rounded-xl text-sm font-bold text-amber-700">
-                </div>
-                <div class="flex gap-2 pt-2">
-                    <button type="button" onclick="closeEditOldModal()" class="flex-1 py-2 bg-slate-200 rounded-xl font-bold">ยกเลิก</button>
-                    <button type="button" onclick="submitEditOldArrears()" class="flex-1 py-2 bg-amber-600 text-white rounded-xl font-bold shadow">บันทึกยอดค้างเก่า</button>
                 </div>
             </div>
         </div>
@@ -806,7 +758,7 @@ ADMIN_TEMPLATE = """
             const amtInput = document.getElementById('misc-amt-input');
             const desc = descInput.value.trim();
             const amt = parseFloat(amtInput.value) || 0;
-            if (!desc || amt <= 0) return;
+            if (!desc || amt <= 0) { alert('กรุณากรอกรายการและจำนวนเงินที่ถูกต้อง'); return; }
             const timeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
             dailyMiscExpenses.push({ id: Date.now(), time: timeStr, desc: desc, amt: amt });
             descInput.value = ''; amtInput.value = ''; descInput.focus();
@@ -902,7 +854,7 @@ ADMIN_TEMPLATE = """
             const val = parseFloat(document.getElementById('income-input').value) || 0;
             personalFinance.monthly_income = val;
             document.getElementById('income-display').innerText = '฿' + val.toLocaleString('en-US', {minimumFractionDigits: 2});
-            toggleEditIncome(); updateCalculations();
+            toggleEditIncome(); updateCalculations(); alert('บันทึกรายรับใหม่สำเร็จ!');
         }
 
         function openPayDebtModal(id, name, outstanding) {
@@ -915,50 +867,6 @@ ADMIN_TEMPLATE = """
             document.getElementById('payDebtModal').classList.remove('hidden');
         }
         function closePayDebtModal() { document.getElementById('payDebtModal').classList.add('hidden'); }
-
-        function openPayOldModal(phone, currentOld) {
-            document.getElementById('pay_old_phone').value = phone;
-            document.getElementById('pay_old_title').innerText = 'รับชำระยอดค้างเก่า (คงเหลือ ฿' + currentOld.toLocaleString() + ')';
-            document.getElementById('pay_old_amount').value = '';
-            document.getElementById('pay_old_date').value = new Date().toISOString().split('T')[0];
-            document.getElementById('payOldArrearsModal').classList.remove('hidden');
-        }
-        function closePayOldModal() { document.getElementById('payOldArrearsModal').classList.add('hidden'); }
-
-        function openEditOldModal(phone, currentOld) {
-            document.getElementById('edit_old_phone').value = phone;
-            document.getElementById('edit_old_amount_input').value = currentOld;
-            document.getElementById('editOldArrearsModal').classList.remove('hidden');
-        }
-        function closeEditOldModal() { document.getElementById('editOldArrearsModal').classList.add('hidden'); }
-
-        function submitPayOldArrears() {
-            const phone = document.getElementById('pay_old_phone').value;
-            const amt = parseFloat(document.getElementById('pay_old_amount').value) || 0;
-            const customDate = document.getElementById('pay_old_date').value;
-            if (amt <= 0) return;
-
-            fetch('/submit-old-payment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: phone, amount: amt, date: customDate })
-            }).then(res => res.json()).then(data => {
-                if (data.success) { location.reload(); }
-            });
-        }
-
-        function submitEditOldArrears() {
-            const phone = document.getElementById('edit_old_phone').value;
-            const amt = parseFloat(document.getElementById('edit_old_amount_input').value) || 0;
-
-            fetch('/update-old-arrears', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: phone, amount: amt })
-            }).then(res => res.json()).then(data => {
-                if (data.success) { location.reload(); }
-            });
-        }
 
         function toggleExpenseStatus(expId, btn) {
             const exp = householdExpenses.find(e => e.id === expId);
@@ -988,7 +896,7 @@ ADMIN_TEMPLATE = """
                 btn.innerText = 'รอจ่าย';
                 btn.className = "px-2.5 py-1 bg-amber-100 text-amber-800 rounded-lg font-bold text-[11px] expense-status-btn";
             });
-            updateCalculations();
+            updateCalculations(); alert('รีเซ็ตสถานะค่าใช้จ่ายประจำเดือนเรียบร้อย!');
         }
 
         function openBoxModal(boxType) {
@@ -1005,10 +913,7 @@ ADMIN_TEMPLATE = """
             const todayStr = new Date().toLocaleDateString('th-TH');
 
             debtorsData.forEach(d => {
-                if (boxType === 'old_arrears' && parseFloat(d.old_arrears || 0) > 0) {
-                    count++;
-                    html += `<tr><td class="p-2 font-bold">${d.name}</td><td class="p-2 font-mono">${d.phone}</td><td class="p-2 text-right font-mono font-bold text-amber-600">฿${parseFloat(d.old_arrears || 0).toLocaleString()}</td><td class="p-2">ยอดค้างเก่าคงเหลือ</td></tr>`;
-                } else if (boxType === 'principal' && d.status === 'ปกติ') {
+                if (boxType === 'principal' && d.status === 'ปกติ') {
                     count++;
                     html += `<tr><td class="p-2 font-bold">${d.name}</td><td class="p-2 font-mono">${d.phone}</td><td class="p-2 text-right font-mono font-bold text-rose-600">฿${parseFloat(d.principal || 0).toLocaleString()}</td><td class="p-2">เงินต้นคงค้าง</td></tr>`;
                 } else if (boxType === 'collected_today' || boxType === 'profit') {
@@ -1016,7 +921,7 @@ ADMIN_TEMPLATE = """
                     if (typeof txs === 'string') { try { txs = JSON.parse(txs); } catch(e) { txs = []; } }
                     if (txs && txs.length > 0) {
                         txs.forEach(t => {
-                            if (t.type === 'รับชำระหนี้' || t.type === 'รับชำระยอดค้างเก่า') {
+                            if (t.type === 'รับชำระหนี้') {
                                 count++;
                                 let amtToShow = boxType === 'profit' ? (t.profit || t.raw_amount || 0) : (t.raw_amount || 0);
                                 html += `<tr><td class="p-2 font-bold">${d.name}</td><td class="p-2 font-mono">${d.phone}</td><td class="p-2 text-right font-mono font-bold text-emerald-600">฿${parseFloat(amtToShow).toLocaleString()}</td><td class="p-2">${t.date} (${t.type})</td></tr>`;
@@ -1033,11 +938,11 @@ ADMIN_TEMPLATE = """
         }
         function closeBoxModal() { document.getElementById('boxModal').classList.add('hidden'); }
 
+        // เปิดหน้าประวัติลูกค้าแบบหน้ากระดานเต็ม (Full Tab)
         function openClientProfileByPhone(phone) {
             const clientBills = debtorsData.filter(d => d.phone === phone);
             if (clientBills.length === 0) return;
             const primary = clientBills[0];
-            const clientOldArrears = parseFloat(primary.old_arrears || 0);
 
             document.getElementById('profile-header-info').innerText = primary.name + ' (' + primary.phone + ') | บิลทั้งหมด: ' + clientBills.length + ' บิล';
 
@@ -1061,8 +966,8 @@ ADMIN_TEMPLATE = """
                     <div class="p-5 bg-white border rounded-3xl shadow-sm space-y-4">
                         <div class="flex flex-wrap items-center justify-between border-b pb-3 gap-2">
                             <div>
-                                <span class="font-bold text-slate-800 text-sm">บิลที่ #${index + 1} (รหัส: ${b.id})</span>
-                                <span class="ml-2 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${b.status == 'รออนุมัติ' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">${b.status}</span>
+                                <span class="font-black text-purple-900 text-base">บิลที่ #${index + 1} (รหัส: ${b.id})</span>
+                                <span class="ml-2 px-2.5 py-1 rounded-full text-xs font-bold ${b.status == 'รออนุมัติ' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">${b.status}</span>
                             </div>
                             <div class="flex flex-wrap gap-2">
                                 ${b.status == 'รออนุมัติ' ? `<a href="/approve-debtor?debtor_id=${encodeURIComponent(b.id)}" class="px-3 py-1.5 bg-emerald-600 text-white rounded-xl font-bold text-xs shadow">อนุมัติบิลนี้</a>` : ''}
@@ -1072,7 +977,7 @@ ADMIN_TEMPLATE = """
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="space-y-1.5 text-xs">
-                                <div><b>เงินต้นกู้:</b> <span class="font-mono font-bold text-rose-700 text-sm">฿${parseFloat(b.principal || 0).toLocaleString()}</span></div>
+                                <div><b>เงินต้นกู้:</b> <span class="font-mono font-bold text-rose-700">฿${parseFloat(b.principal || 0).toLocaleString()}</span></div>
                                 <div><b>ประเภทดอกเบี้ย:</b> ${b.interest_type || 'ดอกลอย'} (<span class="font-mono text-purple-700 font-bold">฿${b.interest_rate || 100}/วัน</span>)</div>
                                 <div><b>ธนาคารรับเงิน:</b> ${b.bank || '-'} (<span class="font-mono">${b.acc || '-'}</span>)</div>
                                 <div><b>วันที่ยื่นกู้:</b> ${b.date || '-'}</div>
@@ -1106,19 +1011,9 @@ ADMIN_TEMPLATE = """
                             <p class="text-xs text-purple-200 font-mono">เบอร์โทร: ${primary.phone}</p>
                             <p class="text-xs text-purple-200">Facebook: <a href="${primary.facebook || '#'}" target="_blank" class="text-sky-300 underline">${primary.facebook || 'ไม่มี'}</a></p>
                         </div>
-                        <div class="flex items-center gap-3">
-                            <div class="text-right bg-amber-500/20 px-4 py-2 rounded-2xl border border-amber-500/30">
-                                <span class="text-[10px] font-bold text-amber-300 block uppercase">📁 ยอดค้างเก่าคงเหลือ</span>
-                                <div class="flex items-center gap-2 mt-0.5">
-                                    <span class="font-black text-amber-300 text-lg">฿${clientOldArrears.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
-                                    <button onclick="openPayOldModal('${primary.phone}', ${clientOldArrears})" class="px-2.5 py-1 bg-amber-500 text-slate-950 font-bold rounded-lg text-xs shadow hover:bg-amber-400 transition">รับชำระค้างเก่า</button>
-                                    <button onclick="openEditOldModal('${primary.phone}', ${clientOldArrears})" class="px-2 py-1 bg-white/20 hover:bg-white/30 text-white rounded-lg text-xs" title="แก้ไขยอดค้างเก่าตั้งต้น"><i class="fa-solid fa-pen"></i></button>
-                                </div>
-                            </div>
-                            <div class="text-right bg-white/10 px-4 py-2 rounded-2xl border border-white/10">
-                                <span class="text-[10px] font-bold text-purple-300 block uppercase">📂 ดอกลอยสะสมรวม</span>
-                                <span class="font-black text-amber-300 text-lg">฿${parseFloat(primary.accumulated_profit || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
-                            </div>
+                        <div class="text-right bg-white/10 px-4 py-2 rounded-2xl border border-white/10">
+                            <span class="text-[10px] font-bold text-purple-300 block uppercase">📂 ดอกลอยสะสมรวม</span>
+                            <span class="font-black text-amber-300 text-xl">฿${parseFloat(primary.accumulated_profit || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
                         </div>
                     </div>
 
@@ -1148,7 +1043,7 @@ ADMIN_TEMPLATE = """
             const discount = parseFloat(document.getElementById('pay_debt_discount').value) || 0;
             const customDate = document.getElementById('pay_debt_date').value;
 
-            if (amt <= 0) return;
+            if (amt <= 0) { alert('กรุณากรอกจำนวนเงินรับชำระที่ถูกต้อง'); return; }
             
             fetch('/submit-payment', {
                 method: 'POST',
@@ -1156,7 +1051,10 @@ ADMIN_TEMPLATE = """
                 body: JSON.stringify({ debtor_id: id, amount: amt, fine: fine, discount: discount, date: customDate })
             }).then(res => res.json()).then(data => {
                 if (data.success) {
+                    alert('บันทึกรับชำระหนี้สำเร็จ!');
                     location.reload();
+                } else {
+                    alert('เกิดข้อผิดพลาดในการบันทึก');
                 }
             });
         }
@@ -1182,7 +1080,7 @@ ADMIN_TEMPLATE = """
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ bank: bankName, amount: val })
-            }).then(res => res.json()).then(data => { if(data.success) { location.reload(); } });
+            }).then(res => res.json()).then(data => { if(data.success) { alert('บันทึกยอดเงินสำเร็จ!'); location.reload(); } });
         }
     </script>
 </body>
@@ -1360,6 +1258,7 @@ def admin_dashboard():
         return redirect(url_for('admin_login'))
     
     today_str = datetime.now().strftime('%d/%m/%Y')
+    today_date_iso = datetime.now().strftime('%Y-%m-%d')
     debtors_database = get_debtors_from_db()
     
     total_principal = sum(float(d.get('principal', 0)) for d in debtors_database if d.get('status') == 'ปกติ')
@@ -1372,7 +1271,7 @@ def admin_dashboard():
             try: txs = json.loads(txs)
             except: txs = []
         for tx in txs:
-            if tx.get('date', '').startswith(today_str) and (tx.get('type') == 'รับชำระหนี้' or tx.get('type') == 'รับชำระยอดค้างเก่า'):
+            if tx.get('date', '').startswith(today_str) and tx.get('type') == 'รับชำระหนี้':
                 collected_today += float(tx.get('raw_amount', 0))
 
     return render_template_string(ADMIN_TEMPLATE, 
@@ -1531,6 +1430,7 @@ def submit_payment():
                 try: txs = json.loads(txs)
                 except: txs = []
             
+            # คำนวณดอกลอย / กำไร (ยอดชำระสุทธิ - ส่วนลด หรือแยกตามตรรกะดอกลอย)
             profit_earned = amount - discount
             txs.append({
                 'date': formatted_date, 
@@ -1549,67 +1449,6 @@ def submit_payment():
             return {'success': True}
     except Exception as e:
         print(f"Payment Error: {e}")
-    return {'success': False}
-
-@app.route('/submit-old-payment', methods=['POST'])
-def submit_old_payment():
-    if not session.get('admin_logged_in'): return {'success': False}
-    data = request.json
-    phone = data.get('phone')
-    amount = float(data.get('amount') or 0)
-    custom_date = data.get('date')
-
-    if custom_date:
-        try:
-            date_obj = datetime.strptime(custom_date, '%Y-%m-%d')
-            formatted_date = date_obj.strftime('%d/%m/%Y') + ' ' + datetime.now().strftime('%H:%M')
-        except:
-            formatted_date = datetime.now().strftime('%d/%m/%Y %H:%M')
-    else:
-        formatted_date = datetime.now().strftime('%d/%m/%Y %H:%M')
-
-    try:
-        res = supabase.table("debtors").select("*").eq('phone', phone).execute()
-        if res.data:
-            for debtor in res.data:
-                current_old = float(debtor.get('old_arrears', 0))
-                new_old = max(0, current_old - amount)
-                
-                txs = debtor.get('transactions', [])
-                if isinstance(txs, str):
-                    try: txs = json.loads(txs)
-                    except: txs = []
-                
-                txs.append({
-                    'date': formatted_date,
-                    'type': 'รับชำระยอดค้างเก่า',
-                    'raw_amount': amount,
-                    'profit': 0
-                })
-
-                supabase.table("debtors").update({
-                    'old_arrears': new_old,
-                    'transactions': json.dumps(txs)
-                }).eq('id', debtor['id']).execute()
-            return {'success': True}
-    except Exception as e:
-        print(f"Old Payment Error: {e}")
-    return {'success': False}
-
-@app.route('/update-old-arrears', methods=['POST'])
-def update_old_arrears():
-    if not session.get('admin_logged_in'): return {'success': False}
-    data = request.json
-    phone = data.get('phone')
-    amount = float(data.get('amount') or 0)
-    try:
-        res = supabase.table("debtors").select("id").eq('phone', phone).execute()
-        if res.data:
-            for debtor in res.data:
-                supabase.table("debtors").update({'old_arrears': amount}).eq('id', debtor['id']).execute()
-            return {'success': True}
-    except Exception as e:
-        print(f"Update Old Arrears Error: {e}")
     return {'success': False}
 
 @app.route('/submit-application', methods=['POST'])
@@ -1633,7 +1472,6 @@ def submit_application():
         'interest_type': 'ดอกลอย',
         'interest_rate': 100,
         'accumulated_profit': 0,
-        'old_arrears': 0,
         'signature_data': signature_data,
         'date': datetime.now().strftime('%d/%m/%Y %H:%M'),
         'transactions': json.dumps([{'date': datetime.now().strftime('%d/%m/%Y %H:%M'), 'type': 'ยื่นขอกู้เงินออนไลน์', 'raw_amount': amount}])
