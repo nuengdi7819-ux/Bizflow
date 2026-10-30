@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="th" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BizFlow+ หน้าบ้านยื่นกู้สมาชิก & ยืนยันตัวตน OTP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { darkbg: '#0f1423', cardbg: '#161d31' } } } }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style> body { font-family: 'Prompt', sans-serif; } </style>
+</head>
+<body class="bg-gray-100 dark:bg-[#0f1423] text-gray-900 dark:text-[#f3f4f6] min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white dark:bg-[#161d31] border border-gray-200 dark:border-gray-800 rounded-3xl p-8 shadow-xl max-w-xl w-full space-y-6">
+        <div class="text-center space-y-2">
+            <div class="w-12 h-12 bg-purple-600/20 text-purple-600 dark:text-purple-400 rounded-2xl mx-auto flex items-center justify-center font-bold text-xl">🌐</div>
+            <h2 class="text-2xl font-bold">BizFlow+ หน้าบ้านยื่นกู้สมาชิก</h2>
+            <p class="text-xs text-gray-500 dark:text-gray-400">กรุณายืนยันเบอร์โทรศัพท์เพื่อรับรหัส OTP ก่อนทำรายการ</p>
+        </div>
+
+        <!-- STEP 1: ขอรหัส OTP -->
+        <div id="step-otp-request" class="space-y-4 text-xs">
+            <div>
+                <label class="block font-medium mb-1">เบอร์โทรศัพท์มือถือของคุณ *</label>
+                <input type="tel" id="client-phone" required placeholder="เช่น 0812345678" class="w-full bg-gray-50 dark:bg-[#0f1423] border border-gray-300 dark:border-gray-800 rounded-xl p-3 text-gray-900 dark:text-white focus:outline-none focus:border-purple-500">
+            </div>
+            <button type="button" onclick="requestOtp()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-purple-600/30 transition text-sm">
+                ขอรหัส OTP (แจ้งเตือนแอดมินทาง Telegram)
+            </button>
+        </div>
+
+        <!-- STEP 2: กรอกรหัส OTP (ซ่อนไว้ก่อนจนกว่าจะกดขอ) -->
+        <div id="step-otp-verify" class="hidden space-y-4 text-xs">
+            <div class="bg-purple-50 dark:bg-purple-950/30 border border-purple-500/30 p-3 rounded-xl text-purple-700 dark:text-purple-300 text-center">
+                ระบบได้ส่งคำขอ OTP ไปยัง Telegram ของแอดมินแล้ว<br>กรุณารอสักครู่แล้วนำรหัส 4-6 หลักมากลอกด้านล่าง
+            </div>
+            <div>
+                <label class="block font-medium mb-1">กรอกรหัส OTP ยืนยันตัวตน *</label>
+                <input type="text" id="client-otp-input" placeholder="กรอกรหัส OTP ที่ได้รับ" class="w-full bg-gray-50 dark:bg-[#0f1423] border border-gray-300 dark:border-gray-800 rounded-xl p-3 text-gray-900 dark:text-white text-center font-bold text-lg tracking-widest focus:outline-none focus:border-purple-500">
+            </div>
+            <button type="button" onclick="verifyOtp()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl shadow-lg transition text-sm">
+                ยืนยันรหัส OTP เพื่อเข้าสู่หน้ากรอกสัญญา
+            </button>
+        </div>
+
+        <!-- STEP 3: ฟอร์มกรอกขอกู้และเซ็นสัญญา (ซ่อนไว้จนกว่าจะยืนยัน OTP สำเร็จ) -->
+        <form id="step-apply-form" onsubmit="submitClientApplication(event)" class="hidden space-y-4 text-xs">
+            <div class="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-500/30 p-3 rounded-xl text-emerald-600 dark:text-emerald-400 text-center font-medium">
+                ✅ ยืนยันตัวตนด้วยเบอร์โทร <span id="display-phone" class="font-bold underline"></span> สำเร็จแล้ว
+            </div>
+            <div>
+                <label class="block font-medium mb-1">ชื่อ - นามสกุลจริง *</label>
+                <input type="text" id="apply-name" required placeholder="เช่น สมชาย ใจดี" class="w-full bg-gray-50 dark:bg-[#0f1423] border border-gray-300 dark:border-gray-800 rounded-xl p-3 text-gray-900 dark:text-white focus:outline-none focus:border-purple-500">
+            </div>
+            <div>
+                <label class="block font-medium mb-1">ลิงก์ Facebook ส่วนตัว *</label>
+                <input type="url" id="apply-fb" required placeholder="https://facebook.com/yourname" class="w-full bg-gray-50 dark:bg-[#0f1423] border border-gray-300 dark:border-gray-800 rounded-xl p-3 text-gray-900 dark:text-white focus:outline-none focus:border-purple-500">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block font-medium mb-1">จำนวนเงินต้นที่ขอกู้ (บาท) *</label>
+                    <input type="number" id="apply-amount" required placeholder="5000" class="w-full bg-gray-50 dark:bg-[#0f1423] border border-gray-300 dark:border-gray-800 rounded-xl p-3 text-gray-900 dark:text-white focus:outline-none focus:border-purple-500">
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">รูปแบบการผ่อนชำระ *</label>
+                    <select id="apply-cycle" class="w-full bg-gray-50 dark:bg-[#0f1423] border border-gray-300 dark:border-gray-800 rounded-xl p-3 text-gray-900 dark:text-white focus:outline-none focus:border-purple-500">
+                        <option value="daily">จ่ายทุกวัน (ดอกลอย)</option>
+                        <option value="weekly">จ่ายทุกสัปดาห์</option>
+                        <option value="monthly">จ่ายทุกเดือน</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Signature Pad -->
+            <div>
+                <div class="flex justify-between items-center mb-1">
+                    <label class="block font-medium">ลงลายเซ็นอิเล็กทรอนิกส์ (ใช้นิ้วหรือเมาส์วาด) *</label>
+                    <button type="button" onclick="clearSignature()" class="text-rose-500 hover:underline">ล้างลายเซ็น</button>
+                </div>
+                <div class="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl bg-gray-50 dark:bg-[#0f1423] h-40 relative overflow-hidden">
+                    <canvas id="signatureCanvas" class="w-full h-full cursor-crosshair touch-none"></canvas>
+                    <div id="signPlaceholder" class="absolute inset-0 flex items-center justify-center text-gray-400 pointer-events-none font-medium">เซ็นชื่อลงในกรอบนี้</div>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-purple-600/30 transition text-sm">
+                ส่งคำขอกู้ & ยืนยันสัญญา (แจ้งเตือน Telegram)
+            </button>
+        </form>
+    </div>
+
+    <script>
+        const tgToken = "9203750510:AAFJhUvWRF4mOSozUSkz0I0I9jca-ximuTo";
+        const tgChatId = "1880260879";
+        let verifiedPhone = "";
+        let mockGeneratedOtp = "1234"; // รหัสจำลองสำหรับทดสอบ (หรือรอแอดมินส่งมา)
+
+        async function sendTelegram(text) {
+            await fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: tgChatId, text: text, parse_mode: 'Markdown' })
+            });
+        }
+
+        async function requestOtp() {
+            const phone = document.getElementById('client-phone').value.trim();
+            if(!phone || phone.length < 9) {
+                alert('กรุณากรอกเบอร์โทรศัพท์มือถือให้ถูกต้อง');
+                return;
+            }
+            verifiedPhone = phone;
+
+            // ส่งแจ้งเตือนขอ OTP เข้า Telegram ของแอดมิน
+            const msg = `🔑 *OTP คำขอกู้*\n📞 เบอร์ลูกค้า: ${phone}\n⏳ กำลังรอแอดมินอนุมัติรหัส OTP`;
+            await sendTelegram(msg);
+
+            alert('ระบบได้ส่งคำขอรหัส OTP ไปยัง Telegram ของแอดมินเรียบร้อยแล้ว');
+            document.getElementById('step-otp-request').classList.add('hidden');
+            document.getElementById('step-otp-verify').classList.remove('hidden');
+        }
+
+        function verifyOtp() {
+            const inputOtp = document.getElementById('client-otp-input').value.trim();
+            if(!inputOtp) {
+                alert('กรุณากรอกรหัส OTP');
+                return;
+            }
+            
+            // ตรวจสอบรหัส (จำลองให้ผ่าน หรือเทียบกับค่าที่แอดมินแจ้ง)
+            document.getElementById('display-phone').innerText = verifiedPhone;
+            document.getElementById('step-otp-verify').classList.add('hidden');
+            document.getElementById('step-apply-form').classList.remove('hidden');
+            setTimeout(initSignaturePad, 50);
+        }
+
+        let canvas, ctx, isDrawing = false, hasSigned = false;
+        function initSignaturePad() {
+            canvas = document.getElementById('signatureCanvas');
+            if(!canvas) return;
+            ctx = canvas.getContext('2d');
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width; canvas.height = rect.height;
+            ctx.strokeStyle = '#a78bfa'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+
+            const getPos = (e) => {
+                const r = canvas.getBoundingClientRect();
+                return { x: (e.clientX || e.touches[0].clientX) - r.left, y: (e.clientY || e.touches[0].clientY) - r.top };
+            };
+            const start = (e) => { isDrawing = true; hasSigned = true; document.getElementById('signPlaceholder').style.display = 'none'; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); e.preventDefault(); };
+            const draw = (e) => { if(!isDrawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); e.preventDefault(); };
+            const stop = () => { isDrawing = false; ctx.beginPath(); };
+
+            canvas.onmousedown = start; canvas.onmousemove = draw; canvas.onmouseup = stop; canvas.onmouseleave = stop;
+            canvas.ontouchstart = start; canvas.ontouchmove = draw; canvas.ontouchend = stop;
+        }
+
+        function clearSignature() {
+            if(!ctx || !canvas) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            hasSigned = false;
+            document.getElementById('signPlaceholder').style.display = 'flex';
+        }
+
+        async function submitClientApplication(e) {
+            e.preventDefault();
+            if(!hasSigned) { alert('กรุณาลงลายเซ็นก่อนส่งคำขอ'); return; }
+
+            const name = document.getElementById('apply-name').value;
+            const fb = document.getElementById('apply-fb').value;
+            const amount = document.getElementById('apply-amount').value;
+            const cycle = document.getElementById('apply-cycle').value;
+
+            const msg = `🚨 *มีคำขอกู้เงินใหม่เข้ามา!*\n👤 ชื่อ: ${name}\n📞 เบอร์ยืนยัน OTP: ${verifiedPhone}\n🔗 FB: ${fb}\n💰 ยอดกู้: ฿${amount}\n📅 ผ่อน: ${cycle}`;
+            await sendTelegram(msg);
+
+            alert('ส่งคำขอกู้และแจ้งเตือนผ่าน Telegram สำเร็จ!');
+            location.reload();
+        }
+    </script>
+</body>
+</html>
