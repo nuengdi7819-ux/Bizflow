@@ -13,7 +13,8 @@
                 extend: {
                     colors: {
                         darkBg: '#0b0f19',
-                        cardBg: '#111827',
+                        sidebarBg: '#111827',
+                        cardBg: '#1f2937',
                         accent: '#6366f1'
                     }
                 }
@@ -25,132 +26,353 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
     </style>
 </head>
-<body class="bg-darkBg text-gray-100 min-h-screen flex flex-col justify-center items-center p-4">
+<body class="bg-darkBg text-gray-100 min-h-screen flex flex-col md:flex-row antialiased">
 
-    <!-- Container หลัก -->
-    <div class="w-full max-w-xl bg-cardBg border border-gray-800 rounded-2xl shadow-2xl p-6 md:p-8 space-y-6">
-        
-        <!-- Header -->
-        <div class="text-center space-y-2">
-            <h1 class="text-2xl font-bold tracking-wide text-white">BizFlow<span class="text-accent">+</span></h1>
-            <p class="text-xs text-gray-400">กรอกข้อมูลเบอร์โทรศัพท์เพื่อตรวจสอบสมาชิก และยืนยันตัวตนผ่าน OTP</p>
-        </div>
-
-        <!-- Notification Banner -->
-        <div class="bg-indigo-950/40 border border-indigo-800/50 rounded-xl p-4 flex items-start space-x-3 text-sm text-indigo-200">
-            <span class="text-lg">💡</span>
-            <p>ระบบตรวจพบสมาชิกเก่า: ดึงข้อมูลเดิมให้อัตโนมัติและไม่บังคับแนบรูปบัตรประชาชน</p>
-        </div>
-
-        <!-- Form Section -->
-        <form id="loanForm" onsubmit="handleSubmit(event)" class="space-y-4">
-            
-            <!-- ชื่อ - นามสกุลจริง -->
-            <div>
-                <label class="block text-xs font-medium text-gray-300 mb-1">ชื่อ - นามสกุลจริง *</label>
-                <input type="text" id="fullname" value="สมชาย ใจดี" required 
-                    class="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent">
-            </div>
-
-            <!-- เบอร์โทรศัพท์ -->
-            <div>
-                <label class="block text-xs font-medium text-gray-300 mb-1">เบอร์โทรศัพท์ (ยืนยันแล้ว)</label>
-                <input type="text" id="phone" value="0960719978" readonly 
-                    class="w-full bg-gray-900/50 border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-400 cursor-not-allowed">
-            </div>
-
-            <!-- ลิงก์ Facebook -->
-            <div>
-                <label class="block text-xs font-medium text-gray-300 mb-1">ลิงก์ FACEBOOK *</label>
-                <input type="url" id="facebook" value="https://facebook.com/somchai.sample" required 
-                    class="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent">
-            </div>
-
-            <!-- Grid 2 คอลัมน์ (จำนวนเงิน & กำหนดจ่าย) -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-medium text-gray-300 mb-1">จำนวนเงินต้นที่ขอกู้ (บาท) *</label>
-                    <input type="number" id="amount" value="5000" required 
-                        class="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-300 mb-1">ระบบกำหนดการจ่าย *</label>
-                    <select id="paymentCycle" class="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent">
-                        <option value="daily">จ่ายทุกวัน (ทวงทุกวัน)</option>
-                        <option value="weekly">จ่ายทุกสัปดาห์</option>
-                        <option value="monthly">จ่ายทุกเดือน</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- แนบไฟล์รูปถ่ายบัตรประชาชน -->
-            <div>
-                <label class="block text-xs font-medium text-gray-300 mb-1">แนบไฟล์รูปถ่ายบัตรประชาชน (บังคับเฉพาะลูกค้าใหม่)</label>
-                <div class="flex items-center space-x-3 bg-gray-900 border border-gray-700 rounded-xl px-4 py-2">
-                    <label class="cursor-pointer bg-accent hover:bg-indigo-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">
-                        เลือกไฟล์
-                        <input type="file" id="idCardFile" class="hidden" onchange="updateFileName(this)">
-                    </label>
-                    <span id="fileNameDisplay" class="text-xs text-gray-400 truncate">Screenshot_2.jpg</span>
-                </div>
-            </div>
-
-            <!-- ลงลายเซ็นอิเล็กทรอนิกส์ -->
-            <div>
-                <div class="flex justify-between items-center mb-1">
-                    <label class="block text-xs font-medium text-gray-300">ลงลายเซ็นอิเล็กทรอนิกส์ *</label>
-                    <button type="button" onclick="clearSignature()" class="text-xs text-red-400 hover:text-red-300 transition">ล้างลายเซ็น</button>
-                </div>
-                <div class="relative w-full h-40 bg-gray-900 border border-gray-700 rounded-xl overflow-hidden">
-                    <canvas id="signatureCanvas" class="w-full h-full cursor-crosshair touch-none"></canvas>
-                </div>
-            </div>
-
-            <!-- ปุ่มส่งข้อมูล -->
-            <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold py-3 px-4 rounded-xl shadow-lg transition duration-200 flex items-center justify-center space-x-2 text-sm">
-                <span>ส่งคำขอกู้เงินและทำสัญญาออนไลน์</span>
-                <span>➔</span>
-            </button>
-
-        </form>
+    <!-- Top Toggle Bar (สำหรับสลับดูหน้า Admin Dashboard / หน้าลูกค้า Apply) -->
+    <div class="fixed top-3 right-4 z-50 bg-gray-900/90 backdrop-blur border border-gray-700 rounded-xl p-1.5 flex space-x-1 shadow-2xl">
+        <button onclick="switchView('admin')" id="btnViewAdmin" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-accent text-white transition">🖥️ แอดมิน (Dashboard)</button>
+        <button onclick="switchView('client')" id="btnViewClient" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white transition">📱 ลูกค้า (/apply)</button>
     </div>
 
-    <!-- Script สำหรับควบคุม Canvas และ Form -->
+    <!-- ========================================================= -->
+    <!-- SECTION 1: ADMIN BACKEND DASHBOARD (ระบบหลังบ้าน) -->
+    <!-- ========================================================= -->
+    <div id="adminView" class="flex-1 flex flex-col md:flex-row w-full min-h-screen">
+        
+        <!-- Static Non-scrolling Sidebar -->
+        <aside class="w-full md:w-64 bg-sidebarBg border-r border-gray-800 p-5 flex flex-col justify-between shrink-0 md:h-screen md:sticky md:top-0">
+            <div class="space-y-6">
+                <!-- Brand -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-white text-xl">B+</div>
+                    <div>
+                        <h2 class="font-bold text-lg leading-none text-white">BizFlow<span class="text-accent">+</span></h2>
+                        <span class="text-[10px] text-gray-400">Loan Management System</span>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <nav class="space-y-1 text-sm font-medium">
+                    <a href="#" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl bg-accent text-white">
+                        <span>📊</span>
+                        <span>แดชบอร์ดภาพรวม</span>
+                    </a>
+                    <a href="#" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-gray-400 hover:bg-gray-800 hover:text-white transition">
+                        <span>📁</span>
+                        <span>รายการสินเชื่อ</span>
+                    </a>
+                    <a href="#" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-gray-400 hover:bg-gray-800 hover:text-white transition">
+                        <span>👥</span>
+                        <span>จัดการลูกค้า</span>
+                    </a>
+                    <a href="#" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-gray-400 hover:bg-gray-800 hover:text-white transition">
+                        <span>🔑</span>
+                        <span>OTP Gate Control</span>
+                    </a>
+                    <a href="#" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-gray-400 hover:bg-gray-800 hover:text-white transition">
+                        <span>⚙️</span>
+                        <span>ตั้งค่าระบบ / Telegram</span>
+                    </a>
+                </nav>
+            </div>
+
+            <div class="pt-4 border-t border-gray-800 text-xs text-gray-500">
+                สถานะระบบ: <span class="text-emerald-400 font-semibold">● ปกติ (Vercel)</span>
+            </div>
+        </aside>
+
+        <!-- Main Dashboard Content -->
+        <main class="flex-1 p-6 space-y-6 overflow-y-auto">
+            
+            <!-- Header -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-white">ระบบบริหารจัดการการเงินและสินเชื่อ</h1>
+                    <p class="text-xs text-gray-400 mt-1">ภาพรวมกระแสเงินสด การปล่อยกู้ และการบันทึกรายการ</p>
+                </div>
+                <button onclick="openTransactionModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-lg transition flex items-center space-x-2">
+                    <span>+</span>
+                    <span>บันทึกรายการใหม่ (Admin Entry)</span>
+                </button>
+            </div>
+
+            <!-- Dual Card Summary (Inflow / Outflow) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <!-- Inflow Card -->
+                <div class="bg-cardBg border border-emerald-900/40 rounded-2xl p-5 space-y-2 relative overflow-hidden shadow-xl">
+                    <div class="flex justify-between items-center text-xs text-emerald-400 font-semibold uppercase tracking-wider">
+                        <span>เงินไหลเข้าทั้งหมด (Inflow)</span>
+                        <span class="bg-emerald-950/60 border border-emerald-800 px-2.5 py-1 rounded-full text-[10px]">ชำระแล้ว</span>
+                    </div>
+                    <div class="text-3xl font-extrabold text-white">฿ 145,200.00</div>
+                    <p class="text-xs text-gray-400">รับชำระค่างวดและดอกเบี้ยประจำเดือน</p>
+                </div>
+
+                <!-- Outflow Card -->
+                <div class="bg-cardBg border border-rose-900/40 rounded-2xl p-5 space-y-2 relative overflow-hidden shadow-xl">
+                    <div class="flex justify-between items-center text-xs text-rose-400 font-semibold uppercase tracking-wider">
+                        <span>เงินไหลออกทั้งหมด (Outflow)</span>
+                        <span class="bg-rose-950/60 border border-rose-800 px-2.5 py-1 rounded-full text-[10px]">ปล่อยกู้</span>
+                    </div>
+                    <div class="text-3xl font-extrabold text-white">฿ 92,000.00</div>
+                    <p class="text-xs text-gray-400">อนุมัติและโอนเงินกู้ให้ลูกค้า</p>
+                </div>
+            </div>
+
+            <!-- Recent Transactions Table -->
+            <div class="bg-cardBg border border-gray-800 rounded-2xl overflow-hidden shadow-xl">
+                <div class="p-4 border-b border-gray-800 flex justify-between items-center">
+                    <h3 class="font-bold text-white text-sm">รายการธุรกรรมล่าสุด (Transactions)</h3>
+                    <span class="text-xs text-gray-400">แสดง 3 รายการล่าสุด</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-gray-300">
+                        <thead class="bg-gray-900/60 text-xs text-gray-400 uppercase border-b border-gray-800">
+                            <tr>
+                                <th class="px-5 py-3.5">วันที่ / เวลา</th>
+                                <th class="px-5 py-3.5">ชื่อลูกค้า / เบอร์โทร</th>
+                                <th class="px-5 py-3.5">ประเภท</th>
+                                <th class="px-5 py-3.5">จำนวนเงิน</th>
+                                <th class="px-5 py-3.5">สถานะ</th>
+                                <th class="px-5 py-3.5 text-right">การจัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-800">
+                            <tr class="hover:bg-gray-800/40 transition">
+                                <td class="px-5 py-4 text-xs text-gray-400">30 ต.ค. 2026, 18:30</td>
+                                <td class="px-5 py-4 font-medium text-white">สมชาย ใจดี <br><span class="text-xs text-gray-500">0960719978</span></td>
+                                <td class="px-5 py-4"><span class="text-xs bg-emerald-950 text-emerald-400 border border-emerald-800 px-2.5 py-1 rounded-full">Inflow (ชำระเงิน)</span></td>
+                                <td class="px-5 py-4 font-bold text-emerald-400">+ ฿ 1,500.00</td>
+                                <td class="px-5 py-4"><span class="text-xs text-emerald-400">สำเร็จ</span></td>
+                                <td class="px-5 py-4 text-right">
+                                    <button onclick="viewDetail('สมชาย ใจดี', '1500', 'Inflow')" class="text-xs text-indigo-400 hover:text-indigo-300 font-semibold underline">ดูรายละเอียด</button>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-gray-800/40 transition">
+                                <td class="px-5 py-4 text-xs text-gray-400">30 ต.ค. 2026, 14:15</td>
+                                <td class="px-5 py-4 font-medium text-white">วิภาดา สุขใจ <br><span class="text-xs text-gray-500">0812345678</span></td>
+                                <td class="px-5 py-4"><span class="text-xs bg-rose-950 text-rose-400 border border-rose-800 px-2.5 py-1 rounded-full">Outflow (ปล่อยกู้)</span></td>
+                                <td class="px-5 py-4 font-bold text-rose-400">- ฿ 5,000.00</td>
+                                <td class="px-5 py-4"><span class="text-xs text-amber-400">รออนุมัติ</span></td>
+                                <td class="px-5 py-4 text-right">
+                                    <button onclick="viewDetail('วิภาดา สุขใจ', '5000', 'Outflow')" class="text-xs text-indigo-400 hover:text-indigo-300 font-semibold underline">ดูรายละเอียด</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- SECTION 2: CLIENT APPLY VIEW (หน้าลงทะเบียนสำหรับลูกค้า /apply) -->
+    <!-- ========================================================= -->
+    <div id="clientView" class="hidden flex-1 min-h-screen w-full flex flex-col justify-center items-center p-4 my-8 md:my-0">
+        <div class="w-full max-w-xl bg-cardBg border border-gray-800 rounded-2xl shadow-2xl p-6 md:p-8 space-y-6">
+            
+            <div class="text-center space-y-2">
+                <h1 class="text-2xl font-bold tracking-wide text-white">BizFlow<span class="text-accent">+</span></h1>
+                <p class="text-xs text-gray-400">กรอกข้อมูลเบอร์โทรศัพท์เพื่อตรวจสอบสมาชิก และยืนยันตัวตนผ่าน OTP</p>
+            </div>
+
+            <div class="bg-indigo-950/40 border border-indigo-800/50 rounded-xl p-4 flex items-start space-x-3 text-sm text-indigo-200">
+                <span class="text-lg">💡</span>
+                <p>ระบบตรวจพบสมาชิกเก่า: ดึงข้อมูลเดิมให้อัตโนมัติและไม่บังคับแนบรูปบัตรประชาชน</p>
+            </div>
+
+            <form id="loanForm" onsubmit="handleSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">ชื่อ - นามสกุลจริง *</label>
+                    <input type="text" id="fullname" value="สมชาย ใจดี" required class="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">เบอร์โทรศัพท์ (ยืนยันแล้ว)</label>
+                    <input type="text" id="phone" value="0960719978" readonly class="w-full bg-gray-900/50 border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-400 cursor-not-allowed">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">ลิงก์ FACEBOOK *</label>
+                    <input type="url" id="facebook" value="https://facebook.com/somchai.sample" required class="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">จำนวนเงินต้นที่ขอกู้ (บาท) *</label>
+                        <input type="number" id="amount" value="5000" required class="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">ระบบกำหนดการจ่าย *</label>
+                        <select id="paymentCycle" class="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-accent">
+                            <option value="daily">จ่ายทุกวัน (ทวงทุกวัน)</option>
+                            <option value="weekly">จ่ายทุกสัปดาห์</option>
+                            <option value="monthly">จ่ายทุกเดือน</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">แนบไฟล์รูปถ่ายบัตรประชาชน (บังคับเฉพาะลูกค้าใหม่)</label>
+                    <div class="flex items-center space-x-3 bg-gray-900 border border-gray-700 rounded-xl px-4 py-2">
+                        <label class="cursor-pointer bg-accent hover:bg-indigo-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition">
+                            เลือกไฟล์
+                            <input type="file" id="idCardFile" class="hidden" onchange="updateFileName(this)">
+                        </label>
+                        <span id="fileNameDisplay" class="text-xs text-gray-400 truncate">Screenshot_2.jpg</span>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-medium text-gray-300">ลงลายเซ็นอิเล็กทรอนิกส์ *</label>
+                        <button type="button" onclick="clearSignature()" class="text-xs text-red-400 hover:text-red-300 transition">ล้างลายเซ็น</button>
+                    </div>
+                    <div class="relative w-full h-40 bg-gray-900 border border-gray-700 rounded-xl overflow-hidden">
+                        <canvas id="signatureCanvas" class="w-full h-full cursor-crosshair touch-none"></canvas>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold py-3 px-4 rounded-xl shadow-lg transition duration-200 flex items-center justify-center space-x-2 text-sm">
+                    <span>ส่งคำขอกู้เงินและทำสัญญาออนไลน์</span>
+                    <span>➔</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- MODAL 1: ADMIN TRANSACTION ENTRY (สำหรับแอดมินลงบันทึก) -->
+    <!-- ========================================================= -->
+    <div id="entryModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-cardBg border border-gray-700 rounded-2xl w-full max-w-lg p-6 space-y-4 shadow-2xl relative">
+            <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                <h3 class="font-bold text-white text-base">บันทึกรายการธุรกรรมแอดมิน (Admin Entry)</h3>
+                <button onclick="closeTransactionModal()" class="text-gray-400 hover:text-white">✕</button>
+            </div>
+            
+            <form onsubmit="saveTransaction(event)" class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-gray-300 mb-1">ประเภทรายการ</label>
+                        <select class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-xs text-white">
+                            <option value="inflow">Inflow (รับชำระ)</option>
+                            <option value="outflow">Outflow (ปล่อยกู้)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-300 mb-1">จำนวนเงิน (บาท)</label>
+                        <input type="number" placeholder="0.00" class="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-xs text-white" required>
+                    </div>
+                </div>
+
+                <!-- Advanced Interest Toggle -->
+                <div class="p-3 bg-gray-900/80 border border-gray-800 rounded-xl space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-semibold text-gray-200">คำนวณดอกเบี้ยขั้นสูง (Advanced Logic)</span>
+                        <input type="checkbox" id="advancedToggle" onchange="toggleAdvancedLogic(this)" class="w-4 h-4 accent-indigo-600">
+                    </div>
+                    <div id="advancedOptions" class="hidden space-y-2 pt-2 border-t border-gray-800">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[10px] text-gray-400">อัตราดอกเบี้ย (%)</label>
+                                <input type="number" placeholder="2.5" class="w-full bg-gray-950 border border-gray-700 rounded-lg p-2 text-xs text-white">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-gray-400">รูปแบบคำนวณ</label>
+                                <select class="w-full bg-gray-950 border border-gray-700 rounded-lg p-2 text-xs text-white">
+                                    <option>ลดต้นลดดอก</option>
+                                    <option>คงที่ (Flat Rate)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-2 border-t border-gray-800">
+                    <button type="button" onclick="closeTransactionModal()" class="px-4 py-2 rounded-xl text-xs bg-gray-800 text-gray-300">ยกเลิก</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl text-xs bg-accent text-white font-semibold">บันทึกข้อมูล</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- JAVASCRIPT LOGIC -->
+    <!-- ========================================================= -->
     <script>
-        // จัดการแสดงชื่อไฟล์ที่อัปโหลด
-        function updateFileName(input) {
-            const display = document.getElementById('fileNameDisplay');
-            if (input.files && input.files[0]) {
-                display.textContent = input.files[0].name;
+        // --- 1. View Switching (สลับหน้า Admin / Client) ---
+        function switchView(view) {
+            const admin = document.getElementById('adminView');
+            const client = document.getElementById('clientView');
+            const btnAdmin = document.getElementById('btnViewAdmin');
+            const btnClient = document.getElementById('btnViewClient');
+
+            if(view === 'admin') {
+                admin.classList.remove('hidden');
+                client.classList.add('hidden');
+                btnAdmin.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-accent text-white transition';
+                btnClient.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white transition';
+            } else {
+                admin.classList.add('hidden');
+                client.classList.remove('hidden');
+                btnClient.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-accent text-white transition';
+                btnAdmin.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white transition';
+                // Trigger canvas resize
+                setTimeout(resizeCanvas, 50);
             }
         }
 
-        // --- ระบบ Canvas ลายเซ็นอิเล็กทรอนิกส์ (รองรับ Mouse และ Touch) ---
+        // --- 2. Modal Handling ---
+        function openTransactionModal() {
+            document.getElementById('entryModal').classList.remove('hidden');
+        }
+        function closeTransactionModal() {
+            document.getElementById('entryModal').classList.add('hidden');
+        }
+        function toggleAdvancedLogic(checkbox) {
+            const opts = document.getElementById('advancedOptions');
+            if(checkbox.checked) opts.classList.remove('hidden');
+            else opts.classList.add('hidden');
+        }
+        function saveTransaction(e) {
+            e.preventDefault();
+            alert('บันทึกรายการธุรกรรมเรียบร้อยแล้ว!');
+            closeTransactionModal();
+        }
+        function viewDetail(name, amount, type) {
+            alert(`รายละเอียดธุรกรรม:\nชื่อ: ${name}\nจำนวน: ฿${amount}\nประเภท: ${type}`);
+        }
+
+        // --- 3. Client Form & Signature Canvas ---
+        function updateFileName(input) {
+            const display = document.getElementById('fileNameDisplay');
+            if (input.files && input.files[0]) display.textContent = input.files[0].name;
+        }
+
         const canvas = document.getElementById('signatureCanvas');
         const ctx = canvas.getContext('2d');
         let isDrawing = false;
 
         function resizeCanvas() {
+            if(!canvas) return;
             const rect = canvas.getBoundingClientRect();
             canvas.width = rect.width;
             canvas.height = rect.height;
-            ctx.strokeStyle = '#ffffff'; // เส้นสีขาว
+            ctx.strokeStyle = '#ffffff';
             ctx.lineWidth = 2.5;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
         }
 
         window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
 
         function getPos(e) {
             const rect = canvas.getBoundingClientRect();
             const clientX = e.clientX || (e.touches && e.touches[0].clientX);
             const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-            return {
-                x: clientX - rect.left,
-                y: clientY - rect.top
-            };
+            return { x: clientX - rect.left, y: clientY - rect.top };
         }
 
         function startDraw(e) {
@@ -174,26 +396,22 @@
             ctx.beginPath();
         }
 
-        // Event Listeners สำหรับเมาส์
         canvas.addEventListener('mousedown', startDraw);
         canvas.addEventListener('mousemove', drawing);
         canvas.addEventListener('mouseup', stopDraw);
         canvas.addEventListener('mouseleave', stopDraw);
 
-        // Event Listeners สำหรับมือถือ / แท็บเล็ต (Touch)
         canvas.addEventListener('touchstart', startDraw, { passive: false });
         canvas.addEventListener('touchmove', drawing, { passive: false });
         canvas.addEventListener('touchend', stopDraw);
 
-        // ปุ่มล้างลายเซ็น
         function clearSignature() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
 
-        // จัดการเมื่อกดส่งฟอร์ม
         function handleSubmit(e) {
             e.preventDefault();
-            alert('ส่งคำขอกู้เงินและบันทึกข้อมูลเรียบร้อยแล้ว!');
+            alert('ส่งคำขอกู้เงินและทำสัญญาออนไลน์เรียบร้อยแล้ว!');
         }
     </script>
 </body>
